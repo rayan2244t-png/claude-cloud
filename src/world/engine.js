@@ -2,30 +2,24 @@
 import * as THREE from 'three';
 import { makeCharacter } from './character.js';
 import { MAPS } from './maps/index.js';
+import { createRenderPipeline } from './render.js';
+import { SHADER } from './kit.js';
 
 const PLAYER_R = 0.35;
 const SPEED = 4.2;
 
-export function createEngine(container, { npcs }) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  container.appendChild(renderer.domElement);
-
+export function createEngine(container, { npcs, quality = 'high' }) {
   const scene = new THREE.Scene();
   const SKY = new THREE.Color('#d8e8e4');
   scene.background = SKY;
-  scene.fog = new THREE.Fog(SKY, 38, 85);
+  scene.fog = new THREE.Fog(SKY, 55, 150);
 
   // Мягкий свет без жёстких контрастов — как в Goose Game
-  scene.add(new THREE.HemisphereLight('#fffaf0', '#9ab38f', 1.55));
+  const hemi = new THREE.HemisphereLight('#fffaf0', '#9ab38f', 1.55);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight('#fff4e0', 1.6);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 80 });
+  Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.03;
   sun.shadow.radius = 4;
@@ -36,6 +30,10 @@ export function createEngine(container, { npcs }) {
   const CAM_OFFSET = new THREE.Vector3(0, 14.5, 20.5);
   let zoom = 1;
 
+  const pipe = createRenderPipeline(container, scene, camera, quality);
+  const renderer = pipe.renderer;
+  sun.shadow.mapSize.set(pipe.quality.shadow, pipe.quality.shadow);
+
   // ---------- Карты ----------
   const maps = {};
   for (const [id, build] of Object.entries(MAPS)) {
@@ -43,6 +41,10 @@ export function createEngine(container, { npcs }) {
     scene.add(maps[id].root);
   }
   let map = maps.brooklyn;
+  const showOnly = (id) => Object.values(maps).forEach((m) => { m.root.visible = m.id === id; });
+  showOnly('brooklyn');
+  // Кто из персонажей сейчас на улице (карта + расписание). Задаётся из main.js
+  let npcFilter = (id) => (npcs[id].map || 'brooklyn') === map.id;
 
   // Статичные объекты не пересчитываем каждый кадр
   scene.updateMatrixWorld(true);
@@ -171,6 +173,7 @@ export function createEngine(container, { npcs }) {
 
   // ---------- Цикл ----------
   const clock = new THREE.Clock();
+  const tmpV = new THREE.Vector3(), tmpL = new THREE.Vector3();
   const camPos = new THREE.Vector3().copy(pos).add(CAM_OFFSET);
   const camLook = new THREE.Vector3().copy(pos);
   let talkFocus = null;
@@ -225,6 +228,8 @@ export function createEngine(container, { npcs }) {
 
     // Персонажи поворачиваются к герою, когда он рядом
     for (const n of Object.values(npcObjs)) {
+      n.char.root.visible = npcFilter(n.id);
+      if (!n.char.root.visible) continue;
       const d = n.pos.distanceTo(pos);
       const target = d < 4 || n.lookAt ? Math.atan2(pos.x - n.pos.x, pos.z - n.pos.z) : n.baseRot;
       let diff = target - n.char.root.rotation.y;
@@ -236,25 +241,29 @@ export function createEngine(container, { npcs }) {
     map.update?.(dt, t, pos, camera.position);
 
     // Камера плавно следует за героем; во время разговора — немного приближается
+    // У каждой карты свой ракурс: в Манхэттене камера смотрит вверх, на небоскрёбы
     const focus = talkFocus ? pos.clone().lerp(talkFocus, 0.5) : pos;
     const z = (talkFocus ? 0.72 : zoom) * (map.camZoom || 1);
-    const wantPos = focus.clone().add(CAM_OFFSET.clone().multiplyScalar(z));
+    const offset = map.cam ? tmpV.set(...map.cam.offset) : tmpV.copy(CAM_OFFSET);
+    const wantPos = focus.clone().add(offset.multiplyScalar(z));
     camPos.lerp(wantPos, Math.min(1, dt * 4));
-    camLook.lerp(focus.clone().add(new THREE.Vector3(0, talkFocus ? 1.2 : 0, 0)), Math.min(1, dt * 4));
+    const look = map.cam?.look && !talkFocus ? tmpL.set(...map.cam.look) : tmpL.set(0, talkFocus ? 1.2 : 0.6, talkFocus ? 0 : -1.5);
+    camLook.lerp(focus.clone().add(look), Math.min(1, dt * 4));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
     sun.position.copy(pos).add(SUN_OFFSET);
     sun.target.position.copy(pos);
 
+    SHADER.uTime.value = t;
     frameHooks.forEach((fn) => fn(dt, t));
-    renderer.render(scene, camera);
+    pipe.render(dt);
     requestAnimationFrame(step);
   }
 
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
-    renderer.setSize(w, h);
+    pipe.setSize(w, h);
     camera.aspect = w / h;
     // На узком экране телефона отодвигаем камеру, чтобы видеть больше
     camera.fov = w < h ? 44 : 30;
@@ -292,8 +301,14 @@ export function createEngine(container, { npcs }) {
       camPos.copy(pos).add(CAM_OFFSET);
       camLook.copy(pos);
       moveTarget = null;
-      Object.values(npcObjs).forEach((n) => { n.char.root.visible = id === 'brooklyn'; });
+      showOnly(id);
     },
+    setNpcFilter(fn) { npcFilter = fn; },
+    lights: { sun, hemi },
+    pipe,
+    camera,
+    setSunOffset(x, y, z) { SUN_OFFSET.set(x, y, z); },
+    npcDance(id, on) { npcObjs[id]?.char.setDance(on); },
     teleport(x, z, face) {
       pos.set(x, 0, z);
       if (face !== undefined) heading = face;

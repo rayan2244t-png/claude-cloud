@@ -13,34 +13,40 @@
 
 export const NPCS = {
   marcus: {
-    id: 'marcus', name: 'Marcus', role: 'Таксист', pitch: 0.8,
+    id: 'marcus', name: 'Marcus', role: 'Таксист', pitch: 0.8, hours: [6, 23.5],
     look: { skin: '#8d5a3b', shirt: '#f2c230', pants: '#3d4a5c', hat: 'cap', hatColor: '#2f3b52', hair: '#1d1d1d' },
     pos: [-25.5, 0, 5.2],
     persona: 'You are a cheerful taxi driver in your 40s, born and raised in Queens. You love the Yankees, pizza and giving tourists tips about the city.',
   },
   jess: {
-    id: 'jess', name: 'Jess', role: 'Бариста', pitch: 1.25,
+    id: 'jess', name: 'Jess', role: 'Бариста', pitch: 1.25, hours: [7, 20],
     look: { skin: '#f1c7a5', shirt: '#7fb38a', pants: '#4a3f5c', hat: 'bun', hair: '#c4572e', apron: '#f5efe2' },
     pos: [-8.2, 0, 10.4],
     persona: 'You are a friendly barista in your 20s who runs a coffee cart in a Brooklyn park. You are an art student, you love indie music and iced coffee.',
   },
   rodriguez: {
-    id: 'rodriguez', name: 'Mrs. Rodriguez', role: 'Хозяйка квартиры', pitch: 1.1,
+    id: 'rodriguez', name: 'Mrs. Rodriguez', role: 'Хозяйка квартиры', pitch: 1.1, hours: [8, 22],
     look: { skin: '#c99a73', shirt: '#b0577a', pants: '#5b4b6b', hat: 'bun', hair: '#d9d4cc', glasses: true },
     pos: [9.9, 0, -5.3],
     persona: 'You are a kind but strict landlady in your 60s, originally from Puerto Rico, who has lived in Brooklyn for 40 years. You love your garden and cooking.',
   },
   tony: {
-    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75,
+    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75, hours: [10, 25],
     look: { skin: '#e8b48f', shirt: '#ffffff', pants: '#2f3b52', hat: 'paper', hair: '#3a2a20', apron: '#e0e0e0', mustache: true },
     pos: [16.2, 0, 9.2],
     persona: 'You are a loud, funny hot dog vendor from Brooklyn in your 50s. You call everyone "buddy" and you are proud of your hot dogs.',
   },
   dev: {
-    id: 'dev', name: 'Dev', role: 'Прохожий', pitch: 1.0,
+    id: 'dev', name: 'Dev', role: 'Прохожий', pitch: 1.0, hours: [6, 24],
     look: { skin: '#a8714f', shirt: '#5b7fb3', pants: '#c9b28f', hat: 'none', hair: '#151515', backpack: '#e07a5f', headphones: true },
     pos: [24, 0, 12.6],
     persona: 'You are a relaxed software developer in your 20s who lives in Brooklyn and rides the subway every day. You like basketball and street food.',
+  },
+  luis: {
+    id: 'luis', name: 'Luis', role: 'Уличный музыкант (только вечером)', pitch: 0.9, hours: [18.5, 27],
+    look: { skin: '#b07a55', shirt: '#2f3b52', pants: '#5b4b3b', hat: 'beanie', hatColor: '#e07a5f', hair: '#1d1d1d', mustache: true },
+    pos: [-15.5, 0, 13.5],
+    persona: 'You are Luis, a street musician who plays guitar in a Brooklyn park in the evenings. You are from Mexico City, you love jazz, salsa and old rock songs.',
   },
 };
 
@@ -326,6 +332,41 @@ export const QUESTS = [
     onDone: { flag: 'subway', toast: 'Метро на востоке улицы. Скоро: Глава 2 — Манхэттен!' },
   },
 ];
+
+QUESTS.push({
+  id: 'music', npc: 'luis', todo: 'Найти музыканта в парке (вечером)', xp: 50, requires: ['arrive'], optional: true,
+  words: [['like', 'нравиться'], ['music', 'музыка'], ['song', 'песня'], ['favorite', 'любимый'], ['kind of', 'вид, тип'], ['beautiful', 'красивый'], ['tonight', 'сегодня вечером']],
+  steps: [
+    { t: 'say', en: 'Good evening, my friend! Do you like music?', ru: 'Добрый вечер, друг! Ты любишь музыку?' },
+    { t: 'tip', title: 'Do you like…?', text: 'Чтобы спросить «Тебе нравится…?» — **Do you like…?** Ответ: **Yes, I do!** / **No, I don\'t.**' },
+    {
+      t: 'choice', q: 'Ответь «Да, люблю!»', topic: 'have',
+      opts: [
+        { en: 'Yes, I do! I love music.', ok: true },
+        { en: 'Yes, I like!', why: 'После like нужно что-то: I like music. Или короткий ответ: Yes, I do!' },
+        { en: 'Yes, I am like music.', why: 'Не смешивай am и like: I like music.' },
+      ],
+    },
+    { t: 'say', en: 'Me too! What kind of music do you like?', ru: 'Я тоже! Какую музыку ты любишь?' },
+    {
+      t: 'type', q: 'Ответь, какую музыку ты любишь', example: 'I like rock. / I like hip-hop.', topic: 'word_order',
+      answers: ['I like *', 'I love *', 'I like * music', 'I love * music', 'I really like *'],
+      hints: [{ single: true, text: 'Ответь полным предложением: I like rock / I love jazz.' }],
+    },
+    { t: 'say', en: 'Nice choice! My favorite song is about New York. Listen!', ru: 'Отличный выбор! Моя любимая песня — про Нью-Йорк. Слушай!' },
+    { t: 'listen', en: 'Start spreading the news, I am leaving today.', q: 'О чём поёт Луис?', topic: 'listening', opts: ['Расскажите всем — я уезжаю сегодня', 'Я остаюсь дома сегодня', 'Новости по телевизору', 'Я люблю пиццу'], ok: 0 },
+    { t: 'tip', title: 'New York, New York', text: 'Это начало знаменитой песни Фрэнка Синатры «New York, New York». Её поют на каждом празднике в городе!' },
+    {
+      t: 'choice', q: 'Похвали песню', topic: 'slang',
+      opts: [
+        { en: "Wow, that's beautiful!", ok: true },
+        { en: "Wow, that's beautifully!", why: 'После that\'s — прилагательное: beautiful.' },
+        { en: 'Wow, it beauty!', why: 'Правильно: That\'s beautiful! / It\'s beautiful!' },
+      ],
+    },
+    { t: 'say', en: 'Thank you! Come back any night. I play here every evening.', ru: 'Спасибо! Приходи в любой вечер. Я играю здесь каждый вечер.' },
+  ],
+});
 
 // Переписка с другом в телефоне героя
 export const PHONE_THREADS = [

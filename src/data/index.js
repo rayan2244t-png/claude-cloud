@@ -1,10 +1,10 @@
 // Реестр глав. Новая глава = новый файл в src/data + одна строка в CHAPTERS.
-import { CHAPTER as chapter1 } from './chapter1.js';
-import { NPCS as npcs1 } from './chapter1.js';
+import { CHAPTER as chapter1, NPCS as npcs1 } from './chapter1.js';
+import { CHAPTER as chapter2, NPCS as npcs2 } from './chapter2.js';
 
-export const CHAPTERS = [chapter1];
+export const CHAPTERS = [chapter1, chapter2];
 
-export const NPCS = { ...npcs1 };
+export const NPCS = { ...npcs1, ...npcs2 };
 
 export const QUESTS = CHAPTERS.flatMap((c) => c.quests.map((q) => ({ ...q, chapter: c.id })));
 export const THREADS = CHAPTERS.flatMap((c) => c.threads.map((t) => ({ ...t, chapter: c.id })));

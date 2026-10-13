@@ -5,13 +5,15 @@ import { el, ui, money } from './dom.js';
 import { state, on } from '../game/state.js';
 import { levelInfo } from '../game/progress.js';
 
-export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, onPhone, onAction }) {
+export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onAction }) {
   const lvlBadge = el('div', { class: 'lvl-badge' });
   const lvlTitle = el('div', { class: 'lvl-title' });
   const xpFill = el('div', { class: 'xp-fill' });
   const xpText = el('div', { class: 'xp-text' });
   const moneyEl = el('div', { class: 'money' });
+  const clockEl = el('div', { class: 'clock' });
   const top = el('div', { class: 'hud-top' },
+    clockEl,
     el('div', { class: 'hud-level' }, lvlBadge, el('div', { class: 'hud-xp' }, lvlTitle, el('div', { class: 'xp-bar' }, xpFill), xpText)),
     moneyEl,
   );
@@ -72,6 +74,9 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
       m.querySelector('.mk-icon').textContent = st === 'quest' ? '!' : st === 'talk' ? '💬' : st === 'shift' ? '☕' : '';
       m.classList.toggle('near', near === id);
     }
+
+    const c = getClock();
+    if (clockEl.textContent !== c) clockEl.textContent = c;
 
     const act = getInteraction();
     if (act) {

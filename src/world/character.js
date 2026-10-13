@@ -125,6 +125,7 @@ export function makeCharacter(look = {}) {
   let phase = Math.random() * 10;
   let talkTimer = 0;
   let wave = 0;
+  let dancing = false;
 
   return {
     root,
@@ -143,6 +144,21 @@ export function makeCharacter(look = {}) {
       // Дыхание
       torso.scale.set(1, 1 + Math.sin(phase * 0.7) * 0.015 * (1 - walk), 1);
 
+      if (dancing) {
+        // Танец уличного танцора: прыжки, повороты, руки вверх
+        const d = phase * 1.6;
+        body.position.y = Math.abs(Math.sin(d)) * 0.25;
+        body.rotation.y = Math.sin(d * 0.5) * 0.9;
+        arms[0].rotation.z = -2.2 + Math.sin(d) * 0.6;
+        arms[1].rotation.z = 2.2 - Math.sin(d) * 0.6;
+        legs[0].rotation.x = Math.sin(d) * 0.5;
+        legs[1].rotation.x = -Math.sin(d) * 0.5;
+        phase += dt * 3;
+        return;
+      }
+      body.rotation.y *= 0.8;
+      if (arms[0].rotation.z < -0.2) arms[0].rotation.z += (-0.12 - arms[0].rotation.z) * 0.2;
+
       if (talkTimer > 0) {
         talkTimer -= dt;
         head.rotation.x = Math.sin(talkTimer * 14) * 0.08;
@@ -159,5 +175,6 @@ export function makeCharacter(look = {}) {
     },
     talk(seconds = 1.5) { talkTimer = seconds; },
     wave(seconds = 1.2) { wave = seconds; },
+    setDance(on) { dancing = on; },
   };
 }

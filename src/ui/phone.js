@@ -5,6 +5,10 @@ import { levelInfo, weakTopics, LEVELS, addXP } from '../game/progress.js';
 import { dueWords, grade, vocabStats } from '../game/srs.js';
 import { speak } from '../game/speech.js';
 import { SHOP } from '../data/shop.js';
+import { QUALITY } from '../world/render.js';
+import { COLLECTIBLES } from '../data/collectibles.js';
+
+const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
 export function createPhone(api) {
   const screen = el('div', { class: 'phone-screen' });
@@ -97,6 +101,20 @@ export function createPhone(api) {
             m.why ? el('div', { class: 'muted' }, m.why) : null)));
       },
     },
+    notes: {
+      icon: '📒', name: 'Шпаргалка', color: '#4fa3a5',
+      badge: () => 0,
+      render() {
+        const tips = Object.entries(state.tips || {});
+        const slang = COLLECTIBLES.filter((c) => state.apples?.[c.id]);
+        page('Шпаргалка',
+          el('div', { class: 'muted small-note' }, 'Все правила и американские фишки, которые ты встретил в игре.'),
+          tips.length ? null : el('div', { class: 'empty' }, 'Пока пусто — поговори с жителями города!'),
+          ...tips.map(([title, text]) => el('div', { class: 'note-card' }, el('b', {}, title), el('div', { html: mdLite(text) }))),
+          slang.length ? el('div', { class: 'section-title' }, `🍎 Сленг из золотых яблок (${slang.length}/${COLLECTIBLES.length})`) : null,
+          ...slang.map((c) => el('div', { class: 'note-card' }, el('b', {}, c.en, el('button', { class: 'icon-btn small', onclick: () => speak(c.en, { force: true }) }, '🔊')), el('div', { class: 'muted' }, c.ru), el('div', { html: mdLite(c.text) }))));
+      },
+    },
     daily: {
       icon: '🔥', name: 'Задание дня', color: '#f2a03c',
       badge: () => (state.daily === today() ? 0 : 1),
@@ -169,6 +187,15 @@ export function createPhone(api) {
         const rate = el('input', { type: 'range', min: '0.5', max: '1.2', step: '0.05', value: state.settings.rate });
         rate.addEventListener('change', () => { state.settings.rate = Number(rate.value); save(); speak('This is how fast I talk.', { force: true }); });
         page('Настройки',
+          el('label', { class: 'set-row col' }, '✨ Графика (шейдеры)', (() => {
+            const sel = el('select', { class: 'text-in' }, ...Object.entries(QUALITY).map(([id, q]) => {
+              const o = el('option', { value: id }, q.label);
+              if (state.settings.gfx === id) o.selected = true;
+              return o;
+            }));
+            sel.addEventListener('change', () => { state.settings.gfx = sel.value; save(); location.reload(); });
+            return sel;
+          })()),
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),
           toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
           el('label', { class: 'set-row col' }, 'Скорость речи', rate),

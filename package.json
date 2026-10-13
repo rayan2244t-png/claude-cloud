@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
+    "n8ao": "^2.0.1",
+    "postprocessing": "^6.39.5",
     "three": "^0.170.0"
   },
   "devDependencies": {

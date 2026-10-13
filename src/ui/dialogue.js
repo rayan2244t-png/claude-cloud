@@ -136,6 +136,9 @@ export const STEP_TYPES = {
   },
 
   async tip(step, ctx) {
+    // Все подсказки собираются в «Шпаргалку» в телефоне
+    state.tips ||= {};
+    if (!state.tips[step.title]) { state.tips[step.title] = step.text; save(); }
     const card = el('div', { class: 'tip-card' }, el('div', { class: 'tip-flag' }, '🇺🇸 Американский английский'), el('div', { class: 'tip-title' }, step.title), el('div', { class: 'tip-text', html: md(step.text) }));
     ctx.log.append(card);
     ctx.log.scrollTop = ctx.log.scrollHeight;

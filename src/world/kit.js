@@ -1,22 +1,141 @@
 // Общие «кирпичики» для low-poly мира в пастельном стиле:
 // материалы, простые фигуры и надписи на вывесках.
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 const matCache = new Map();
 
-// Плоские пастельные материалы без текстур — основа стиля.
+// ---------- «Шейдерпак»: общие юниформы для всех материалов ----------
+// Тени облаков, ползущие по городу, и ветер, качающий листву и траву.
+// Общее состояние мира для эффектов (ночь, дождь) — пишет world/time.js
+export const WORLD = { night: 0, rain: 0 };
+
+export const SHADER = {
+  uTime: { value: 0 },
+  uCloud: { value: 0.5 }, // сила теней от облаков (0 — ясно)
+  uWind: { value: 1 },
+};
+
+const NOISE = /* glsl */ `
+uniform float uTime;
+uniform float uCloud;
+uniform float uWind;
+varying vec3 vWPos;
+float bHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float bNoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(bHash(i), bHash(i + vec2(1, 0)), u.x), mix(bHash(i + vec2(0, 1)), bHash(i + vec2(1, 1)), u.x), u.y);
+}
+float bFbm(vec2 p) { return bNoise(p) * 0.55 + bNoise(p * 2.1) * 0.3 + bNoise(p * 4.3) * 0.15; }
+`;
+
+// Подключает эффекты шейдерпака к материалу. wave: 0 — нет, 1 — листва, 2 — трава (качается верхушка)
+export function shaderize(m, { wave = 0 } = {}) {
+  if (m.userData.shaderized) return m;
+  m.userData.shaderized = true;
+  m.userData.wave = wave;
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = SHADER.uTime;
+    shader.uniforms.uCloud = SHADER.uCloud;
+    shader.uniforms.uWind = SHADER.uWind;
+    shader.vertexShader = NOISE + shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      vec4 bWp = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        bWp = instanceMatrix * bWp;
+      #endif
+      bWp = modelMatrix * bWp;
+      ${wave === 1 ? 'transformed += vec3(sin(uTime * 1.7 + bWp.x * 0.5 + bWp.z * 0.3), sin(uTime * 2.3 + bWp.x) * 0.4, cos(uTime * 1.3 + bWp.z * 0.5)) * 0.07 * uWind;' : ''}
+      ${wave === 2 ? 'transformed.x += sin(uTime * 2.4 + bWp.x * 0.7 + bWp.z * 0.4) * 0.09 * uWind * clamp(position.y + 0.16, 0.0, 1.0) * 3.0;' : ''}
+      vWPos = bWp.xyz;`,
+    );
+    shader.fragmentShader = NOISE + shader.fragmentShader.replace(
+      '#include <lights_fragment_end>',
+      `#include <lights_fragment_end>
+      // Тени от облаков: мягкие пятна, медленно плывущие по ветру
+      float bCloud = smoothstep(0.42, 0.75, bFbm(vWPos.xz * 0.025 + vec2(uTime * 0.012, uTime * 0.006)));
+      float bShade = 1.0 - bCloud * 0.55 * uCloud;
+      reflectedLight.directDiffuse *= bShade;
+      reflectedLight.directSpecular *= bShade;`,
+    );
+  };
+  m.customProgramCacheKey = () => `bigapple-${wave}`;
+  return m;
+}
+
+// Копия материала с эффектами шейдерпака (clone() их не копирует)
+export function cloneMat(m) {
+  const c = m.clone();
+  c.userData = { ...m.userData, shaderized: false };
+  return shaderize(c, { wave: m.userData.wave });
+}
+
+// Пастельные материалы с физичным светом (PBR) — основа стиля.
+// opts.wave — качание на ветру; остальные поля уходят в материал.
 export function mat(color, opts = {}) {
   const key = color + JSON.stringify(opts);
   if (!matCache.has(key)) {
-    matCache.set(key, new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts }));
+    const { wave, ...rest } = opts;
+    const m = new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, metalness: 0, ...rest });
+    matCache.set(key, shaderize(m, { wave }));
   }
   return matCache.get(key);
+}
+
+// Поверхности, которые блестят в дождь (асфальт, плитка)
+export const WET = [];
+export function wetMat(color, extra = {}) {
+  const m = shaderize(new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, metalness: 0, ...extra }));
+  m.userData.dryRoughness = m.roughness;
+  WET.push(m);
+  return m;
+}
+
+// Материалы, которые светятся ночью (окна, фонари, неон). Яркость задаёт world/time.js
+export const NIGHT_GLOW = [];
+export function glowMat(color, emissive, strength = 1, extra = {}) {
+  const m = shaderize(new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 0, flatShading: true, roughness: 0.6, metalness: 0, ...extra }));
+  NIGHT_GLOW.push({ m, strength });
+  return m;
+}
+
+// Пятна света от фонарей на земле
+function softSpot() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+export const LIGHT_POOL_MAT = new THREE.MeshBasicMaterial({ color: '#ffcf7a', map: softSpot(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+const poolGeo = new THREE.CircleGeometry(2.6, 24);
+export function lightPool(x, z, scale = 1) {
+  const m = new THREE.Mesh(poolGeo, LIGHT_POOL_MAT);
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(x, 0.1, z);
+  m.scale.setScalar(scale);
+  m.renderOrder = 2;
+  return m;
 }
 
 export function mesh(geometry, color, { shadow = true, receive = true, opts } = {}) {
   const m = new THREE.Mesh(geometry, typeof color === 'string' ? mat(color, opts) : color);
   m.castShadow = shadow;
   m.receiveShadow = receive;
+  return m;
+}
+
+// Скруглённая коробка — «игрушечные» края у машин, тележек, мебели
+export function rbox(w, h, d, color, x = 0, y = 0, z = 0, radius = 0.12, o) {
+  const m = mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(radius, w / 2, h / 2, d / 2)), color, o);
+  m.position.set(x, y + h / 2, z);
   return m;
 }
 
@@ -77,7 +196,7 @@ export function sign(text, w, h, opts) {
   const tex = signTexture(text, opts);
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), [
     mat(opts?.bg || '#2f3b52'), mat(opts?.bg || '#2f3b52'), mat(opts?.bg || '#2f3b52'),
-    mat(opts?.bg || '#2f3b52'), new THREE.MeshLambertMaterial({ map: tex }), mat(opts?.bg || '#2f3b52'),
+    mat(opts?.bg || '#2f3b52'), shaderize(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 })), mat(opts?.bg || '#2f3b52'),
   ]);
   m.castShadow = true;
   return m;

@@ -1,11 +1,12 @@
 // Карта «Бруклин»: улица с браунстоунами, дорога и парк.
 // Новые районы делаются по образцу этого файла и регистрируются в world/maps/index.js.
 import * as THREE from 'three';
-import { mat, mesh, box, block, cyl, sphere, group, rng, pick, PAL } from '../kit.js';
+import { mat, mesh, box, block, cyl, sphere, group, rng, pick, PAL, wetMat, cloneMat, WORLD } from '../kit.js';
 import {
   brownstone, tree, treePit, streetLamp, hydrant, trashCan, mailbox, bench, bush, flowerBed,
   car, coffeeCart, hotDogStand, subwayEntrance, hoopFence, deliFront,
 } from '../props.js';
+import { createCrowd } from '../crowd.js';
 
 const SIDEWALK_Y = 0.08;
 
@@ -24,7 +25,7 @@ export function buildBrooklyn() {
   root.add(grass);
 
   // Дорога
-  root.add(block(120, 0.02, 7, PAL.asphalt, 0, -0.01, 0, { shadow: false }));
+  root.add(block(120, 0.02, 7, wetMat(PAL.asphalt), 0, -0.01, 0, { shadow: false }));
   for (let x = -58; x < 60; x += 4) {
     root.add(block(2, 0.01, 0.12, PAL.line, x, 0.012, -0.08, { shadow: false }));
     root.add(block(2, 0.01, 0.12, PAL.line, x, 0.012, 0.08, { shadow: false }));
@@ -42,7 +43,7 @@ export function buildBrooklyn() {
       for (let k = 0; k < 3; k++) slabPositions.push([x + 0.75, z0 + k * 1.5]);
     }
   }
-  const slabs = new THREE.InstancedMesh(slabGeo, mat('#ffffff'), slabPositions.length);
+  const slabs = new THREE.InstancedMesh(slabGeo, wetMat('#ffffff'), slabPositions.length);
   const m4 = new THREE.Matrix4();
   const col = new THREE.Color();
   slabPositions.forEach(([x, z], i) => {
@@ -183,7 +184,7 @@ export function buildBrooklyn() {
   // Фонтан
   const fountain = group(
     cyl(2.0, 2.2, 0.5, '#cfc8b8', 0, 0, 0, 20),
-    cyl(1.75, 1.75, 0.52, '#8fc6d6', 0, 0.01, 0, 20, { shadow: false }),
+    cyl(1.75, 1.75, 0.52, mat('#7fbfd6', { roughness: 0.05, metalness: 0.5, wave: 1 }), 0, 0.01, 0, 20, { shadow: false }),
     cyl(0.25, 0.35, 1.2, '#cfc8b8', 0, 0, 0, 10),
     cyl(0.8, 0.5, 0.2, '#cfc8b8', 0, 1.2, 0, 14),
   );
@@ -203,7 +204,7 @@ export function buildBrooklyn() {
     tr.userData.center = new THREE.Vector3(x, 3.5 * s, z);
     tr.userData.radius = 2.1 * s;
     // Свои материалы, чтобы дерево могло стать прозрачным, когда закрывает героя
-    tr.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; } });
+    tr.traverse((o) => { if (o.isMesh) { o.material = cloneMat(o.material); o.material.transparent = true; } });
     tr.userData.fade = 1;
     fadeTrees.push(tr);
     root.add(tr);
@@ -216,14 +217,19 @@ export function buildBrooklyn() {
   root.add(flowerBed(r, -2, 11.5, 3, 1.6)); boxC(-3.5, -0.5, 10.7, 12.3);
   root.add(flowerBed(r, 8.5, 11.2, 2.4, 1.4)); boxC(7.3, 9.7, 10.5, 11.9);
   root.add(bench(-1, 18.8, Math.PI / 2 + 0.3)); circC(-1, 18.8, 1.0);
+  // Фонари вдоль дорожек парка — вечером здесь играет музыкант
+  [[-8.5, 14.5, 0.6], [-17.5, 12.2, -0.4], [9, 14.2, 2.4], [22, 17, 2.8], [-26, 17, 0]].forEach(([x, z, ry]) => {
+    root.add(streetLamp(x, z, ry));
+    circC(x, z, 0.25);
+  });
   root.add(bench(9.5, 16.2, -Math.PI / 2)); circC(9.5, 16.2, 1.0);
 
   // Травяные кустики (инстансы)
   const tuftGeo = new THREE.ConeGeometry(0.06, 0.32, 3);
-  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff'), 900);
-  for (let i = 0; i < 900; i++) {
+  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff', { wave: 2 }), 1600);
+  for (let i = 0; i < 1600; i++) {
     let x, z;
-    if (i < 160) { x = -60 + r() * 120; z = r() < 0.5 ? -3.25 + (r() - 0.5) * 0.2 : 7.0 + r() * 0.4; }
+    if (i < 220) { x = -60 + r() * 120; z = r() < 0.5 ? -3.25 + (r() - 0.5) * 0.2 : 7.0 + r() * 0.4; }
     else { x = -50 + r() * 100; z = 7.5 + r() * 20; }
     m4.makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 0.5, r() * 3, (r() - 0.5) * 0.5));
     m4.setPosition(x, 0.12, z);
@@ -262,6 +268,37 @@ export function buildBrooklyn() {
     pigeons.push({ g: p, head, beak, wings, home, state: 'idle', t: r() * 5, vel: new THREE.Vector3() });
   }
 
+  // ---------- Светлячки в парке (ночью) ----------
+  const FLIES = 70;
+  const flyBase = Array.from({ length: FLIES }, () => [-34 + r() * 68, 0.4 + r() * 1.8, 9 + r() * 15, r() * 10]);
+  const flyGeo = new THREE.BufferGeometry();
+  flyGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(FLIES * 3), 3));
+  const flyMat = new THREE.PointsMaterial({ color: new THREE.Color(2.2, 2.6, 0.9), size: 0.22, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+  const flies = new THREE.Points(flyGeo, flyMat);
+  flies.frustumCulled = false;
+  root.add(flies);
+  animated.push((t) => {
+    flyMat.opacity = WORLD.night * (1 - WORLD.rain);
+    flies.visible = flyMat.opacity > 0.02;
+    if (!flies.visible) return;
+    const p = flyGeo.attributes.position.array;
+    flyBase.forEach(([x, y, z, ph], i) => {
+      p[i * 3] = x + Math.sin(t * 0.4 + ph) * 1.2;
+      p[i * 3 + 1] = y + Math.sin(t * 0.9 + ph * 2) * 0.35;
+      p[i * 3 + 2] = z + Math.cos(t * 0.33 + ph) * 1.2;
+    });
+    flyGeo.attributes.position.needsUpdate = true;
+    flyMat.size = 0.18 + Math.sin(t * 3) * 0.04;
+  });
+
+  // ---------- Прохожие ----------
+  const crowd = createCrowd({
+    lanes: [{ z: 4.75, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 5.5, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 24.2, x0: -36, x1: 36 }],
+    count: 9,
+    seed: 21,
+  });
+  root.add(crowd.group);
+
   // ---------- Обновление каждый кадр ----------
   const treeGroups = [];
   const rayA = new THREE.Vector3(), rayB = new THREE.Vector3(), rayD = new THREE.Vector3(), tmp = new THREE.Vector3();
@@ -269,6 +306,7 @@ export function buildBrooklyn() {
 
   function update(dt, t, playerPos, camPos) {
     animated.forEach((fn) => fn(t));
+    crowd.update(dt, t, playerPos);
     // Дерево становится прозрачным, если крона пересекает луч «камера → герой»
     if (camPos) {
       rayA.copy(camPos);
@@ -341,6 +379,7 @@ export function buildBrooklyn() {
   return {
     id: 'brooklyn',
     root,
+    crowd,
     colliders,
     bounds: { minX: -38, maxX: 38, minZ: -7.4, maxZ: 25 },
     heightAt: (x, z) => ((z > -8 && z < -3.5) || (z > 3.5 && z < 7) ? SIDEWALK_Y : 0),

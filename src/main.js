@@ -10,13 +10,81 @@ import { createHud } from './ui/hud.js';
 import { createPhone } from './ui/phone.js';
 import { startShift } from './ui/barista.js';
 import { openAiChat } from './ui/aichat.js';
-import { el, ui, toast, modal, confetti, floatText, money } from './ui/dom.js';
+import { startRide } from './ui/subway.js';
+import { el, ui, toast, modal, confetti, floatText, money, md } from './ui/dom.js';
+import { createTimeSystem } from './world/time.js';
+import { defaultQuality } from './world/render.js';
+import { createImmersion } from './ui/immersion.js';
+import { createCollectibles } from './world/collectibles.js';
+import { COLLECTIBLES } from './data/collectibles.js';
 
-const SPEAKER_COLORS = { marcus: '#c99a1a', jess: '#4f8a5f', rodriguez: '#a2456c', tony: '#c94f3d', dev: '#3f6aa8' };
+const SPEAKER_COLORS = {
+  marcus: '#c99a1a', jess: '#4f8a5f', rodriguez: '#a2456c', tony: '#c94f3d', dev: '#3f6aa8', luis: '#7a5a8f',
+  sal: '#3e7d4f', emily: '#3f8ab0', jay: '#c98a1a', linda: '#2f9a8a',
+};
 const speakerOf = (npc) => ({ ...npc, color: npc.color || SPEAKER_COLORS[npc.id] || '#5b7fb3', mode: 'world' });
 
-const engine = createEngine(document.getElementById('game'), { npcs: NPCS });
+state.settings.gfx ??= defaultQuality();
+const engine = createEngine(document.getElementById('game'), { npcs: NPCS, quality: state.settings.gfx });
 let busy = false; // открыт диалог / мини-игра
+
+// ---------- Время суток, расписания, прохожие ----------
+const time = createTimeSystem({ engine, state });
+state.apples ??= {};
+
+// Работает ли персонаж сейчас (hours: [с, до], «до» может быть больше 24 — после полуночи)
+function isOpen(npc) {
+  if (!npc.hours) return true;
+  const [a, b] = npc.hours;
+  const h = time.hour;
+  return (h >= a && h < b) || (h + 24 >= a && h + 24 < b);
+}
+const hoursText = (npc) => `${Math.floor(npc.hours[0])}:${npc.hours[0] % 1 ? '30' : '00'}`;
+engine.setNpcFilter((id) => (NPCS[id].map || 'brooklyn') === engine.mapId && isOpen(NPCS[id]));
+
+const collectibles = createCollectibles(COLLECTIBLES);
+collectibles.attach(engine.maps);
+
+let lastWeather = state.weather;
+let saveTimer = 0;
+engine.onFrame((dt, t) => {
+  time.update(dt);
+  const h = time.hour;
+  const density = h >= 7 && h < 20 ? 1 : h >= 20 && h < 23 ? 0.6 : 0.25;
+  for (const m of Object.values(engine.maps)) m.crowd?.setDensity(time.raining ? density * 0.5 : density);
+  for (const npc of Object.values(NPCS)) if (npc.dance) engine.npcDance(npc.id, !busy);
+  collectibles.update(t, state.apples);
+  if (!busy) {
+    const apple = collectibles.near(engine.mapId, engine.playerPos, state.apples);
+    if (apple) collectApple(apple);
+  }
+  if (state.weather !== lastWeather) {
+    lastWeather = state.weather;
+    if (state.weather === 'rain' && engine.mapId !== 'apartment') toast('Пошёл дождь ☔ It\'s raining! (дождь идёт)', { icon: '🌧️', time: 4500 });
+  }
+  saveTimer += dt;
+  if (saveTimer > 10) { saveTimer = 0; save(); }
+});
+
+function collectApple(apple) {
+  state.apples[apple.id] = true;
+  addWord(apple.en, apple.ru);
+  save();
+  addMoney(2);
+  addXP(10);
+  speak(apple.en, { force: true });
+  const found = Object.keys(state.apples).length;
+  whenFree(() => {
+    confetti();
+    modal(el('div', { class: 'complete' },
+      el('div', { class: 'daily-emoji' }, '🍎'),
+      el('div', { class: 'muted' }, `Золотое яблоко ${found} из ${COLLECTIBLES.length}`),
+      el('div', { class: 'daily-title' }, apple.en),
+      el('div', { class: 'muted' }, apple.ru),
+      el('div', { class: 'tip-text', html: md(apple.text) }),
+      el('div', { class: 'reward-row' }, el('span', {}, '+$2'), el('span', {}, '+10 XP'))));
+  });
+}
 
 // ---------- Квесты ----------
 const isDone = (id) => !!state.done[id];
@@ -39,7 +107,16 @@ function todos() {
   const list = [];
   if (!isDone('arrive')) list.push({ text: QUESTS[0].todo });
   else {
-    for (const q of QUESTS) if (unlocked(q)) list.push({ text: q.todo, done: isDone(q.id) });
+    for (const q of QUESTS) {
+      if (!unlocked(q)) continue;
+      // Выполненные задания пройденных глав не загромождают список
+      if (isDone(q.id) && state.flags[`chapter${q.chapter}`]) continue;
+      const npc = NPCS[q.npc];
+      const closed = !isDone(q.id) && npc.hours && !isOpen(npc);
+      list.push({ text: closed ? `${q.todo} (с ${hoursText(npc)})` : q.todo, done: isDone(q.id), optional: q.optional });
+    }
+    const apples = Object.keys(state.apples).length;
+    list.push({ text: `Найти золотые яблоки 🍎 ${apples}/${COLLECTIBLES.length}`, done: apples >= COLLECTIBLES.length, optional: true });
     // Одна строка на собеседника: зачёркнута, когда прочитаны все его сообщения
     const byFrom = new Map();
     for (const t of availableThreads()) {
@@ -63,6 +140,7 @@ function whenFree(fn) {
 function setBusy(b) {
   busy = b;
   engine.setPaused(b);
+  time.setPaused(b);
   hud.hide(b);
   if (!b) {
     engine.focusOn(null);
@@ -75,10 +153,12 @@ async function talkTo(npcId) {
   const npc = NPCS[npcId];
   const quest = questFor(npcId);
   if (quest) return playQuest(quest);
-  if (lockedQuestFor(npcId)) {
+  const locked = lockedQuestFor(npcId);
+  if (locked) {
     engine.npcWave(npcId);
-    speak('Hey there!', { pitch: npc.pitch });
-    toast(`${npc.name}: «Hey there!» — сначала поговори с таксистом Маркусом 🚕`, { icon: '👋' });
+    speak('Hey there! Come back later!', { pitch: npc.pitch });
+    const need = (locked.requires || []).filter((id) => !isDone(id)).map((id) => QUESTS.find((q) => q.id === id)?.todo).filter(Boolean);
+    toast(`${npc.name}: «Come back later!» — сначала: ${need.join(', ').toLowerCase()}`, { icon: '👋', time: 4500 });
     return;
   }
   // Задание выполнено — меню действий
@@ -113,6 +193,7 @@ async function playQuest(quest, { replay = false } = {}) {
   engine.playerWave();
   questComplete(quest, result);
   if (quest.onDone?.flag) setFlag(quest.onDone.flag);
+  if (quest.onDone?.money) { addMoney(quest.onDone.money); floatText(`+${money(quest.onDone.money)}`, 'money'); }
   if (quest.onDone?.toast) setTimeout(() => toast(quest.onDone.toast, { icon: '📍', time: 6000 }), 2600);
   checkNewMessages();
   checkChapterDone();
@@ -149,19 +230,25 @@ function checkNewMessages() {
   }
 }
 
+const CHAPTER_TEXT = {
+  1: ['знакомство, кафе, деньги, вопросы и направления', 'Спустись в метро — тебя ждёт Манхэттен! 🚇'],
+  2: ['прошедшее время, can / can\'t, -ing и работа', 'Продолжай: собирай золотые яблоки, гуляй ночью, болтай с жителями через ИИ. Глава 3 — скоро!'],
+};
 function checkChapterDone() {
-  const ch = CHAPTERS[0];
-  if (state.flags[`chapter${ch.id}`]) return;
-  if (!ch.quests.every((q) => isDone(q.id))) return;
-  setFlag(`chapter${ch.id}`);
-  setTimeout(() => {
-    confetti();
-    modal(el('div', { class: 'complete' },
-      el('div', { class: 'daily-emoji' }, '🗽'),
-      el('div', { class: 'daily-title' }, `Глава ${ch.id} пройдена!`),
-      el('div', {}, `«${ch.title}» — ты освоил основы ${ch.level}: знакомство, кафе, деньги, вопросы и направления.`),
-      el('div', { class: 'muted' }, 'Продолжай: болтай с жителями через ИИ, работай баристой, обставляй квартиру и делай задание дня. Глава 2 «Манхэттен» (A2) — скоро!')));
-  }, 3500);
+  for (const ch of CHAPTERS) {
+    if (state.flags[`chapter${ch.id}`]) continue;
+    if (!ch.quests.filter((q) => !q.optional).every((q) => isDone(q.id))) continue;
+    setFlag(`chapter${ch.id}`);
+    const [learned, next] = CHAPTER_TEXT[ch.id] || ['много нового', ''];
+    whenFree(() => setTimeout(() => {
+      confetti();
+      modal(el('div', { class: 'complete' },
+        el('div', { class: 'daily-emoji' }, ch.id === 1 ? '🗽' : '🏙️'),
+        el('div', { class: 'daily-title' }, `Глава ${ch.id} пройдена!`),
+        el('div', {}, `«${ch.title}» (${ch.level}): ${learned}.`),
+        el('div', { class: 'muted' }, next)));
+    }, 2500));
+  }
 }
 
 async function runThread(thread) {
@@ -269,7 +356,15 @@ function interaction() {
   const p = engine.playerPos;
   const near = (spot, r = 1.6) => spot && Math.hypot(p.x - spot[0], p.z - spot[1]) < r;
   if (engine.mapId === 'apartment') {
-    if (near(engine.maps.apartment.spots.exit, 1.3)) return { label: '🚪 Выйти на улицу', run: () => engine.enterMap('brooklyn', 'homeDoor') };
+    const ap = engine.maps.apartment.spots;
+    if (near(ap.exit, 1.3)) return { label: '🚪 Выйти на улицу', run: () => engine.enterMap('brooklyn', 'homeDoor') };
+    if (near(ap.bed, 2.0)) return { label: '😴 Лечь спать', run: goToSleep };
+    return null;
+  }
+  if (engine.mapId === 'manhattan') {
+    const npcM = engine.nearestNpc();
+    if (npcM) return { label: `💬 ${NPCS[npcM].name}`, run: () => talkTo(npcM) };
+    if (near(engine.maps.manhattan.spots.subway, 2.2)) return { label: '🚇 Метро → Бруклин', run: () => ride('brooklyn') };
     return null;
   }
   const b = engine.maps.brooklyn.spots;
@@ -283,12 +378,59 @@ function interaction() {
       : { label: '🚪 Дверь', run: () => toast('Заперто. Ключ у миссис Родригес 🔑', { icon: '🚪' }) };
   }
   if (near(b.subway, 2)) {
-    return { label: '🚇 Метро', run: () => (isDone('subway')
-      ? modal(el('div', { class: 'complete' }, el('div', { class: 'daily-emoji' }, '🚇'), el('div', { class: 'daily-title' }, 'Глава 2: Манхэттен'), el('div', {}, 'Уровень A2: работа, банк, врач, Таймс-сквер и Центральный парк. Скоро!')))
+    return { label: '🚇 Метро → Манхэттен', run: () => (isDone('subway')
+      ? ride('manhattan')
       : toast('Сначала узнай у Дева, как пользоваться метро', { icon: '🚇' })) };
   }
   if (npc) return { label: `💬 ${NPCS[npc].name}`, run: () => talkTo(npc) };
   return null;
+}
+
+const FARE = 2.9;
+function ride(to) {
+  if (busy) return;
+  setBusy(true);
+  if (state.money >= FARE) {
+    addMoney(-FARE);
+    floatText(`−${money(FARE)}`, 'money');
+  } else {
+    toast('Денег на проезд не хватило — добрый незнакомец оплатил тебе поездку 🙏', { icon: '🚇' });
+  }
+  startRide({
+    to,
+    onArrive: () => {
+      engine.enterMap(to, to === 'manhattan' ? 'start' : 'subway');
+      setBusy(false);
+      if (to === 'manhattan' && !state.flags.visitedManhattan) {
+        setFlag('visitedManhattan');
+        setTimeout(() => toast('Добро пожаловать в Манхэттен! Найди пиццерию Сала, танцора и потерявшуюся туристку 🗽', { icon: '🏙️', time: 6500 }), 800);
+      }
+    },
+  });
+}
+
+function goToSleep() {
+  const h = time.hour;
+  if (h >= 7 && h < 19) {
+    toast('Ещё рано спать! Ложиться можно вечером (после 19:00) 🌙', { icon: '😴' });
+    return;
+  }
+  setBusy(true);
+  const fade = el('div', { class: 'sleep-fade' }, el('div', {}, '💤'), el('div', { class: 'sleep-text' }, 'Good night!'));
+  ui().append(fade);
+  speak('Good night!', { force: true });
+  setTimeout(() => {
+    time.sleep();
+    save();
+    fade.querySelector('.sleep-text').textContent = `Good morning! День ${state.day}`;
+    speak('Good morning!', { force: true });
+  }, 1800);
+  setTimeout(() => {
+    fade.classList.add('out');
+    setTimeout(() => fade.remove(), 800);
+    setBusy(false);
+    toast(state.weather === 'rain' ? 'Сегодня дождливо ☔ Новый день — новое задание дня в телефоне!' : 'Солнечное утро ☀️ Новый день — новое задание дня в телефоне!', { icon: '🌅', time: 5000 });
+  }, 3600);
 }
 
 function enterHome() {
@@ -321,9 +463,12 @@ const hud = createHud({
   getTodos: todos,
   getNpcStatus: npcStatus,
   getInteraction: interaction,
+  getClock: () => `${time.raining ? '🌧️' : time.phase.icon} ${time.clockText}`,
   onPhone: () => (phone.isOpen ? phone.close() : phone.open()),
   onAction: () => interaction()?.run(),
 });
+
+createImmersion({ engine, time, isBusy: () => busy || phone.isOpen });
 
 on('levelup', (lvl) => whenFree(() => {
   confetti();
@@ -366,4 +511,4 @@ function intro() {
 intro();
 
 // Для отладки из консоли браузера
-window.bigApple = { state, engine };
+window.bigApple = { state, engine, time, ride };

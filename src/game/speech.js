@@ -21,7 +21,7 @@ if ('speechSynthesis' in window) {
 export const canSpeak = () => 'speechSynthesis' in window;
 
 // pitch даёт персонажам немного разные голоса
-export function speak(text, { pitch = 1, rate, force = false } = {}) {
+export function speak(text, { pitch = 1, rate, force = false, volume = 1 } = {}) {
   if (!canSpeak() || (!state.settings.voice && !force)) return Promise.resolve();
   return new Promise((resolve) => {
     window.speechSynthesis.cancel();
@@ -30,6 +30,7 @@ export function speak(text, { pitch = 1, rate, force = false } = {}) {
     if (voice) u.voice = voice;
     u.rate = rate ?? state.settings.rate;
     u.pitch = pitch;
+    u.volume = volume;
     u.onend = u.onerror = () => resolve();
     window.speechSynthesis.speak(u);
     setTimeout(resolve, 12000);
