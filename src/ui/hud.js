@@ -5,7 +5,7 @@ import { el, ui, money } from './dom.js';
 import { state, on } from '../game/state.js';
 import { levelInfo } from '../game/progress.js';
 
-export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onAction }) {
+export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onLibrary, onAction }) {
   const lvlBadge = el('div', { class: 'lvl-badge' });
   const lvlTitle = el('div', { class: 'lvl-title' });
   const xpFill = el('div', { class: 'xp-fill' });
@@ -22,10 +22,11 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
   const todoToggle = el('button', { class: 'todo-toggle', onclick: () => todo.classList.remove('collapsed') }, '📝');
 
   const phoneBtn = el('button', { class: 'phone-btn', onclick: onPhone, title: 'Телефон' }, '📱', el('span', { class: 'badge hidden' }));
+  const libBtn = el('button', { class: 'lib-btn', onclick: () => onLibrary(), title: 'Учебник (L)' }, '🎓');
   const actionBtn = el('button', { class: 'action-btn hidden', onclick: () => onAction() });
   const help = el('div', { class: 'controls-help' }, 'WASD / стрелки или тап — идти · E — говорить');
 
-  ui().append(top, todoToggle, todo, phoneBtn, actionBtn, help);
+  ui().append(top, todoToggle, todo, phoneBtn, libBtn, actionBtn, help);
   // На телефоне список дел по умолчанию свёрнут, чтобы не закрывать город
   if (window.innerWidth < 640) todo.classList.add('collapsed');
   setTimeout(() => help.classList.add('fade'), 9000);

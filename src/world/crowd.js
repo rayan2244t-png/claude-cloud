@@ -38,9 +38,16 @@ export function createCrowd({ lanes, count = 8, seed = 11 }) {
   const walkers = [];
   for (let i = 0; i < count; i++) {
     const lane = lanes[i % lanes.length];
+    const gender = r() < 0.5 ? 'f' : 'm';
     const c = makeCharacter({
+      gender,
       skin: pick(r, SKIN), shirt: pick(r, SHIRT), pants: pick(r, PANTS), hair: pick(r, HAIR),
-      hat: pick(r, HATS), hatColor: pick(r, SHIRT), backpack: r() < 0.25 ? pick(r, SHIRT) : undefined,
+      hairStyle: pick(r, gender === 'f' ? ['long', 'ponytail', 'bun', 'curly', 'long'] : ['short', 'short', 'curly', 'spiky', 'bald']),
+      hat: pick(r, HATS.filter((h) => h !== 'bun')), hatColor: pick(r, SHIRT),
+      backpack: r() < 0.25 ? pick(r, SHIRT) : undefined,
+      sleeves: r() < 0.4 ? 'short' : 'long',
+      jacket: r() < 0.3 ? pick(r, ['#2f3b52', '#8a6347', '#5d7363', '#3a3a3a', '#b0577a']) : undefined,
+      glasses: r() < 0.15,
       scale: 0.92 + r() * 0.16,
     });
     const w = {

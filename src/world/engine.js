@@ -63,7 +63,7 @@ export function createEngine(container, { npcs, quality = 'high' }) {
   // ---------- Персонажи ----------
   const npcObjs = {};
   for (const npc of Object.values(npcs)) {
-    const c = makeCharacter(npc.look);
+    const c = makeCharacter({ gender: npc.gender, ...npc.look });
     const p = new THREE.Vector3(...npc.pos);
     c.root.position.copy(p);
     c.root.rotation.y = npc.rot ?? Math.PI;
@@ -278,6 +278,7 @@ export function createEngine(container, { npcs, quality = 'high' }) {
   return {
     scene,
     get playerPos() { return pos; },
+    get playerSpeed() { return speed; },
     get mapId() { return map.id; },
     maps,
     npcObjs,

@@ -322,14 +322,15 @@ export function buildBrooklyn() {
         const d = tmp.copy(rayA).addScaledVector(rayD, t).distanceTo(c);
         blocking = t < 0.96 && d < tr.userData.radius;
       }
-      const want = blocking ? 0.22 : 1;
+      const want = blocking ? 0 : 1;
       if (Math.abs(tr.userData.fade - want) > 0.01) {
-        tr.userData.fade += (want - tr.userData.fade) * Math.min(1, dt * 6);
+        tr.userData.fade += (want - tr.userData.fade) * Math.min(1, dt * 7);
+        // Почти прозрачное дерево прячем целиком (иначе зелёная дымка на персонажах), тень оставляем
         tr.traverse((o) => {
           if (!o.isMesh) return;
           o.material.opacity = tr.userData.fade;
           o.material.depthWrite = tr.userData.fade > 0.9;
-          o.castShadow = true;
+          o.material.colorWrite = tr.userData.fade > 0.05;
         });
       }
     }

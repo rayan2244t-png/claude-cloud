@@ -46,11 +46,11 @@ export function openAiChat(npc, { onTalk, onClose, openSettings }) {
       el('div', { class: 'bubble-name', style: { color: npc.color } }, npc.name),
       el('div', { class: 'bubble-en' }, r.reply), ru,
       el('div', { class: 'bubble-tools' },
-        el('button', { class: 'icon-btn small', onclick: () => speak(r.reply, { pitch: npc.pitch, force: true }) }, '🔊'),
+        el('button', { class: 'icon-btn small', onclick: () => speak(r.reply, { pitch: npc.pitch, gender: npc.gender, who: npc.name, force: true }) }, '🔊'),
         r.ru ? el('button', { class: 'icon-btn small ru-btn', onclick: () => ru.classList.toggle('show') }, 'RU') : null)));
     log.scrollTop = log.scrollHeight;
     onTalk?.(Math.min(4, r.reply.length * 0.05));
-    speak(r.reply, { pitch: npc.pitch });
+    speak(r.reply, { pitch: npc.pitch, gender: npc.gender, who: npc.name });
   };
 
   async function submit(text) {

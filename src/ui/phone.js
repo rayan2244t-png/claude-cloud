@@ -6,6 +6,7 @@ import { dueWords, grade, vocabStats } from '../game/srs.js';
 import { speak } from '../game/speech.js';
 import { SHOP } from '../data/shop.js';
 import { QUALITY } from '../world/render.js';
+import { setVolumes, sfx } from '../game/audio.js';
 import { COLLECTIBLES } from '../data/collectibles.js';
 
 const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
@@ -22,6 +23,7 @@ export function createPhone(api) {
 
   function open(app) {
     if (!isOpen) {
+      sfx('whoosh');
       ui().append(back);
       requestAnimationFrame(() => back.classList.add('open'));
       isOpen = true;
@@ -100,6 +102,21 @@ export function createPhone(api) {
             el('div', { class: 'good-ans' }, '✓ ', m.correct),
             m.why ? el('div', { class: 'muted' }, m.why) : null)));
       },
+    },
+    library: {
+      icon: '🎓', name: 'Учебник', color: '#3f6aa8',
+      badge: () => 0,
+      render() { close(); api.openLibrary('words'); },
+    },
+    shadowing: {
+      icon: '🗣️', name: 'Шэдовинг', color: '#c94f3d',
+      badge: () => 0,
+      render() { close(); api.openLibrary('shadow'); },
+    },
+    grammar: {
+      icon: '📘', name: 'Грамматика', color: '#5b2a86',
+      badge: () => 0,
+      render() { close(); api.openLibrary('grammar'); },
     },
     notes: {
       icon: '📒', name: 'Шпаргалка', color: '#4fa3a5',
@@ -196,6 +213,9 @@ export function createPhone(api) {
             sel.addEventListener('change', () => { state.settings.gfx = sel.value; save(); location.reload(); });
             return sel;
           })()),
+          slider('🎵 Музыка', 'music', 0.35),
+          slider('🏙️ Звуки города', 'ambience', 0.6),
+          slider('🔔 Звуковые эффекты', 'sfx', 0.8),
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),
           toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
           el('label', { class: 'set-row col' }, 'Скорость речи', rate),
@@ -203,6 +223,7 @@ export function createPhone(api) {
           el('div', { class: 'muted small-note', html: 'Чтобы свободно болтать с персонажами, вставь свой API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Ключ хранится только в этом браузере.' }),
           key,
           el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
+          el('button', { class: 'btn wide', onclick: () => { api.resetTutorial(); toast('Обучение начнётся заново', { icon: '🎓' }); } }, '🎓 Пройти обучение заново'),
           el('div', { class: 'section-title' }, 'Сохранение'),
           el('button', { class: 'btn danger wide', onclick: () => { if (confirm('Удалить весь прогресс и начать заново?')) resetSave(); } }, 'Начать игру заново'));
       },
@@ -225,6 +246,13 @@ export function createPhone(api) {
 
   function stat(value, label) {
     return el('div', { class: 'stat' }, el('b', {}, value), el('span', {}, label));
+  }
+
+  function slider(label, key, def) {
+    const input = el('input', { type: 'range', min: '0', max: '1', step: '0.05', value: state.settings[key] ?? def });
+    input.addEventListener('input', () => { state.settings[key] = Number(input.value); setVolumes(); });
+    input.addEventListener('change', () => save());
+    return el('label', { class: 'set-row col' }, label, input);
   }
 
   function toggle(label, value, onChange) {

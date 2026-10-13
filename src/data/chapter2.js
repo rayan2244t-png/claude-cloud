@@ -3,25 +3,25 @@
 
 export const NPCS = {
   sal: {
-    id: 'sal', name: 'Sal', role: 'Пиццерия', pitch: 0.7, map: 'manhattan', hours: [10, 26],
+    id: 'sal', name: 'Sal', role: 'Пиццерия', pitch: 0.7, gender: 'm', map: 'manhattan', hours: [10, 26],
     look: { skin: '#e3b08a', shirt: '#f6f3ec', pants: '#3d4a5c', hat: 'paper', hair: '#2a2420', apron: '#c94f3d', mustache: true },
     pos: [-13, 0, -6.7],
     persona: 'You are Sal, a proud Italian-American pizza maker from New York in your 60s. You talk about pizza, family and the old days of New York.',
   },
   emily: {
-    id: 'emily', name: 'Emily', role: 'Туристка из Огайо', pitch: 1.3, map: 'manhattan', hours: [8, 22],
-    look: { skin: '#f1c7a5', shirt: '#7fb3d9', pants: '#c9b28f', hat: 'cap', hatColor: '#e07a5f', hair: '#d9c08a', backpack: '#f2c230' },
+    id: 'emily', name: 'Emily', role: 'Туристка из Огайо', pitch: 1.3, gender: 'f', map: 'manhattan', hours: [8, 22],
+    look: { skin: '#f1c7a5', shirt: '#7fb3d9', pants: '#c9b28f', hat: 'cap', hatColor: '#e07a5f', hair: '#d9c08a', hairStyle: 'ponytail', backpack: '#f2c230', sleeves: 'short' },
     pos: [9, 0, 9.8],
     persona: 'You are Emily, an excited tourist from a small town in Ohio, visiting New York for the first time. Everything amazes you.',
   },
   jay: {
-    id: 'jay', name: 'Jay', role: 'Уличный танцор', pitch: 0.95, map: 'manhattan', hours: [11, 23], dance: true,
-    look: { skin: '#6b4430', shirt: '#f2c230', pants: '#2f3b52', hat: 'cap', hatColor: '#c94f3d', hair: '#1d1d1d', headphones: true },
+    id: 'jay', name: 'Jay', role: 'Уличный танцор', pitch: 0.95, gender: 'm', map: 'manhattan', hours: [11, 23], dance: true,
+    look: { skin: '#6b4430', shirt: '#f2c230', pants: '#2f3b52', hat: 'cap', hatColor: '#c94f3d', hair: '#1d1d1d', headphones: true, sleeves: 'short' },
     pos: [-4, 0, 10.5],
     persona: 'You are Jay, a cheerful street dancer from the Bronx in your 20s who performs for tourists. You use friendly slang like "yo", "dope", "for real".',
   },
   linda: {
-    id: 'linda', name: 'Linda', role: 'Хозяйка дайнера', pitch: 1.05, map: 'manhattan', hours: [6, 23],
+    id: 'linda', name: 'Linda', role: 'Хозяйка дайнера', pitch: 1.05, gender: 'f', map: 'manhattan', hours: [6, 23],
     look: { skin: '#e8b48f', shirt: '#7fd1c1', pants: '#3a3a3a', hat: 'bun', hair: '#c4572e', apron: '#f6f3ec', glasses: true },
     pos: [25.5, 0, -6.7],
     persona: 'You are Linda, the warm and busy owner of a classic New York diner in your 50s. You call everyone "honey" and you love pancakes.',

@@ -2,7 +2,11 @@
 import { state } from './state.js';
 
 let voice = null;
+const pools = { f: [], m: [] };
 const PREFERRED = ['Google US English', 'Samantha', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Guy', 'Alex'];
+// Известные американские голоса по полу (разные ОС и браузеры)
+const FEMALE = /Samantha|Aria|Jenny|Zira|Ava|Allison|Susan|Victoria|Karen|Michelle|Emma|Joanna|Salli|Kendra|Kimberly|Ivy|Google US English|female/i;
+const MALE = /Alex|Guy|David|Mark|Fred|Tom|Aaron|Daniel|Eric|Christopher|Roger|Steffan|Brian|Matthew|Joey|Justin|male/i;
 
 function pickVoice() {
   const voices = window.speechSynthesis?.getVoices() || [];
@@ -11,6 +15,17 @@ function pickVoice() {
     PREFERRED.map((n) => us.find((v) => v.name.includes(n))).find(Boolean) ||
     us.find((v) => v.localService) || us[0] ||
     voices.find((v) => v.lang?.startsWith('en')) || null;
+  pools.f = us.filter((v) => FEMALE.test(v.name) && !/\bmale\b/i.test(v.name));
+  pools.m = us.filter((v) => MALE.test(v.name) && !FEMALE.test(v.name));
+}
+
+// Свой голос для каждого персонажа: по полу и имени (стабильно)
+function voiceFor(gender, who) {
+  const pool = pools[gender] || [];
+  if (!pool.length) return voice;
+  let h = 0;
+  for (const c of who || '') h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length];
 }
 
 if ('speechSynthesis' in window) {
@@ -21,13 +36,16 @@ if ('speechSynthesis' in window) {
 export const canSpeak = () => 'speechSynthesis' in window;
 
 // pitch даёт персонажам немного разные голоса
-export function speak(text, { pitch = 1, rate, force = false, volume = 1 } = {}) {
+export function speak(text, { pitch = 1, rate, force = false, volume = 1, gender, who } = {}) {
   if (!canSpeak() || (!state.settings.voice && !force)) return Promise.resolve();
   return new Promise((resolve) => {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/[*_]/g, ''));
     u.lang = 'en-US';
-    if (voice) u.voice = voice;
+    const v = gender ? voiceFor(gender, who) : voice;
+    if (v) u.voice = v;
+    // Если отдельного голоса нет — меняем высоту, чтобы персонажи звучали по-разному
+    if (gender && v === voice) pitch *= gender === 'f' ? 1.12 : 0.85;
     u.rate = rate ?? state.settings.rate;
     u.pitch = pitch;
     u.volume = volume;
