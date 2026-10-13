@@ -1,0 +1,388 @@
+// Предметы городского окружения Бруклина.
+import * as THREE from 'three';
+import { mat, mesh, box, block, cyl, sphere, group, sign, PAL, pick } from './kit.js';
+
+// Дом-браунстоун с крыльцом (stoop) — визитная карточка Бруклина
+export function brownstone(r, { width = 7.6, floors = 4, color, door = '#5b3a2e', fireEscape = false, waterTower = false, windowBoxes = false } = {}) {
+  const g = new THREE.Group();
+  const floorH = 2.6;
+  const base = 1.4; // цокольный этаж приподнят
+  const h = base + floors * floorH;
+  const depth = 8;
+  color ||= pick(r, PAL.brick);
+  const trim = '#efe6d6';
+
+  g.add(block(width, h, depth, color, 0, 0, -depth / 2, { receive: true }));
+  // Цоколь и карниз
+  g.add(block(width + 0.1, base, depth + 0.1, '#8b7d6e', 0, 0, -depth / 2));
+  g.add(block(width + 0.5, 0.45, depth + 0.5, trim, 0, h, -depth / 2));
+  g.add(block(width + 0.7, 0.18, depth + 0.7, '#d9cdb9', 0, h + 0.45, -depth / 2));
+  for (let i = -1; i <= 1; i++) g.add(block(0.25, 0.4, 0.3, trim, i * (width / 3), h - 0.4, 0.1));
+
+  // Окна
+  const doorX = -width / 2 + 1.6;
+  for (let f = 0; f < floors; f++) {
+    const y = base + f * floorH + 0.75;
+    for (let i = 0; i < 3; i++) {
+      const x = -width / 2 + 1.6 + i * ((width - 3.2) / 2);
+      if (f === 0 && i === 0) continue; // место для двери
+      g.add(box(1.0, 1.45, 0.12, PAL.frame, x, y + 0.72, 0.03));
+      g.add(box(0.82, 1.27, 0.1, PAL.glass, x, y + 0.72, 0.08, { shadow: false }));
+      g.add(box(0.06, 1.27, 0.12, PAL.frame, x, y + 0.72, 0.1, { shadow: false }));
+      g.add(box(1.2, 0.14, 0.3, trim, x, y + 1.52, 0.1));
+      g.add(box(1.15, 0.1, 0.32, trim, x, y - 0.05, 0.12));
+      if (windowBoxes && f === 0) {
+        g.add(box(1.0, 0.25, 0.35, '#7a5a40', x, y + 0.08, 0.3));
+        for (let k = 0; k < 4; k++)
+          g.add(sphere(0.12, pick(r, ['#e07a5f', '#f2c230', '#f6f3ec', '#d98bb3']), x - 0.35 + k * 0.23, y + 0.28, 0.32, 0));
+      }
+    }
+  }
+
+  // Дверь с аркой
+  const dy = base;
+  g.add(box(1.25, 2.3, 0.15, trim, doorX, dy + 1.15, 0.05));
+  g.add(box(1.0, 2.1, 0.12, door, doorX, dy + 1.05, 0.1));
+  g.add(sphere(0.06, '#e4c36a', doorX + 0.32, dy + 1.05, 0.2, 0));
+  g.add(box(1.4, 0.2, 0.5, trim, doorX, dy + 2.4, 0.15));
+  // Номер дома
+  // Крыльцо (лестница вниз к тротуару)
+  const steps = 6;
+  const stepD = 0.42;
+  for (let s = 0; s < steps; s++) {
+    const sy = base - (s + 1) * (base / steps);
+    g.add(block(1.6, sy + base / steps, stepD, '#9a8a78', doorX, 0, 0.3 + s * stepD + stepD / 2));
+  }
+  g.add(block(1.8, base, 0.6, '#9a8a78', doorX, 0, 0.3));
+  // Перила
+  [-0.85, 0.85].forEach((dx) => {
+    for (let s = 0; s <= steps; s += 2) {
+      const sz = 0.3 + s * stepD;
+      const sy = base - s * (base / steps);
+      g.add(cyl(0.035, 0.035, 0.9, PAL.iron, doorX + dx, sy, sz, 6));
+    }
+    const rail = mesh(new THREE.CylinderGeometry(0.04, 0.04, Math.hypot(steps * stepD, base), 6), PAL.iron);
+    rail.position.set(doorX + dx, base / 2 + 0.9, 0.3 + (steps * stepD) / 2);
+    rail.rotation.x = Math.atan2(steps * stepD, base);
+    g.add(rail);
+  });
+
+  // Пожарная лестница — классика Нью-Йорка
+  if (fireEscape) {
+    const fx = width / 2 - 2.2;
+    for (let f = 1; f < floors; f++) {
+      const y = base + f * floorH;
+      g.add(box(2.6, 0.08, 1.0, PAL.iron, fx, y, 0.55));
+      for (let k = 0; k < 9; k++) g.add(box(0.03, 0.9, 0.03, PAL.iron, fx - 1.25 + k * 0.31, y + 0.45, 1.03, { shadow: true }));
+      g.add(box(2.6, 0.05, 0.05, PAL.iron, fx, y + 0.9, 1.03));
+      const ladder = box(0.5, floorH * 1.05, 0.05, PAL.iron, fx + 0.6, y - floorH / 2, 0.8);
+      ladder.rotation.z = 0.5;
+      g.add(ladder);
+    }
+  }
+
+  // Водонапорная башня на крыше
+  if (waterTower) {
+    const t = group(
+      cyl(0.9, 0.9, 2.2, '#8a6347', 0, 1.6, 0, 14),
+      mesh(new THREE.ConeGeometry(1.05, 0.9, 14), '#6b4a36'),
+      ...[[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]].map(([x, z]) => cyl(0.06, 0.06, 1.6, PAL.iron, x, 0, z, 6)),
+    );
+    t.children[1].position.y = 4.25;
+    t.position.set(width / 4, h + 0.6, -depth / 2);
+    g.add(t);
+  }
+
+  // Трубы и мелочи на крыше
+  g.add(block(0.6, 0.9, 0.6, '#7d6e62', -width / 3, h + 0.6, -depth + 1.5));
+
+  return { group: g, doorX, depth, width, height: h };
+}
+
+export function tree(r, x, z, s = 1) {
+  const g = new THREE.Group();
+  const trunkH = 2.2 * s;
+  g.add(cyl(0.16 * s, 0.24 * s, trunkH, PAL.trunk, 0, 0, 0, 7));
+  const n = 4 + Math.floor(r() * 3);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + r();
+    const rad = (0.9 + r() * 0.5) * s;
+    const leaf = sphere(rad, pick(r, PAL.leaf), Math.cos(a) * 0.8 * s, trunkH + 0.5 * s + r() * 1.0 * s, Math.sin(a) * 0.8 * s, 0);
+    leaf.rotation.set(r() * 3, r() * 3, r() * 3);
+    g.add(leaf);
+  }
+  g.add(sphere(1.2 * s, pick(r, PAL.leaf), 0, trunkH + 1.3 * s, 0, 0));
+  g.position.set(x, 0, z);
+  g.userData.sway = r() * 10;
+  return g;
+}
+
+export function treePit(x, z) {
+  return group(
+    block(1.6, 0.06, 1.6, '#7a6150', x, 0.0, z, { shadow: false }),
+    block(1.7, 0.18, 0.1, '#5e5146', x, 0, z - 0.8), block(1.7, 0.18, 0.1, '#5e5146', x, 0, z + 0.8),
+    block(0.1, 0.18, 1.7, '#5e5146', x - 0.8, 0, z), block(0.1, 0.18, 1.7, '#5e5146', x + 0.8, 0, z),
+  );
+}
+
+export function streetLamp(x, z, rotY = 0) {
+  const g = group(
+    cyl(0.12, 0.16, 0.5, PAL.iron, 0, 0, 0, 8),
+    cyl(0.06, 0.07, 4.2, PAL.iron, 0, 0.4, 0, 8),
+  );
+  const arm = box(0.08, 0.08, 1.2, PAL.iron, 0, 4.5, 0.55);
+  const head = box(0.5, 0.18, 0.7, PAL.iron, 0, 4.42, 1.1);
+  const light = box(0.4, 0.05, 0.55, '#fff2c4', 0, 4.31, 1.1, { shadow: false, opts: { emissive: '#fff2c4', emissiveIntensity: 0.3 } });
+  g.add(arm, head, light);
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function hydrant(x, z) {
+  const red = '#d4573f';
+  return group(
+    cyl(0.18, 0.22, 0.6, red, x, 0, z, 10),
+    sphere(0.19, red, x, 0.62, z, 1),
+    cyl(0.05, 0.05, 0.12, red, x, 0.78, z, 6),
+    box(0.55, 0.1, 0.1, red, x, 0.42, z),
+  );
+}
+
+export function trashCan(x, z) {
+  return group(
+    cyl(0.32, 0.27, 0.9, '#5d7363', x, 0, z, 10),
+    cyl(0.34, 0.34, 0.06, '#4b5e50', x, 0.9, z, 10),
+  );
+}
+
+export function mailbox(x, z, rotY = 0) {
+  const blue = '#3a5f9e';
+  const g = group(
+    block(0.65, 0.9, 0.55, blue, 0, 0.3, 0),
+    cyl(0.33, 0.33, 0.55, blue, 0, 1.2, 0, 12),
+    ...[[-0.25, -0.2], [0.25, -0.2], [-0.25, 0.2], [0.25, 0.2]].map(([a, b]) => block(0.06, 0.3, 0.06, PAL.iron, a, 0, b)),
+  );
+  g.children[1].rotation.x = Math.PI / 2;
+  g.children[1].scale.set(1, 1, 1);
+  g.children[1].position.y = 1.2;
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function bench(x, z, rotY = 0) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 3; i++) g.add(box(2.2, 0.08, 0.16, PAL.wood, 0, 0.5, -0.2 + i * 0.2));
+  for (let i = 0; i < 2; i++) g.add(box(2.2, 0.14, 0.06, PAL.wood, 0, 0.75 + i * 0.22, -0.32));
+  [-0.9, 0.9].forEach((dx) => {
+    g.add(box(0.08, 0.5, 0.5, PAL.iron, dx, 0.25, -0.05));
+    g.add(box(0.08, 0.6, 0.08, PAL.iron, dx, 0.8, -0.32));
+  });
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function bush(r, x, z, s = 1, flowers = true) {
+  const g = new THREE.Group();
+  const n = 3 + Math.floor(r() * 3);
+  for (let i = 0; i < n; i++) {
+    g.add(sphere((0.5 + r() * 0.35) * s, pick(r, ['#4f8a57', '#5a9660', '#46804f']), (r() - 0.5) * 1.2 * s, 0.4 * s, (r() - 0.5) * 0.9 * s, 0));
+  }
+  if (flowers) {
+    for (let i = 0; i < 6; i++) {
+      const f = sphere(0.09, '#f6f3ec', (r() - 0.5) * 1.3 * s, (0.5 + r() * 0.4) * s, (r() - 0.5) * 1.0 * s + 0.35 * s, 0, { shadow: false });
+      g.add(f);
+      g.add(sphere(0.04, '#f2a03c', f.position.x, f.position.y + 0.02, f.position.z + 0.06, 0, { shadow: false }));
+    }
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+
+export function flowerBed(r, x, z, w, d) {
+  const g = group(block(w, 0.3, d, PAL.woodDark, x, 0, z), block(w - 0.2, 0.32, d - 0.2, '#7a5d48', x, 0, z, { shadow: false }));
+  const colors = ['#f2c230', '#e07a5f', '#d98bb3', '#f6f3ec', '#8b7fd1'];
+  for (let i = 0; i < w * d * 3; i++) {
+    const fx = x + (r() - 0.5) * (w - 0.5);
+    const fz = z + (r() - 0.5) * (d - 0.5);
+    g.add(cyl(0.02, 0.02, 0.25, '#4f8a57', fx, 0.3, fz, 4));
+    g.add(sphere(0.12, pick(r, colors), fx, 0.6, fz, 0, { shadow: false }));
+  }
+  return g;
+}
+
+export function car(color, { taxi = false } = {}) {
+  const g = new THREE.Group();
+  const body = taxi ? '#f2c230' : color;
+  g.add(block(4.2, 0.75, 1.8, body, 0, 0.35, 0));
+  g.add(block(2.4, 0.7, 1.65, body, -0.2, 1.1, 0));
+  // Окна
+  g.add(box(2.2, 0.5, 1.68, '#5a6f82', -0.2, 1.47, 0, { shadow: false }));
+  g.add(box(0.06, 0.5, 1.7, body, -0.2, 1.47, 0, { shadow: false }));
+  // Фары
+  [[-0.6], [0.6]].forEach(([z]) => {
+    g.add(box(0.06, 0.18, 0.35, '#fff6d6', 2.1, 0.75, z, { shadow: false }));
+    g.add(box(0.06, 0.18, 0.35, '#d4573f', -2.1, 0.75, z, { shadow: false }));
+  });
+  g.add(box(4.3, 0.2, 1.85, '#3d4048', 0, 0.42, 0));
+  // Колёса
+  [[1.3, 0.85], [-1.3, 0.85], [1.3, -0.85], [-1.3, -0.85]].forEach(([x, z]) => {
+    const w = mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.28, 12), '#2b2d31');
+    w.rotation.x = Math.PI / 2;
+    w.position.set(x, 0.38, z);
+    const hub = mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 8), '#b9bcc2');
+    hub.rotation.x = Math.PI / 2;
+    hub.position.copy(w.position);
+    g.add(w, hub);
+  });
+  if (taxi) {
+    const s = sign('TAXI', 0.9, 0.3, { bg: '#f6f3ec', fg: '#2f3b52', w: 256, h: 96, font: 'bold 64px Nunito, sans-serif' });
+    s.position.set(-0.2, 1.62, 0);
+    s.rotation.y = Math.PI / 2;
+    g.add(s);
+    // Шашечки
+    for (let i = 0; i < 8; i++) {
+      g.add(box(0.25, 0.1, 0.02, i % 2 ? '#2f3b52' : '#f6f3ec', -1.5 + i * 0.25 + 0.6, 0.55, 0.91, { shadow: false }));
+      g.add(box(0.25, 0.1, 0.02, i % 2 ? '#2f3b52' : '#f6f3ec', -1.5 + i * 0.25 + 0.6, 0.55, -0.91, { shadow: false }));
+    }
+  }
+  return g;
+}
+
+function stripedAwning(w, d, colors, h = 0.5) {
+  const g = new THREE.Group();
+  const n = Math.round(w / 0.4);
+  for (let i = 0; i < n; i++) {
+    const s = box(w / n, 0.06, d, colors[i % 2], -w / 2 + (i + 0.5) * (w / n), 0, 0);
+    s.rotation.x = -0.35;
+    g.add(s);
+    g.add(box(w / n, h * 0.4, 0.04, colors[i % 2], -w / 2 + (i + 0.5) * (w / n), -h * 0.25 - 0.05, d / 2 - 0.02));
+  }
+  return g;
+}
+
+export function coffeeCart(x, z, rotY = 0) {
+  const g = new THREE.Group();
+  g.add(block(2.6, 1.0, 1.3, '#6f9e83', 0, 0.35, 0));
+  g.add(block(2.7, 0.1, 1.4, PAL.wood, 0, 1.35, 0));
+  [[-0.9, 0.66], [0.9, 0.66], [-0.9, -0.66], [0.9, -0.66]].forEach(([wx, wz]) => {
+    const w = mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.1, 14), '#3d4048');
+    w.rotation.x = Math.PI / 2;
+    w.position.set(wx, 0.33, wz);
+    g.add(w);
+  });
+  // Кофемашина и стаканчики
+  g.add(block(0.6, 0.6, 0.45, '#c9ccd1', -0.6, 1.45, -0.2));
+  g.add(block(0.15, 0.08, 0.15, '#2e3238', -0.6, 1.55, 0.06));
+  for (let i = 0; i < 4; i++) g.add(cyl(0.08, 0.06, 0.2, '#f6f3ec', 0.3 + i * 0.18, 1.45, 0.3, 8));
+  g.add(cyl(0.12, 0.12, 0.3, '#8a6347', 0.9, 1.45, -0.3, 10));
+  // Стойки и навес
+  [[-1.2, 0.6], [1.2, 0.6], [-1.2, -0.6], [1.2, -0.6]].forEach(([px, pz]) => g.add(cyl(0.04, 0.04, 1.5, PAL.white, px, 1.45, pz, 6)));
+  const awn = stripedAwning(2.9, 1.7, ['#f6f3ec', '#e07a5f']);
+  awn.position.y = 3.05;
+  g.add(awn);
+  const s = sign('COFFEE', 1.7, 0.42, { bg: '#2f3b52', fg: '#f2c230' });
+  s.position.set(0, 0.85, 0.67);
+  g.add(s);
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function hotDogStand(x, z, rotY = 0) {
+  const g = new THREE.Group();
+  g.add(block(2.2, 1.0, 1.1, '#c9ccd1', 0, 0.3, 0));
+  g.add(block(2.25, 0.08, 1.15, '#aeb2b8', 0, 1.3, 0));
+  [[-0.8, 0.56], [0.8, 0.56], [-0.8, -0.56], [0.8, -0.56]].forEach(([wx, wz]) => {
+    const w = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 14), '#3d4048');
+    w.rotation.x = Math.PI / 2;
+    w.position.set(wx, 0.3, wz);
+    g.add(w);
+  });
+  // Зонтик
+  g.add(cyl(0.04, 0.04, 2.0, '#9aa0a6', 0, 1.35, 0, 6));
+  const colors = ['#f2c230', '#3a6ea5'];
+  for (let i = 0; i < 8; i++) {
+    const seg = mesh(new THREE.ConeGeometry(1.6, 0.6, 8, 1, true, (i / 8) * Math.PI * 2, Math.PI / 4), colors[i % 2]);
+    seg.material = mat(colors[i % 2], { side: THREE.DoubleSide });
+    seg.position.y = 3.6;
+    g.add(seg);
+  }
+  // Сосиски и соусы
+  for (let i = 0; i < 4; i++) {
+    const d = mesh(new THREE.CapsuleGeometry(0.05, 0.3, 3, 6), '#c4653f');
+    d.rotation.z = Math.PI / 2;
+    d.position.set(-0.5 + i * 0.15, 1.4, 0.2);
+    g.add(d);
+  }
+  g.add(cyl(0.07, 0.07, 0.3, '#d4573f', 0.6, 1.34, 0.25, 8));
+  g.add(cyl(0.07, 0.07, 0.3, '#f2c230', 0.8, 1.34, 0.25, 8));
+  const s = sign('HOT DOGS', 1.8, 0.4, { bg: '#d4573f', fg: '#ffffff' });
+  s.position.set(0, 0.8, 0.57);
+  g.add(s);
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function subwayEntrance(x, z) {
+  const g = new THREE.Group();
+  const green = '#2f5d46';
+  // Проём со ступенями вниз
+  g.add(block(2.4, 0.04, 4.0, '#2b2d31', 0, 0, 0, { shadow: false }));
+  for (let i = 0; i < 7; i++) g.add(block(2.2, 0.05, 0.45, i % 2 ? '#5a5f66' : '#6b7077', 0, 0.01, -1.6 + i * 0.5, { shadow: false }));
+  // Перила
+  [-1.25, 1.25].forEach((dx) => {
+    g.add(box(0.08, 0.08, 4.0, green, dx, 1.05, 0));
+    for (let i = 0; i < 9; i++) g.add(cyl(0.035, 0.035, 1.05, green, dx, 0, -2 + i * 0.5, 6));
+  });
+  g.add(box(2.6, 0.08, 0.08, green, 0, 1.05, -2));
+  for (let i = 0; i < 5; i++) g.add(cyl(0.035, 0.035, 1.05, green, -1 + i * 0.5, 0, -2, 6));
+  // Фонари-шары
+  [-1.25, 1.25].forEach((dx) => {
+    g.add(cyl(0.06, 0.08, 2.4, green, dx, 0, 2, 8));
+    g.add(sphere(0.25, '#9fe0a9', dx, 2.6, 2, 2, { opts: { emissive: '#6fcf7f', emissiveIntensity: 0.4 } }));
+  });
+  const s = sign('SUBWAY', 2.2, 0.45, { bg: '#1f2226', fg: '#ffffff' });
+  s.position.set(0, 1.55, 2.0);
+  g.add(s);
+  // Линии метро: G и L
+  [['G', '#6cbe45', -0.55], ['L', '#a7a9ac', 0.55]].forEach(([letter, col, dx]) => {
+    const c = sign(letter, 0.36, 0.36, { bg: col, fg: '#ffffff', w: 128, h: 128, font: 'bold 90px Nunito, sans-serif' });
+    c.position.set(dx, 2.0, 2.0);
+    g.add(c);
+  });
+  g.position.set(x, 0, z);
+  return g;
+}
+
+export function hoopFence(length, rotY = 0) {
+  const g = new THREE.Group();
+  const n = Math.floor(length / 0.6);
+  for (let i = 0; i < n; i++) {
+    const hoop = mesh(new THREE.TorusGeometry(0.3, 0.025, 4, 10, Math.PI), PAL.iron);
+    hoop.position.set(-length / 2 + i * 0.6 + 0.3, 0.05, 0);
+    g.add(hoop);
+  }
+  g.rotation.y = rotY;
+  return g;
+}
+
+export function deliFront(width) {
+  const g = new THREE.Group();
+  g.add(box(width - 1, 2.2, 0.1, '#5a6f82', 0, 1.4 + 1.1, 0.06, { shadow: false }));
+  const awn = stripedAwning(width - 0.4, 1.6, ['#3e6b4f', '#f6f3ec']);
+  awn.position.set(0, 4.0, 0.8);
+  g.add(awn);
+  const s = sign('DELI • GROCERY', width - 1.5, 0.6, { bg: '#c94f3d', fg: '#ffffff', w: 1024, h: 128, font: 'bold 78px Nunito, sans-serif' });
+  s.position.set(0, 4.55, 0.1);
+  g.add(s);
+  // Ящики с фруктами
+  [['#e07a5f', -2.2], ['#f2c230', -1.2], ['#7db374', 1.2], ['#f29a3c', 2.2]].forEach(([c, dx]) => {
+    g.add(block(0.85, 0.5, 0.6, PAL.wood, dx, 0, 1.0));
+    for (let i = 0; i < 6; i++) g.add(sphere(0.11, c, dx - 0.27 + (i % 3) * 0.27, 0.6, 0.85 + Math.floor(i / 3) * 0.25, 0, { shadow: false }));
+  });
+  return g;
+}
