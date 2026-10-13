@@ -25,7 +25,7 @@ a { color: var(--blue); }
 #game canvas { display: block; }
 #ui { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
 #ui > * { pointer-events: auto; }
-#ui > .npc-marker, #ui > .float, #ui > .confetti, #ui > .controls-help { pointer-events: none; }
+#ui > .npc-marker, #ui > .float, #ui > .confetti, #ui > .controls-help, #ui > .immersion, #ui > .toasts { pointer-events: none; }
 
 /* ---------- Кнопки ---------- */
 .btn {
