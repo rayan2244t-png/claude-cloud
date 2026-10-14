@@ -44,9 +44,16 @@ function splitClips(animations) {
 }
 
 // Плоские матовые материалы, общие для всех персонажей одного цвета
+// «Мультяшный» свет в два тона: освещённая сторона — чистый цвет, теневая — чуть темнее, без бликов
+const TOON = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([168, 168, 168, 255, 236, 236, 236, 255, 255, 255, 255, 255]), 3, 1);
+  t.minFilter = t.magFilter = THREE.NearestFilter;
+  t.needsUpdate = true;
+  return t;
+})();
 const MATS = new Map();
 function flat(color) {
-  if (!MATS.has(color)) MATS.set(color, shaderize(new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0 })));
+  if (!MATS.has(color)) MATS.set(color, shaderize(new THREE.MeshToonMaterial({ color, gradientMap: TOON })));
   return MATS.get(color);
 }
 const lighter = (hex, l) => '#' + new THREE.Color(hex).offsetHSL(0, -0.05, l).getHexString();

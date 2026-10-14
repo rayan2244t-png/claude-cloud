@@ -1,12 +1,7 @@
 // Нейроголоса: управление потоком синтеза (tts-worker.js), кэш готовых фраз, состояние загрузки.
 import { state, save, emit } from './state.js';
 
-// Голоса Kokoro, американский английский. Персонаж получает «свой» голос стабильно по имени.
-export const NEURAL_VOICES = {
-  f: ['af_heart', 'af_bella', 'af_nicole', 'af_aoede', 'af_kore', 'af_sarah', 'af_nova'],
-  m: ['am_michael', 'am_fenrir', 'am_puck', 'am_echo', 'am_eric', 'am_liam', 'am_onyx'],
-};
-export const NARRATOR = 'af_heart';
+export { NEURAL_VOICES, NARRATOR } from './voices.js';
 
 export const neural = { status: 'off', progress: 0, error: '' }; // off | loading | ready | error
 

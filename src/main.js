@@ -14,6 +14,8 @@ import { createPhone } from './ui/phone.js';
 import { installButton } from './ui/install.js';
 import { createErrands } from './ui/errands.js';
 import { enableNeural, neural, synth } from './game/neural-voice.js';
+import { clipsReady } from './game/voice-clips.js';
+import { nextUnit } from './ui/course.js';
 import { startShift } from './ui/barista.js';
 import { openAiChat } from './ui/aichat.js';
 import { startRide } from './ui/subway.js';
@@ -189,6 +191,9 @@ function todos() {
       list.push({ text: closed ? `${q.todo} (с ${hoursText(npc)})` : q.todo, done: isDone(q.id), optional: q.optional });
     }
     if (errands) list.push(...errands.todos());
+    // Урок грамматики дня (курс A1 → B1): 🎓 → «Курс»
+    const unit = nextUnit();
+    if (unit) list.push({ text: `Урок грамматики: ${unit.title} 🎓`, done: state.course?.lastDay === todayKey(), optional: true });
     const apples = Object.keys(state.apples).length;
     list.push({ text: `Найти золотые яблоки 🍎 ${apples}/${COLLECTIBLES.length}`, done: apples >= COLLECTIBLES.length, optional: true });
     // Одна строка на собеседника: зачёркнута, когда прочитаны все его сообщения
@@ -728,7 +733,7 @@ intro();
 
 // Один раз предлагаем живые голоса вместо голосов браузера
 function offerVoices() {
-  if (state.settings.voiceEngine) return;
+  if (state.settings.voiceEngine || clipsReady()) return; // фразы игры уже озвучены записанными голосами
   const m = modal(el('div', { class: 'complete' },
     el('div', { class: 'daily-emoji' }, '🎙️'),
     el('div', { class: 'daily-title' }, 'Живые голоса'),

@@ -116,8 +116,10 @@ def tube(name, p0, p1, r0, r1, mat, seg=12, subsurf=1, round_ends=True):
 
 
 # ---------------------------------------------------------------- скелет
+HEAD_Z = 1.66  # центр головы
+
 J = {  # суставы (Blender, Z вверх, лицом в −Y)
-    'hips': (0, 0, 0.84), 'spine': (0, 0, 1.0), 'chest': (0, 0, 1.18), 'neck': (0, 0, 1.42), 'head': (0, 0, 1.5), 'top': (0, 0, 1.86),
+    'hips': (0, 0, 0.84), 'spine': (0, 0, 1.0), 'chest': (0, 0, 1.18), 'neck': (0, 0, 1.42), 'head': (0, 0, 1.5), 'top': (0, 0, 1.95),
 }
 BONES = [
     ('hips', J['hips'], J['spine'], None),
@@ -159,8 +161,16 @@ def seg_dist(p, a, b):
     return (p - (a + ab * t)).length
 
 
+HEAD_SCALE = 1.17  # голова крупнее, как у жителей деревни в Goose Game
+HEAD_LIFT = 0.03
+
+
 def skin(ob, bones, sharp=6):
     """Веса по расстоянию до костей (плавно в суставах), только среди разрешённых костей."""
+    if bones == ['head']:
+        c = Vector((0, -0.01, HEAD_Z - 0.12))  # масштаб от подбородка: голова растёт вверх и в стороны
+        for v in ob.data.vertices:
+            v.co = c + (v.co - c) * HEAD_SCALE + Vector((0, 0, HEAD_LIFT))
     groups = {b: ob.vertex_groups.new(name=b) for b in bones}
     for v in ob.data.vertices:
         ds = sorted(((seg_dist(v.co, *SEGS[b]), b) for b in bones))[:2]
@@ -187,7 +197,6 @@ def join(name, obs):
     return ob
 
 
-HEAD_Z = 1.66  # центр головы
 
 
 def build_body(tag, f=False):
@@ -198,9 +207,9 @@ def build_body(tag, f=False):
     head_rings = []
     for i in range(11):
         t = -math.pi / 2 + math.pi * i / 10
-        k = max(math.cos(t), 0.06)
-        z = HEAD_Z + 0.2 * math.sin(t)
-        bulge = 1 + 0.12 * max(0, -math.sin(t))  # щёки
+        k = max(math.cos(t), 0.06) ** 0.8  # чуть «квадратнее» — овал как у садовника
+        z = HEAD_Z + 0.21 * math.sin(t)
+        bulge = 1 + 0.05 * max(0, -math.sin(t))  # чуть шире к подбородку
         head_rings.append((z, 0.17 * k * bulge, 0.18 * k * bulge, 0, -0.01))
     parts.append(skin(loft(f'{tag}_skull', head_rings, 'skin', seg=20, subsurf=2), ['head']))
     parts.append(skin(tube(f'{tag}_neck', (0, 0, 1.38), (0, 0, 1.52), 0.075, 0.07, 'skin', round_ends=False), ['neck', 'head', 'chest']))
@@ -211,8 +220,8 @@ def build_body(tag, f=False):
         parts.append(skin(blob(f'{tag}_ear{x}', (0.172 * x, 0.0, HEAD_Z + 0.0), (0.03, 0.055, 0.07), 'skin'), ['head']))
     # Туловище: от пояса к широким покатым плечам
     torso = [
-        (0.8, 0.21 * sh, 0.17), (0.92, 0.22 * sh, 0.185, 0, -0.01), (1.06, 0.235 * sh, 0.19, 0, -0.005), (1.2, 0.255 * sh, 0.185),
-        (1.32, 0.275 * sh, 0.175, 0, 0.01), (1.38, 0.25 * sh, 0.15, 0, 0.015), (1.43, 0.15 * sh, 0.1, 0, 0.01), (1.46, 0.08, 0.07),
+        (0.8, 0.225 * sh, 0.18), (0.92, 0.24 * sh, 0.205, 0, -0.02), (1.06, 0.245 * sh, 0.21, 0, -0.02), (1.2, 0.245 * sh, 0.19, 0, -0.005),
+        (1.31, 0.245 * sh, 0.17, 0, 0.01), (1.38, 0.22 * sh, 0.14, 0, 0.015), (1.43, 0.14 * sh, 0.1, 0, 0.01), (1.46, 0.08, 0.07),
     ]
     if f:
         torso[1] = (0.92, 0.19, 0.16)
@@ -220,14 +229,14 @@ def build_body(tag, f=False):
     parts.append(skin(loft(f'{tag}_torso', torso, 'top', seg=18), ['hips', 'spine', 'chest']))
     # Воротничок рубашки — два уголка
     for x in (1, -1):
-        c = loft(f'{tag}_collar{x}', [(0, 0.06, 0.012), (0.09, 0.04, 0.01), (0.14, 0.006, 0.006)], 'collar', seg=8, subsurf=1,
+        c = loft(f'{tag}_collar{x}', [(0, 0.075, 0.014), (0.11, 0.05, 0.012), (0.17, 0.006, 0.006)], 'collar', seg=8, subsurf=1,
                  xform=Matrix.Translation((0.075 * x, -0.115, 1.45)) @ Matrix.Rotation(math.radians(-50 * x), 4, 'Y') @ Matrix.Rotation(math.radians(130), 4, 'X'))
         parts.append(skin(c, ['chest']))
     # Таз/брюки и ноги
-    parts.append(skin(loft(f'{tag}_pelvis', [(0.64, 0.2 * sh, 0.16), (0.76, 0.215 * sh, 0.17), (0.86, 0.215 * sh, 0.17)], 'pants', seg=16),
+    parts.append(skin(loft(f'{tag}_pelvis', [(0.62, 0.22 * sh, 0.17), (0.76, 0.232 * sh, 0.18), (0.86, 0.228 * sh, 0.18)], 'pants', seg=16),
                       ['hips', 'thigh.L', 'thigh.R']))
     for x, s in ((1, 'L'), (-1, 'R')):
-        parts.append(skin(tube(f'{tag}_leg{s}', (0.12 * x, 0, 0.8), (0.125 * x, 0.01, 0.3), 0.125, 0.112, 'pants', seg=14),
+        parts.append(skin(tube(f'{tag}_leg{s}', (0.12 * x, 0, 0.8), (0.125 * x, 0.01, 0.3), 0.14, 0.13, 'pants', seg=14),
                           ['hips', f'thigh.{s}', f'shin.{s}']))
         # Сапоги: крупные, с округлым носком
         boot = loft(f'{tag}_boot{s}', [
@@ -236,11 +245,11 @@ def build_body(tag, f=False):
         ], 'shoes', seg=14, xform=Matrix.Translation((0.125 * x, 0.0, 0.0)))
         parts.append(skin(boot, [f'shin.{s}', f'foot.{s}']))
         # Рукава
-        parts.append(skin(tube(f'{tag}_arm{s}', (0.245 * x * sh, 0, 1.35), (0.305 * x, -0.02, 0.9), 0.095, 0.078, 'top', seg=14),
+        parts.append(skin(tube(f'{tag}_arm{s}', (0.225 * x * sh, 0, 1.34), (0.3 * x, -0.03, 0.87), 0.085, 0.07, 'top', seg=14),
                           ['chest', f'upperarm.{s}', f'forearm.{s}']))
         # Ладонь-рукавица с большим пальцем
-        parts.append(skin(blob(f'{tag}_hand{s}', (0.31 * x, -0.03, 0.8), (0.065, 0.08, 0.095), 'hands'), [f'hand.{s}', f'forearm.{s}']))
-        parts.append(skin(blob(f'{tag}_thumb{s}', (0.28 * x, -0.095, 0.84), (0.03, 0.035, 0.045), 'hands'), [f'hand.{s}']))
+        parts.append(skin(blob(f'{tag}_hand{s}', (0.305 * x, -0.04, 0.77), (0.072, 0.088, 0.105), 'hands'), [f'hand.{s}', f'forearm.{s}']))
+        parts.append(skin(blob(f'{tag}_thumb{s}', (0.275 * x, -0.11, 0.81), (0.033, 0.04, 0.05), 'hands'), [f'hand.{s}']))
     return join(f'body_{tag}', parts)
 
 
@@ -319,12 +328,12 @@ cups = [blob(f'cup{x}', (0.18 * x, 0, HZ), (0.035, 0.06, 0.06), 'phones') for x 
 head_piece('headphones', [band] + cups)
 
 # Комбинезон (нагрудник + лямки) — как у садовника
-bib = loft('overall_bib', [(0.62, 0.21, 0.17), (0.78, 0.225, 0.18), (0.95, 0.232, 0.197, 0, -0.01), (1.1, 0.247, 0.2, 0, -0.005), (1.24, 0.262, 0.193)], 'overall', seg=18, cap=(False, False))
+bib = loft('overall_bib', [(0.6, 0.232, 0.182), (0.78, 0.247, 0.192), (0.95, 0.252, 0.217, 0, -0.02), (1.1, 0.252, 0.212, 0, -0.015), (1.24, 0.25, 0.195)], 'overall', seg=18, cap=(False, False))
 straps = [loft(f'strap{x}', [(0, 0.035, 0.008), (0.24, 0.035, 0.008)], 'overall', seg=8, subsurf=1, xform=Matrix.Translation((0.13 * x, -0.17, 1.2)) @ Matrix.Rotation(math.radians(-40), 4, 'X')) for x in (1, -1)]
 ov = join('overall', [bib] + straps)
 skin(ov, ['hips', 'spine', 'chest'])
 # Фартук спереди
-apron = loft('apron', [(0.6, 0.2, 0.17, 0, -0.01), (0.95, 0.21, 0.175, 0, -0.01), (1.25, 0.2, 0.172, 0, -0.005)], 'apron', seg=18, cap=(False, False))
+apron = loft('apron', [(0.58, 0.245, 0.205, 0, -0.01), (0.8, 0.255, 0.215, 0, -0.012), (0.95, 0.258, 0.232, 0, -0.022), (1.12, 0.258, 0.228, 0, -0.02)], 'apron', seg=18, cap=(False, False))  # поверх туловища, не внутри
 skin(apron, ['hips', 'spine', 'chest', 'thigh.L', 'thigh.R'])
 # Юбка
 skirt = loft('skirt', [(0.5, 0.27, 0.22), (0.7, 0.23, 0.18), (0.86, 0.205, 0.155)], 'skirt', seg=18, cap=(False, False))

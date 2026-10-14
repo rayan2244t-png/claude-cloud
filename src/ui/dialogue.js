@@ -1,6 +1,6 @@
 // Диалоги-уроки. Каждый тип шага — отдельная функция в STEP_TYPES:
 // чтобы добавить новый тип упражнения, допишите сюда функцию (step, ctx) => Promise.
-import { el, ui, md, escapeHtml, shuffle, sleep, floatText, money } from './dom.js';
+import { el, ui, md, escapeHtml, shuffle, sleep, floatText, money, stickToBottom } from './dom.js';
 import { state, save, fillName, addMoney } from '../game/state.js';
 import { check, prettyAnswer } from '../game/checker.js';
 import { addXP, recordAnswer } from '../game/progress.js';
@@ -380,6 +380,7 @@ export async function runDialogue({ speaker, steps, idPrefix = 'x', title, onTal
     } }, 'RU'),
   );
   const log = el('div', { class: 'dlg-log' });
+  stickToBottom(log);
   const fb = el('div', { class: 'feedback' });
   const task = el('div', { class: 'dlg-task' });
   root.append(header, log, fb, task);

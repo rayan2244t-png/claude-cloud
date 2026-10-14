@@ -13,6 +13,7 @@ import { COLLECTIBLES } from '../data/collectibles.js';
 import { friendLevel, hearts } from '../game/social.js';
 import { WARDROBE, COLORS, HAIR_COLORS, SKIN } from '../data/wardrobe.js';
 import { installButton } from './install.js';
+import { lessonToday } from './course.js';
 
 const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
@@ -188,6 +189,11 @@ export function createPhone(api) {
       icon: '🗣️', name: 'Шэдовинг', color: '#c94f3d',
       badge: () => 0,
       render() { close(); api.openLibrary('shadow'); },
+    },
+    course: {
+      icon: '🏫', name: 'Курс A1→B1', color: '#2f7d6d',
+      badge: () => (lessonToday() ? 0 : 1),
+      render() { close(); api.openLibrary('course'); },
     },
     grammar: {
       icon: '📘', name: 'Грамматика', color: '#5b2a86',

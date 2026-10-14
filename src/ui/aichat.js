@@ -1,5 +1,5 @@
 // Свободный разговор с персонажем (Claude Haiku 5.5) с исправлением ошибок.
-import { el, ui, escapeHtml, floatText } from './dom.js';
+import { el, ui, escapeHtml, floatText, stickToBottom } from './dom.js';
 import { state } from '../game/state.js';
 import { addXP } from '../game/progress.js';
 import { createChat, hasKey } from '../game/ai.js';
@@ -8,6 +8,7 @@ import { speak, canListen, listen, stopSpeech } from '../game/speech.js';
 export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
   const root = el('div', { class: 'dialogue ai open-later' });
   const log = el('div', { class: 'dlg-log' });
+  stickToBottom(log);
   const input = el('input', { class: 'text-in', placeholder: 'Напиши по-английски…', autocomplete: 'off', spellcheck: 'false' });
   const send = el('button', { class: 'btn primary' }, '➤');
   const mic = canListen() ? el('button', { class: 'btn mic' }, '🎤') : null;

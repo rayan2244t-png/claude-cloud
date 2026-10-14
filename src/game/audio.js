@@ -52,6 +52,8 @@ export function setVolumes() {
 export const voiceVolume = () => (vol().muted ? 0 : vol().master ?? 0.7) * (vol().voiceVol ?? 1);
 
 // Проиграть синтезированную речь через канал голосов; музыка на это время приглушается
+export const audioCtx = () => { initAudio(); return ctx; };
+
 export function playVoice(samples, rate, { volume = 1 } = {}) {
   initAudio();
   if (!ctx) return { done: Promise.resolve(), stop() {}, progress: () => 1 };

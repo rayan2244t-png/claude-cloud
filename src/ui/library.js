@@ -9,6 +9,7 @@ import { openShadowing, compareWords } from './shadow.js';
 import { canListen, listen } from '../game/speech.js';
 import { SOUNDS } from '../data/learn/pronunciation.js';
 import { runDialogue } from './dialogue.js';
+import { courseView } from './course.js';
 import { WORD_TOPICS, ALL_WORDS, PHRASES, ALL_PHRASES, CONSTRUCTIONS, GRAMMAR } from '../data/learn/index.js';
 
 // Мини-разметка для правил: **жирный**, таблицы | a | b |, абзацы
@@ -48,7 +49,7 @@ export function openLibrary(tab = 'words', opts = {}) {
   };
 
   const TABS = [
-    ['words', '📖 Слова'], ['phrases', '💬 Фразы'], ['constr', '🧩 Конструкции'], ['grammar', '📘 Грамматика'], ['shadow', '🗣️ Шэдовинг'], ['dictation', '✍️ Диктант'], ['pron', '👄 Произношение'],
+    ['course', '🏫 Курс A1→B1'], ['words', '📖 Слова'], ['phrases', '💬 Фразы'], ['constr', '🧩 Конструкции'], ['grammar', '📘 Грамматика'], ['shadow', '🗣️ Шэдовинг'], ['dictation', '✍️ Диктант'], ['pron', '👄 Произношение'],
   ];
   const tabBar = el('div', { class: 'lib-tabs' });
   const body = el('div', { class: 'lib-body' });
@@ -393,7 +394,8 @@ export function openLibrary(tab = 'words', opts = {}) {
     next();
   }
 
-  const VIEWS = { words: wordsView, phrases: phrasesView, constr: constrView, grammar: grammarView, shadow: shadowView, dictation: dictationView, pron: pronView };
+  const courseTab = () => courseView(body, { busy: (b) => onBusy(b), explain: (r) => ruleContentLite(r) });
+  const VIEWS = { course: courseTab, words: wordsView, phrases: phrasesView, constr: constrView, grammar: grammarView, shadow: shadowView, dictation: dictationView, pron: pronView };
   show(tab, opts.rule);
   return { close };
 }

@@ -3,8 +3,10 @@
 //  — нейроголоса Kokoro (как живые люди; скачиваются один раз, 92 МБ) — см. neural-voice.js;
 //  — голоса браузера (Web Speech API) — запасной вариант, выбираем самые качественные из доступных.
 import { state } from './state.js';
-import { neuralEnabled, neuralReady, synth, clearPrefetch, NEURAL_VOICES, NARRATOR } from './neural-voice.js';
-import { playVoice, voiceVolume } from './audio.js';
+import { neuralEnabled, neuralReady, synth, clearPrefetch } from './neural-voice.js';
+import { voiceFor, NARRATOR } from './voices.js'; // голоса Kokoro
+import { playVoice, voiceVolume, audioCtx } from './audio.js';
+import { findClip, clipAudio, warmClips } from './voice-clips.js';
 
 let voice = null;
 const pools = { f: [], m: [] };
@@ -45,23 +47,20 @@ export const refreshVoices = pickVoice;
 const hash = (s) => { let h = 0; for (const c of s || '') h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
 // Свой голос для каждого персонажа: по полу и имени (стабильно)
-function voiceFor(gender, who) {
+function browserVoiceFor(gender, who) {
   const pool = pools[gender] || [];
   if (!pool.length) return voice;
   return pool[hash(who) % pool.length];
 }
 
-export function neuralVoiceFor(gender, who) {
-  const pool = NEURAL_VOICES[gender];
-  return pool ? pool[hash(who) % pool.length] : (state.settings.narrator || NARRATOR);
-}
+export const neuralVoiceFor = (gender, who) => voiceFor(gender, who, state.settings.narrator || NARRATOR);
 
 if ('speechSynthesis' in window) {
   pickVoice();
   window.speechSynthesis.onvoiceschanged = pickVoice;
 }
 
-export const canSpeak = () => 'speechSynthesis' in window || neuralReady();
+export const canSpeak = () => true; // есть записанная озвучка, живой синтез или голос браузера
 
 // Текущая реплика — чтобы новая обрывала старую
 let current = null;
@@ -86,6 +85,46 @@ function chunks(text) {
 }
 
 const FIRST_WAIT = 2500;
+const RECORDED_SPEED = 0.95; // скорость, с которой записана озвучка
+
+// Записанная фраза живым голосом
+async function speakClip(clip, { rate, volume, onProgress }, my) {
+  const ctx = audioCtx();
+  if (!ctx) throw new Error('нет звука');
+  const { samples, rate: sr } = await clipAudio(ctx, clip);
+  if (my !== token) return;
+  const ratio = (rate ?? state.settings.rate ?? 0.9) / RECORDED_SPEED;
+  let raf = 0;
+  if (Math.abs(ratio - 1) < 0.12) {
+    // Обычная скорость — через звуковой канал голосов (громкость, приглушение музыки)
+    const play = playVoice(samples, sr, { volume });
+    current = play;
+    if (onProgress) { const tick = () => { onProgress(play.progress()); raf = requestAnimationFrame(tick); }; tick(); }
+    await play.done;
+  } else {
+    // Медленно/быстро без «мультяшного» голоса: браузер растягивает время, сохраняя высоту
+    const a = new Audio(URL.createObjectURL(new Blob([wavBytes(samples, sr)], { type: 'audio/wav' })));
+    a.preservesPitch = true;
+    a.playbackRate = Math.max(0.5, Math.min(1.6, ratio));
+    a.volume = Math.min(1, volume * voiceVolume());
+    current = { stop: () => { a.pause(); a.dispatchEvent(new Event('ended')); } };
+    if (onProgress) { const tick = () => { onProgress(a.duration ? a.currentTime / a.duration : 0); raf = requestAnimationFrame(tick); }; tick(); }
+    await new Promise((res) => { a.onended = res; a.onerror = res; a.play().catch(res); });
+    URL.revokeObjectURL(a.src);
+  }
+  cancelAnimationFrame(raf);
+  if (my === token) onProgress?.(1);
+}
+
+function wavBytes(samples, sr) {
+  const b = new DataView(new ArrayBuffer(44 + samples.length * 2));
+  const w = (o, str) => [...str].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); b.setUint32(4, 36 + samples.length * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+  b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true); b.setUint32(24, sr, true);
+  b.setUint32(28, sr * 2, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 32767, true);
+  return b.buffer;
+}
 
 async function speakNeural(text, { rate, volume, gender, who, onProgress }, my) {
   const v = neuralVoiceFor(gender, who);
@@ -122,7 +161,7 @@ function speakBrowser(text, { pitch, rate, volume, gender, who, onProgress }) {
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
-    const v = gender ? voiceFor(gender, who) : voice;
+    const v = gender ? browserVoiceFor(gender, who) : voice;
     if (v) u.voice = v;
     // Если отдельного голоса нет — меняем высоту, чтобы персонажи звучали по-разному
     if (gender && v === voice) pitch *= gender === 'f' ? 1.12 : 0.85;
@@ -138,6 +177,9 @@ function speakBrowser(text, { pitch, rate, volume, gender, who, onProgress }) {
 
 // Заготовить реплики заранее (пока игрок читает предыдущие), чтобы они прозвучали без задержки
 export function prefetchSpeech(lines, { gender, who, rate } = {}, { fresh = false } = {}) {
+  // Записанные фразы: заранее скачиваем нужные аудиофайлы
+  warmClips(audioCtx(), lines, { gender, who });
+  lines = lines.filter((l) => !findClip(l, { gender, who }));
   if (!neuralEnabled() || !neuralReady()) return;
   if (fresh) clearPrefetch();
   const v = neuralVoiceFor(gender, who);
@@ -157,13 +199,21 @@ export function speak(text, { pitch = 1, rate, force = false, volume = 1, gender
   const clean = String(text).replace(/[*_]/g, '').trim();
   if (!clean) return Promise.resolve();
   const opts = { pitch, rate, volume, gender, who, onProgress };
-  if (neuralEnabled() && neuralReady()) {
-    return speakNeural(clean, opts, my).catch((err) => {
-      console.warn('Нейроголос не сработал, читаю голосом браузера:', err);
-      return my === token ? speakBrowser(clean, opts) : undefined;
+  // 1) Записанная живым голосом фраза  2) живой синтез в браузере  3) голос браузера
+  const clip = findClip(clean, { gender, who });
+  if (clip) {
+    return speakClip(clip, opts, my).catch((err) => {
+      console.warn('Запись не проигралась:', err);
+      return my === token ? fallback() : undefined;
     });
   }
-  return speakBrowser(clean, opts);
+  return fallback();
+  function fallback() {
+    if (neuralEnabled() && neuralReady()) {
+      return speakNeural(clean, opts, my).catch(() => (my === token ? speakBrowser(clean, opts) : undefined));
+    }
+    return speakBrowser(clean, opts);
+  }
 }
 
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
