@@ -1,6 +1,13 @@
 // Предметы городского окружения Бруклина.
 import * as THREE from 'three';
-import { mat, mesh, box, block, cyl, sphere, group, sign, PAL, pick } from './kit.js';
+import { mat, mesh, box, block, rbox, cyl, sphere, group, sign, PAL, pick, glowMat, lightPool } from './kit.js';
+
+// Часть окон вечером загорается тёплым светом
+const LIT_WINDOW = glowMat(PAL.glass, '#ffcf7a', 1.6, { roughness: 0.15, metalness: 0.3 });
+const GLASS = { shadow: false, opts: { roughness: 0.12, metalness: 0.35 } };
+const LAMP_BULB = glowMat('#fff2c4', '#ffe7a3', 4);
+const HEADLIGHT = glowMat('#fff6d6', '#fff2c0', 3.5);
+const TAILLIGHT = glowMat('#d4573f', '#ff3b2f', 3);
 
 // Дом-браунстоун с крыльцом (stoop) — визитная карточка Бруклина
 export function brownstone(r, { width = 7.6, floors = 4, color, door = '#5b3a2e', fireEscape = false, waterTower = false, windowBoxes = false } = {}) {
@@ -27,7 +34,7 @@ export function brownstone(r, { width = 7.6, floors = 4, color, door = '#5b3a2e'
       const x = -width / 2 + 1.6 + i * ((width - 3.2) / 2);
       if (f === 0 && i === 0) continue; // место для двери
       g.add(box(1.0, 1.45, 0.12, PAL.frame, x, y + 0.72, 0.03));
-      g.add(box(0.82, 1.27, 0.1, PAL.glass, x, y + 0.72, 0.08, { shadow: false }));
+      g.add(box(0.82, 1.27, 0.1, r() < 0.45 ? LIT_WINDOW : mat(PAL.glass, GLASS.opts), x, y + 0.72, 0.08, { shadow: false }));
       g.add(box(0.06, 1.27, 0.12, PAL.frame, x, y + 0.72, 0.1, { shadow: false }));
       g.add(box(1.2, 0.14, 0.3, trim, x, y + 1.52, 0.1));
       g.add(box(1.15, 0.1, 0.32, trim, x, y - 0.05, 0.12));
@@ -107,11 +114,11 @@ export function tree(r, x, z, s = 1) {
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + r();
     const rad = (0.9 + r() * 0.5) * s;
-    const leaf = sphere(rad, pick(r, PAL.leaf), Math.cos(a) * 0.8 * s, trunkH + 0.5 * s + r() * 1.0 * s, Math.sin(a) * 0.8 * s, 0);
+    const leaf = sphere(rad, pick(r, PAL.leaf), Math.cos(a) * 0.8 * s, trunkH + 0.5 * s + r() * 1.0 * s, Math.sin(a) * 0.8 * s, 0, { opts: { wave: 1 } });
     leaf.rotation.set(r() * 3, r() * 3, r() * 3);
     g.add(leaf);
   }
-  g.add(sphere(1.2 * s, pick(r, PAL.leaf), 0, trunkH + 1.3 * s, 0, 0));
+  g.add(sphere(1.2 * s, pick(r, PAL.leaf), 0, trunkH + 1.3 * s, 0, 0, { opts: { wave: 1 } }));
   g.position.set(x, 0, z);
   g.userData.sway = r() * 10;
   return g;
@@ -132,8 +139,8 @@ export function streetLamp(x, z, rotY = 0) {
   );
   const arm = box(0.08, 0.08, 1.2, PAL.iron, 0, 4.5, 0.55);
   const head = box(0.5, 0.18, 0.7, PAL.iron, 0, 4.42, 1.1);
-  const light = box(0.4, 0.05, 0.55, '#fff2c4', 0, 4.31, 1.1, { shadow: false, opts: { emissive: '#fff2c4', emissiveIntensity: 0.3 } });
-  g.add(arm, head, light);
+  const light = box(0.4, 0.05, 0.55, LAMP_BULB, 0, 4.31, 1.1, { shadow: false });
+  g.add(arm, head, light, lightPool(0, 1.1));
   g.position.set(x, 0, z);
   g.rotation.y = rotY;
   return g;
@@ -184,17 +191,68 @@ export function bench(x, z, rotY = 0) {
   return g;
 }
 
+// Куст как в Goose Game: тёмная основа, покрытая сотнями листиков, и белые цветы-звёздочки
+const LEAF = (() => {
+  const g = new THREE.SphereGeometry(0.1, 6, 4);
+  g.scale(1, 0.28, 0.62);
+  g.translate(0.05, 0, 0);
+  return g;
+})();
+const PETAL_STAR = (() => {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const rr = i % 2 ? 0.045 : 0.11;
+    pts.push(new THREE.Vector2(Math.cos(a) * rr, Math.sin(a) * rr));
+  }
+  const g = new THREE.ShapeGeometry(new THREE.Shape(pts));
+  g.rotateX(-Math.PI / 2);
+  return g;
+})();
+const leafMat = mat('#ffffff', { wave: 1 });
+
 export function bush(r, x, z, s = 1, flowers = true) {
   const g = new THREE.Group();
   const n = 3 + Math.floor(r() * 3);
+  const blobs = [];
   for (let i = 0; i < n; i++) {
-    g.add(sphere((0.5 + r() * 0.35) * s, pick(r, ['#4f8a57', '#5a9660', '#46804f']), (r() - 0.5) * 1.2 * s, 0.4 * s, (r() - 0.5) * 0.9 * s, 0));
+    const rad = (0.5 + r() * 0.35) * s;
+    const b = sphere(rad, '#3f7748', (r() - 0.5) * 1.2 * s, 0.4 * s, (r() - 0.5) * 0.9 * s, 0, { opts: { wave: 1 } });
+    blobs.push({ c: b.position.clone(), rad });
+    g.add(b);
   }
+  // Листья по поверхности (верх и бока), каждый смотрит наружу
+  const count = Math.round(70 * n * s);
+  const leaves = new THREE.InstancedMesh(LEAF, leafMat, count);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3(), p = new THREE.Vector3();
+  const col = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const bl = blobs[i % blobs.length];
+    dir.set(r() - 0.5, r() * 0.9 - 0.15, r() - 0.5).normalize();
+    p.copy(bl.c).addScaledVector(dir, bl.rad * 0.98);
+    if (p.y < 0.08) p.y = 0.08;
+    q.setFromUnitVectors(up, dir);
+    q.multiply(new THREE.Quaternion().setFromAxisAngle(up, r() * 6.28));
+    const sc = (0.8 + r() * 0.6) * s;
+    m4.compose(p, q, new THREE.Vector3(sc, sc, sc));
+    leaves.setMatrixAt(i, m4);
+    leaves.setColorAt(i, col.set(pick(r, ['#4c8a55', '#3f7a4a', '#5a9a5f', '#467f4e', '#61a064'])));
+  }
+  leaves.castShadow = true;
+  leaves.receiveShadow = true;
+  g.add(leaves);
   if (flowers) {
-    for (let i = 0; i < 6; i++) {
-      const f = sphere(0.09, '#f6f3ec', (r() - 0.5) * 1.3 * s, (0.5 + r() * 0.4) * s, (r() - 0.5) * 1.0 * s + 0.35 * s, 0, { shadow: false });
+    const nf = 4 + Math.floor(r() * 5);
+    for (let i = 0; i < nf; i++) {
+      const bl = blobs[i % blobs.length];
+      dir.set(r() - 0.5, 0.5 + r() * 0.6, r() - 0.5).normalize();
+      const fp = bl.c.clone().addScaledVector(dir, bl.rad + 0.03);
+      const f = new THREE.Mesh(PETAL_STAR, mat('#f8f6ef', { side: THREE.DoubleSide }));
+      f.position.copy(fp);
+      f.quaternion.setFromUnitVectors(up, dir);
+      const c = sphere(0.035, '#f29a2e', 0, 0.015, 0, 0, { shadow: false });
+      f.add(c);
       g.add(f);
-      g.add(sphere(0.04, '#f2a03c', f.position.x, f.position.y + 0.02, f.position.z + 0.06, 0, { shadow: false }));
     }
   }
   g.position.set(x, 0, z);
@@ -215,16 +273,16 @@ export function flowerBed(r, x, z, w, d) {
 
 export function car(color, { taxi = false } = {}) {
   const g = new THREE.Group();
-  const body = taxi ? '#f2c230' : color;
-  g.add(block(4.2, 0.75, 1.8, body, 0, 0.35, 0));
-  g.add(block(2.4, 0.7, 1.65, body, -0.2, 1.1, 0));
-  // Окна
-  g.add(box(2.2, 0.5, 1.68, '#5a6f82', -0.2, 1.47, 0, { shadow: false }));
-  g.add(box(0.06, 0.5, 1.7, body, -0.2, 1.47, 0, { shadow: false }));
-  // Фары
+  const body = mat(taxi ? '#f2c230' : color, { roughness: 0.28, metalness: 0.25 });
+  g.add(rbox(4.2, 0.78, 1.8, body, 0, 0.33, 0, 0.22));
+  g.add(rbox(2.4, 0.72, 1.65, body, -0.2, 1.05, 0, 0.2));
+  // Окна — блестящие, отражают небо
+  g.add(box(2.2, 0.48, 1.68, mat('#4a5d70', { roughness: 0.08, metalness: 0.6 }), -0.2, 1.43, 0, { shadow: false }));
+  g.add(box(0.06, 0.5, 1.7, body, -0.2, 1.43, 0, { shadow: false }));
+  // Фары (ночью светятся)
   [[-0.6], [0.6]].forEach(([z]) => {
-    g.add(box(0.06, 0.18, 0.35, '#fff6d6', 2.1, 0.75, z, { shadow: false }));
-    g.add(box(0.06, 0.18, 0.35, '#d4573f', -2.1, 0.75, z, { shadow: false }));
+    g.add(box(0.08, 0.18, 0.35, HEADLIGHT, 2.1, 0.75, z, { shadow: false }));
+    g.add(box(0.08, 0.18, 0.35, TAILLIGHT, -2.1, 0.75, z, { shadow: false }));
   });
   g.add(box(4.3, 0.2, 1.85, '#3d4048', 0, 0.42, 0));
   // Колёса
@@ -265,7 +323,7 @@ function stripedAwning(w, d, colors, h = 0.5) {
 
 export function coffeeCart(x, z, rotY = 0) {
   const g = new THREE.Group();
-  g.add(block(2.6, 1.0, 1.3, '#6f9e83', 0, 0.35, 0));
+  g.add(rbox(2.6, 1.0, 1.3, '#6f9e83', 0, 0.35, 0, 0.1));
   g.add(block(2.7, 0.1, 1.4, PAL.wood, 0, 1.35, 0));
   [[-0.9, 0.66], [0.9, 0.66], [-0.9, -0.66], [0.9, -0.66]].forEach(([wx, wz]) => {
     const w = mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.1, 14), '#3d4048');
@@ -293,7 +351,7 @@ export function coffeeCart(x, z, rotY = 0) {
 
 export function hotDogStand(x, z, rotY = 0) {
   const g = new THREE.Group();
-  g.add(block(2.2, 1.0, 1.1, '#c9ccd1', 0, 0.3, 0));
+  g.add(rbox(2.2, 1.0, 1.1, mat('#c9ccd1', { roughness: 0.3, metalness: 0.7 }), 0, 0.3, 0, 0.1));
   g.add(block(2.25, 0.08, 1.15, '#aeb2b8', 0, 1.3, 0));
   [[-0.8, 0.56], [0.8, 0.56], [-0.8, -0.56], [0.8, -0.56]].forEach(([wx, wz]) => {
     const w = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 14), '#3d4048');

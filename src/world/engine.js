@@ -2,30 +2,24 @@
 import * as THREE from 'three';
 import { makeCharacter } from './character.js';
 import { MAPS } from './maps/index.js';
+import { createRenderPipeline } from './render.js';
+import { SHADER } from './kit.js';
 
 const PLAYER_R = 0.35;
 const SPEED = 4.2;
 
-export function createEngine(container, { npcs }) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  container.appendChild(renderer.domElement);
-
+export function createEngine(container, { npcs, quality = 'high', playerLook }) {
   const scene = new THREE.Scene();
   const SKY = new THREE.Color('#d8e8e4');
   scene.background = SKY;
-  scene.fog = new THREE.Fog(SKY, 38, 85);
+  scene.fog = new THREE.Fog(SKY, 55, 150);
 
   // Мягкий свет без жёстких контрастов — как в Goose Game
-  scene.add(new THREE.HemisphereLight('#fffaf0', '#9ab38f', 1.55));
+  const hemi = new THREE.HemisphereLight('#fffaf0', '#9ab38f', 1.55);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight('#fff4e0', 1.6);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 80 });
+  Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.03;
   sun.shadow.radius = 4;
@@ -33,8 +27,13 @@ export function createEngine(container, { npcs }) {
   const SUN_OFFSET = new THREE.Vector3(-14, 26, 10);
 
   const camera = new THREE.PerspectiveCamera(32, container.clientWidth / container.clientHeight, 0.5, 200);
-  const CAM_OFFSET = new THREE.Vector3(0, 14.5, 20.5);
+  // Ракурс как в Goose Game: ближе и сверху (~45°), герой крупно
+  const CAM_OFFSET = new THREE.Vector3(0, 11.5, 11.5);
   let zoom = 1;
+
+  const pipe = createRenderPipeline(container, scene, camera, quality);
+  const renderer = pipe.renderer;
+  sun.shadow.mapSize.set(pipe.quality.shadow, pipe.quality.shadow);
 
   // ---------- Карты ----------
   const maps = {};
@@ -43,12 +42,16 @@ export function createEngine(container, { npcs }) {
     scene.add(maps[id].root);
   }
   let map = maps.brooklyn;
+  const showOnly = (id) => Object.values(maps).forEach((m) => { m.root.visible = m.id === id; });
+  showOnly('brooklyn');
+  // Кто из персонажей сейчас на улице (карта + расписание). Задаётся из main.js
+  let npcFilter = (id) => (npcs[id].map || 'brooklyn') === map.id;
 
   // Статичные объекты не пересчитываем каждый кадр
   scene.updateMatrixWorld(true);
 
   // ---------- Герой ----------
-  const player = makeCharacter({
+  let player = makeCharacter(playerLook || {
     skin: '#f0c4a0', shirt: '#e07a5f', pants: '#3f5a7a', hat: 'cap', hatColor: '#2f5d8a', hair: '#5a3d2b', backpack: '#f2c230',
   });
   scene.add(player.root);
@@ -57,11 +60,12 @@ export function createEngine(container, { npcs }) {
   let speed = 0;
   let moveTarget = null;
   let pendingTalk = null;
+  let held = null; // предмет в руках
 
   // ---------- Персонажи ----------
   const npcObjs = {};
   for (const npc of Object.values(npcs)) {
-    const c = makeCharacter(npc.look);
+    const c = makeCharacter({ gender: npc.gender, ...npc.look });
     const p = new THREE.Vector3(...npc.pos);
     c.root.position.copy(p);
     c.root.rotation.y = npc.rot ?? Math.PI;
@@ -171,6 +175,7 @@ export function createEngine(container, { npcs }) {
 
   // ---------- Цикл ----------
   const clock = new THREE.Clock();
+  const tmpV = new THREE.Vector3(), tmpL = new THREE.Vector3();
   const camPos = new THREE.Vector3().copy(pos).add(CAM_OFFSET);
   const camLook = new THREE.Vector3().copy(pos);
   let talkFocus = null;
@@ -225,8 +230,11 @@ export function createEngine(container, { npcs }) {
 
     // Персонажи поворачиваются к герою, когда он рядом
     for (const n of Object.values(npcObjs)) {
+      n.char.root.visible = npcFilter(n.id);
+      if (!n.char.root.visible) continue;
       const d = n.pos.distanceTo(pos);
-      const target = d < 4 || n.lookAt ? Math.atan2(pos.x - n.pos.x, pos.z - n.pos.z) : n.baseRot;
+      if (n.attention > 0) n.attention -= dt;
+      const target = d < 4 || n.lookAt || n.attention > 0 ? Math.atan2(pos.x - n.pos.x, pos.z - n.pos.z) : n.baseRot;
       let diff = target - n.char.root.rotation.y;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       n.char.root.rotation.y += diff * Math.min(1, dt * 5);
@@ -236,25 +244,29 @@ export function createEngine(container, { npcs }) {
     map.update?.(dt, t, pos, camera.position);
 
     // Камера плавно следует за героем; во время разговора — немного приближается
+    // У каждой карты свой ракурс: в Манхэттене камера смотрит вверх, на небоскрёбы
     const focus = talkFocus ? pos.clone().lerp(talkFocus, 0.5) : pos;
-    const z = (talkFocus ? 0.72 : zoom) * (map.camZoom || 1);
-    const wantPos = focus.clone().add(CAM_OFFSET.clone().multiplyScalar(z));
+    const z = (talkFocus ? 0.95 : zoom) * (map.camZoom || 1);
+    const offset = map.cam ? tmpV.set(...map.cam.offset) : tmpV.copy(CAM_OFFSET);
+    const wantPos = focus.clone().add(offset.multiplyScalar(z));
     camPos.lerp(wantPos, Math.min(1, dt * 4));
-    camLook.lerp(focus.clone().add(new THREE.Vector3(0, talkFocus ? 1.2 : 0, 0)), Math.min(1, dt * 4));
+    const look = map.cam?.look && !talkFocus ? tmpL.set(...map.cam.look) : tmpL.set(0, talkFocus ? -1.2 : 0.4, talkFocus ? 2.2 : -0.5);
+    camLook.lerp(focus.clone().add(look), Math.min(1, dt * 4));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
     sun.position.copy(pos).add(SUN_OFFSET);
     sun.target.position.copy(pos);
 
+    SHADER.uTime.value = t;
     frameHooks.forEach((fn) => fn(dt, t));
-    renderer.render(scene, camera);
+    pipe.render(dt);
     requestAnimationFrame(step);
   }
 
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
-    renderer.setSize(w, h);
+    pipe.setSize(w, h);
     camera.aspect = w / h;
     // На узком экране телефона отодвигаем камеру, чтобы видеть больше
     camera.fov = w < h ? 44 : 30;
@@ -269,12 +281,14 @@ export function createEngine(container, { npcs }) {
   return {
     scene,
     get playerPos() { return pos; },
+    get playerSpeed() { return speed; },
+    get time() { return clock.elapsedTime; },
     get mapId() { return map.id; },
     maps,
     npcObjs,
     onInteract(fn) { handlers.interact = fn; },
     onNpcClick(fn) { handlers.npcClick = fn; },
-    onFrame(fn) { frameHooks.push(fn); },
+    onFrame(fn) { frameHooks.push(fn); return () => { const i = frameHooks.indexOf(fn); if (i >= 0) frameHooks.splice(i, 1); }; },
     setPaused(p) { paused = p; if (p) { keys.clear(); moveTarget = null; tapMarker.visible = false; } },
     focusOn(id) {
       const n = npcObjs[id];
@@ -284,6 +298,46 @@ export function createEngine(container, { npcs }) {
     npcTalk(id, seconds) { npcObjs[id]?.char.talk(seconds); },
     npcWave(id) { npcObjs[id]?.char.wave(); },
     playerWave() { player.wave(); },
+    // Переодеть героя (гардероб)
+    setPlayerLook(look) {
+      scene.remove(player.root);
+      player = makeCharacter(look);
+      scene.add(player.root);
+      if (held) { player.root.add(held); player.setCarry?.(true); }
+    },
+    // ---------- Предметы в руках (как гусь носит вещи в Goose Game) ----------
+    holdItem(obj) {
+      held = obj;
+      obj.position.set(0, 1.0, 0.42);
+      obj.rotation.set(0, 0, 0);
+      player.root.add(obj);
+      player.setCarry?.(true);
+    },
+    dropItem() {
+      if (!held) return null;
+      const obj = held;
+      held = null;
+      player.root.remove(obj);
+      player.setCarry?.(false);
+      obj.position.set(pos.x + Math.sin(heading) * 0.8, 0, pos.z + Math.cos(heading) * 0.8);
+      obj.rotation.set(0, heading, 0);
+      return obj;
+    },
+    get heldItem() { return held; },
+    get player() { return player; },
+    // «Эй!» — все вокруг оборачиваются на героя
+    shout(radius = 9) {
+      player.wave(0.8);
+      const turned = [];
+      for (const n of Object.values(npcObjs)) {
+        if (!n.char.root.visible || n.pos.distanceTo(pos) > radius) continue;
+        n.attention = 3;
+        turned.push(n.id);
+        setTimeout(() => n.char.wave(0.9), 350 + Math.random() * 400);
+      }
+      const startled = map.crowd?.startle?.(pos, radius) || { people: 0, dogs: 0 };
+      return { npcs: turned, ...startled };
+    },
     enterMap(id, spot = 'start') {
       map = maps[id];
       const [x, z] = map.spots[spot];
@@ -292,8 +346,14 @@ export function createEngine(container, { npcs }) {
       camPos.copy(pos).add(CAM_OFFSET);
       camLook.copy(pos);
       moveTarget = null;
-      Object.values(npcObjs).forEach((n) => { n.char.root.visible = id === 'brooklyn'; });
+      showOnly(id);
     },
+    setNpcFilter(fn) { npcFilter = fn; },
+    lights: { sun, hemi },
+    pipe,
+    camera,
+    setSunOffset(x, y, z) { SUN_OFFSET.set(x, y, z); },
+    npcDance(id, on) { npcObjs[id]?.char.setDance(on); },
     teleport(x, z, face) {
       pos.set(x, 0, z);
       if (face !== undefined) heading = face;

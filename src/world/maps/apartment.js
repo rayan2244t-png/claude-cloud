@@ -194,7 +194,7 @@ export function buildApartment() {
     get colliders() { return colliders(); },
     bounds: { minX: OX - 4.6, maxX: OX + 4.8, minZ: -3.8, maxZ: 3.9 },
     heightAt: () => 0,
-    spots: { start: [OX - 3.8, 3.0], exit: [OX - 4.3, 3.0] },
+    spots: { start: [OX - 3.8, 3.0], exit: [OX - 4.3, 3.0], bed: [OX - 3.3, 0.2] },
     camZoom: 0.68,
     setItems,
     update,

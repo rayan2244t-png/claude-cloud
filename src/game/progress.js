@@ -19,8 +19,26 @@ export function levelInfo(xp = state.xp) {
   return { cur, next, pct, index: i };
 }
 
+// ---------- Статистика по дням: опыт, минуты, ответы, серия дней ----------
+export const todayKey = () => new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD в местном времени
+
+export function dayStats(key = todayKey()) {
+  state.stats ||= { days: {}, streak: 0, best: 0, last: '' };
+  const s = state.stats;
+  if (!s.days[key]) s.days[key] = { xp: 0, min: 0, ok: 0, bad: 0, words: 0 };
+  // Серия дней подряд
+  if (key === todayKey() && s.last !== key) {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    s.streak = s.last === y.toLocaleDateString('sv-SE') ? s.streak + 1 : 1;
+    s.best = Math.max(s.best, s.streak);
+    s.last = key;
+  }
+  return s.days[key];
+}
+
 export function addXP(amount) {
   const before = levelInfo().index;
+  dayStats().xp += amount;
   state.xp += amount;
   save();
   emit('xp', amount);
@@ -41,6 +59,9 @@ export const TOPICS = {
   slang: 'Американский разговорный',
   food: 'Еда и кафе',
   listening: 'Понимание на слух',
+  phrases: 'Устойчивые фразы',
+  past_simple: 'Past Simple (прошедшее время)',
+  pronouns: 'Местоимения (my / your / these)',
 };
 
 export function recordAnswer(topic, ok, mistake) {
@@ -48,6 +69,7 @@ export function recordAnswer(topic, ok, mistake) {
     const t = (state.topics[topic] ||= { ok: 0, bad: 0 });
     ok ? t.ok++ : t.bad++;
   }
+  ok ? dayStats().ok++ : dayStats().bad++;
   if (!ok && mistake) {
     state.mistakes.unshift({ ...mistake, topic, at: Date.now() });
     state.mistakes = state.mistakes.slice(0, 80);

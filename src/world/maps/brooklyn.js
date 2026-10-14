@@ -1,11 +1,13 @@
 // Карта «Бруклин»: улица с браунстоунами, дорога и парк.
 // Новые районы делаются по образцу этого файла и регистрируются в world/maps/index.js.
 import * as THREE from 'three';
-import { mat, mesh, box, block, cyl, sphere, group, rng, pick, PAL } from '../kit.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mat, mesh, box, block, cyl, sphere, group, sign, rng, pick, PAL, wetMat, cloneMat, WORLD } from '../kit.js';
 import {
   brownstone, tree, treePit, streetLamp, hydrant, trashCan, mailbox, bench, bush, flowerBed,
   car, coffeeCart, hotDogStand, subwayEntrance, hoopFence, deliFront,
 } from '../props.js';
+import { createCrowd } from '../crowd.js';
 
 const SIDEWALK_Y = 0.08;
 
@@ -24,7 +26,7 @@ export function buildBrooklyn() {
   root.add(grass);
 
   // Дорога
-  root.add(block(120, 0.02, 7, PAL.asphalt, 0, -0.01, 0, { shadow: false }));
+  root.add(block(120, 0.02, 7, wetMat(PAL.asphalt), 0, -0.01, 0, { shadow: false }));
   for (let x = -58; x < 60; x += 4) {
     root.add(block(2, 0.01, 0.12, PAL.line, x, 0.012, -0.08, { shadow: false }));
     root.add(block(2, 0.01, 0.12, PAL.line, x, 0.012, 0.08, { shadow: false }));
@@ -42,7 +44,7 @@ export function buildBrooklyn() {
       for (let k = 0; k < 3; k++) slabPositions.push([x + 0.75, z0 + k * 1.5]);
     }
   }
-  const slabs = new THREE.InstancedMesh(slabGeo, mat('#ffffff'), slabPositions.length);
+  const slabs = new THREE.InstancedMesh(slabGeo, wetMat('#ffffff'), slabPositions.length);
   const m4 = new THREE.Matrix4();
   const col = new THREE.Color();
   slabPositions.forEach(([x, z], i) => {
@@ -64,7 +66,7 @@ export function buildBrooklyn() {
   const specials = {
     '-32': { deli: true, floors: 3, color: '#c99a78' },
     '-24': { fireEscape: true },
-    '-16': { waterTower: true, floors: 5 },
+    '-16': { waterTower: true, floors: 5, clinic: true },
     '-8': { windowBoxes: true },
     '0': { fireEscape: true, floors: 3 },
     '8': { door: '#3e7d5a', windowBoxes: true, color: '#b0664f', home: true },
@@ -77,6 +79,11 @@ export function buildBrooklyn() {
     const b = brownstone(r, { floors: sp.floors || 3 + Math.floor(r() * 2), ...sp });
     b.group.position.set(x, 0, -8);
     root.add(b.group);
+    if (sp.clinic) {
+      const cs = sign('✚ FAMILY CLINIC', 4.2, 0.6, { bg: '#2f9a8a', fg: '#ffffff', w: 768, h: 110, font: 'bold 66px Nunito, sans-serif' });
+      cs.position.set(x + 1.2, 1.25, -7.9);
+      root.add(cs);
+    }
     if (sp.deli) {
       const d = deliFront(7.6);
       d.position.set(x + 0.6, 0, -8);
@@ -183,7 +190,7 @@ export function buildBrooklyn() {
   // Фонтан
   const fountain = group(
     cyl(2.0, 2.2, 0.5, '#cfc8b8', 0, 0, 0, 20),
-    cyl(1.75, 1.75, 0.52, '#8fc6d6', 0, 0.01, 0, 20, { shadow: false }),
+    cyl(1.75, 1.75, 0.52, mat('#7fbfd6', { roughness: 0.05, metalness: 0.5, wave: 1 }), 0, 0.01, 0, 20, { shadow: false }),
     cyl(0.25, 0.35, 1.2, '#cfc8b8', 0, 0, 0, 10),
     cyl(0.8, 0.5, 0.2, '#cfc8b8', 0, 1.2, 0, 14),
   );
@@ -203,7 +210,7 @@ export function buildBrooklyn() {
     tr.userData.center = new THREE.Vector3(x, 3.5 * s, z);
     tr.userData.radius = 2.1 * s;
     // Свои материалы, чтобы дерево могло стать прозрачным, когда закрывает героя
-    tr.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; } });
+    tr.traverse((o) => { if (o.isMesh) { o.material = cloneMat(o.material); o.material.transparent = true; } });
     tr.userData.fade = 1;
     fadeTrees.push(tr);
     root.add(tr);
@@ -216,20 +223,48 @@ export function buildBrooklyn() {
   root.add(flowerBed(r, -2, 11.5, 3, 1.6)); boxC(-3.5, -0.5, 10.7, 12.3);
   root.add(flowerBed(r, 8.5, 11.2, 2.4, 1.4)); boxC(7.3, 9.7, 10.5, 11.9);
   root.add(bench(-1, 18.8, Math.PI / 2 + 0.3)); circC(-1, 18.8, 1.0);
+  // Фонари вдоль дорожек парка — вечером здесь играет музыкант
+  [[-8.5, 14.5, 0.6], [-17.5, 12.2, -0.4], [9, 14.2, 2.4], [22, 17, 2.8], [-26, 17, 0]].forEach(([x, z, ry]) => {
+    root.add(streetLamp(x, z, ry));
+    circC(x, z, 0.25);
+  });
   root.add(bench(9.5, 16.2, -Math.PI / 2)); circC(9.5, 16.2, 1.0);
 
-  // Травяные кустики (инстансы)
-  const tuftGeo = new THREE.ConeGeometry(0.06, 0.32, 3);
-  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff'), 900);
-  for (let i = 0; i < 900; i++) {
-    let x, z;
-    if (i < 160) { x = -60 + r() * 120; z = r() < 0.5 ? -3.25 + (r() - 0.5) * 0.2 : 7.0 + r() * 0.4; }
-    else { x = -50 + r() * 100; z = 7.5 + r() * 20; }
-    m4.makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 0.5, r() * 3, (r() - 0.5) * 0.5));
-    m4.setPosition(x, 0.12, z);
-    tufts.setMatrixAt(i, m4);
-    tufts.setColorAt(i, col.set(pick(r, [PAL.grassDark, '#6b9a63', PAL.grassLight])));
+  const tmpS = new THREE.Vector3();
+  // Пучки травы как в Goose Game: веер из 5–6 травинок, гуще всего — у краёв плитки и газона
+  const blades = [];
+  for (let k = 0; k < 6; k++) {
+    const bl = new THREE.ConeGeometry(0.035, 0.28 + (k % 3) * 0.07, 3);
+    bl.translate(0, 0.14 + (k % 3) * 0.035, 0);
+    bl.rotateZ((k - 2.5) * 0.2);
+    bl.rotateY(k * 1.1);
+    bl.translate((k - 2.5) * 0.035, 0, ((k * 7) % 5 - 2) * 0.02);
+    blades.push(bl);
   }
+  const tuftGeo = mergeGeometries(blades);
+  const TUFTS = 1500;
+  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff', { wave: 2 }), TUFTS);
+  let i = 0;
+  const putTuft = (x, z, sc = 1) => {
+    if (i >= TUFTS) return;
+    m4.makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 0.25, r() * 6, (r() - 0.5) * 0.25));
+    m4.scale(tmpS.set(sc, sc * (0.8 + r() * 0.5), sc));
+    m4.setPosition(x, 0.02, z);
+    tufts.setMatrixAt(i, m4);
+    tufts.setColorAt(i, col.set(pick(r, ['#5e8f63', '#679a68', '#57885d', '#72a26f'])));
+    i++;
+  };
+  // Кучки у края газона и у бордюров
+  for (let c = 0; c < 170; c++) {
+    const x = -60 + r() * 120;
+    const z = r() < 0.6 ? 7.05 + r() * 0.35 : -3.25 + (r() - 0.5) * 0.25;
+    const n = 2 + Math.floor(r() * 4);
+    for (let k = 0; k < n; k++) putTuft(x + (r() - 0.5) * 0.7, z + (r() - 0.5) * 0.25, 0.8 + r() * 0.5);
+  }
+  // Редкие пучки на газоне и в щелях тротуара
+  while (i < TUFTS - 60) putTuft(-50 + r() * 100, 7.6 + r() * 20, 0.7 + r() * 0.5);
+  while (i < TUFTS) putTuft(-55 + r() * 110, r() < 0.5 ? 3.5 + r() * 3.4 : -6.9 + r() * 3.4, 0.6);
+  tufts.count = i;
   tufts.receiveShadow = true;
   root.add(tufts);
 
@@ -262,6 +297,80 @@ export function buildBrooklyn() {
     pigeons.push({ g: p, head, beak, wings, home, state: 'idle', t: r() * 5, vel: new THREE.Vector3() });
   }
 
+  // ---------- Светлячки в парке (ночью) ----------
+  const FLIES = 70;
+  const flyBase = Array.from({ length: FLIES }, () => [-34 + r() * 68, 0.4 + r() * 1.8, 9 + r() * 15, r() * 10]);
+  const flyGeo = new THREE.BufferGeometry();
+  flyGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(FLIES * 3), 3));
+  const flyMat = new THREE.PointsMaterial({ color: new THREE.Color(2.2, 2.6, 0.9), size: 0.22, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+  const flies = new THREE.Points(flyGeo, flyMat);
+  flies.frustumCulled = false;
+  root.add(flies);
+  animated.push((t) => {
+    flyMat.opacity = WORLD.night * (1 - WORLD.rain);
+    flies.visible = flyMat.opacity > 0.02;
+    if (!flies.visible) return;
+    const p = flyGeo.attributes.position.array;
+    flyBase.forEach(([x, y, z, ph], i) => {
+      p[i * 3] = x + Math.sin(t * 0.4 + ph) * 1.2;
+      p[i * 3 + 1] = y + Math.sin(t * 0.9 + ph * 2) * 0.35;
+      p[i * 3 + 2] = z + Math.cos(t * 0.33 + ph) * 1.2;
+    });
+    flyGeo.attributes.position.needsUpdate = true;
+    flyMat.size = 0.18 + Math.sin(t * 3) * 0.04;
+  });
+
+  // ---------- Фермерский рынок (событие: появляется в некоторые дни) ----------
+  const market = new THREE.Group();
+  const marketColliders = [];
+  [[13, 15, '#e07a5f'], [17, 15, '#7fb38a'], [21, 15, '#5b7fb3']].forEach(([x, z, c]) => {
+    const tent = group(
+      ...[[-1.4, -0.9], [1.4, -0.9], [-1.4, 0.9], [1.4, 0.9]].map(([dx, dz]) => cyl(0.05, 0.05, 2.3, '#f6f3ec', x + dx, 0, z + dz, 6)),
+      block(3.1, 0.08, 2.1, '#f6f3ec', x, 2.3, z),
+      block(2.8, 0.85, 1.2, PAL.wood, x, 0, z - 0.2),
+    );
+    const roof = mesh(new THREE.ConeGeometry(2.2, 0.8, 4), c);
+    roof.rotation.y = Math.PI / 4;
+    roof.position.set(x, 2.75, z);
+    tent.add(roof);
+    // ящики с фруктами и овощами
+    ['#e94f4f', '#f2c230', '#7db374', '#f29a3c', '#8b6fb3'].forEach((fc, k) => {
+      for (let j = 0; j < 4; j++) tent.add(sphere(0.11, fc, x - 1.1 + k * 0.55 + (j % 2) * 0.18, 0.95, z - 0.4 + Math.floor(j / 2) * 0.2, 0, { shadow: false }));
+    });
+    market.add(tent);
+    marketColliders.push({ type: 'box', minX: x - 1.5, maxX: x + 1.5, minZ: z - 0.9, maxZ: z + 0.9 });
+  });
+  // гирлянда-флажки
+  for (let i = 0; i < 18; i++) {
+    const f = mesh(new THREE.ConeGeometry(0.16, 0.3, 3), pick(r, ['#e07a5f', '#f2c230', '#5b7fb3', '#7fb38a']), { shadow: false });
+    f.rotation.x = Math.PI;
+    f.position.set(11.5 + i * 0.6, 2.35 - Math.sin((i / 17) * Math.PI) * 0.25, 13.95);
+    market.add(f);
+  }
+  const marketSign = sign('FARMERS MARKET', 3.6, 0.6, { bg: '#3e6b4f', fg: '#f2c230' });
+  marketSign.position.set(17, 3.35, 13.9);
+  market.add(marketSign);
+  market.visible = false;
+  root.add(market);
+
+  function setEvent(name) {
+    const on = name === 'market';
+    market.visible = on;
+    for (const c of marketColliders) {
+      const i = colliders.indexOf(c);
+      if (on && i < 0) colliders.push(c);
+      if (!on && i >= 0) colliders.splice(i, 1);
+    }
+  }
+
+  // ---------- Прохожие ----------
+  const crowd = createCrowd({
+    lanes: [{ z: 4.75, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 5.5, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 24.2, x0: -36, x1: 36 }],
+    count: 9,
+    seed: 21,
+  });
+  root.add(crowd.group);
+
   // ---------- Обновление каждый кадр ----------
   const treeGroups = [];
   const rayA = new THREE.Vector3(), rayB = new THREE.Vector3(), rayD = new THREE.Vector3(), tmp = new THREE.Vector3();
@@ -269,6 +378,7 @@ export function buildBrooklyn() {
 
   function update(dt, t, playerPos, camPos) {
     animated.forEach((fn) => fn(t));
+    crowd.update(dt, t, playerPos);
     // Дерево становится прозрачным, если крона пересекает луч «камера → герой»
     if (camPos) {
       rayA.copy(camPos);
@@ -282,16 +392,18 @@ export function buildBrooklyn() {
         const c = tr.userData.center;
         const t = THREE.MathUtils.clamp(tmp.subVectors(c, rayA).dot(rayD) / len2, 0, 1);
         const d = tmp.copy(rayA).addScaledVector(rayD, t).distanceTo(c);
-        blocking = t < 0.96 && d < tr.userData.radius;
+        // Камера теперь ближе и выше: прячем и деревья, которые просто закрывают низ экрана рядом с героем
+        blocking = (t < 0.96 && d < tr.userData.radius * 1.5) || (c.distanceTo(camPos) < 13 && c.z > playerPos.z - 1);
       }
-      const want = blocking ? 0.22 : 1;
+      const want = blocking ? 0 : 1;
       if (Math.abs(tr.userData.fade - want) > 0.01) {
-        tr.userData.fade += (want - tr.userData.fade) * Math.min(1, dt * 6);
+        tr.userData.fade += (want - tr.userData.fade) * Math.min(1, dt * 7);
+        // Почти прозрачное дерево прячем целиком (иначе зелёная дымка на персонажах), тень оставляем
         tr.traverse((o) => {
           if (!o.isMesh) return;
           o.material.opacity = tr.userData.fade;
           o.material.depthWrite = tr.userData.fade > 0.9;
-          o.castShadow = true;
+          o.material.colorWrite = tr.userData.fade > 0.05;
         });
       }
     }
@@ -341,6 +453,8 @@ export function buildBrooklyn() {
   return {
     id: 'brooklyn',
     root,
+    crowd,
+    setEvent,
     colliders,
     bounds: { minX: -38, maxX: 38, minZ: -7.4, maxZ: 25 },
     heightAt: (x, z) => ((z > -8 && z < -3.5) || (z > 3.5 && z < 7) ? SIDEWALK_Y : 0),

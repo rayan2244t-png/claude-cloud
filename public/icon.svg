@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd9a8"/><stop offset=".55" stop-color="#f6b7a0"/><stop offset="1" stop-color="#9fc7c4"/>
+    </linearGradient>
+    <radialGradient id="apple" cx=".36" cy=".32" r=".75">
+      <stop offset="0" stop-color="#ff8f78"/><stop offset=".55" stop-color="#e0503f"/><stop offset="1" stop-color="#a52f2a"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fd88d"/><stop offset="1" stop-color="#4f9a55"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <circle cx="380" cy="130" r="46" fill="#fff4d6" opacity=".85"/>
+  <!-- skyline -->
+  <g fill="#6f8fa3" opacity=".55">
+    <rect x="18" y="300" width="44" height="212"/><rect x="66" y="250" width="36" height="262"/>
+    <rect x="104" y="320" width="40" height="192"/><rect x="370" y="270" width="40" height="242"/>
+    <rect x="414" y="210" width="34" height="302"/><rect x="424" y="180" width="14" height="30"/>
+    <rect x="452" y="300" width="44" height="212"/>
+  </g>
+  <g fill="#fff3c4" opacity=".8">
+    <rect x="74" y="270" width="8" height="10"/><rect x="88" y="300" width="8" height="10"/><rect x="74" y="330" width="8" height="10"/>
+    <rect x="422" y="240" width="8" height="10"/><rect x="434" y="280" width="8" height="10"/><rect x="422" y="320" width="8" height="10"/>
+  </g>
+  <rect y="440" width="512" height="72" fill="#5d7f8c" opacity=".55"/>
+  <!-- apple -->
+  <ellipse cx="256" cy="438" rx="128" ry="18" fill="#3b4b55" opacity=".25"/>
+  <path d="M256 168 C214 140 128 146 112 236 C98 318 150 422 210 432 C232 436 244 426 256 426 C268 426 280 436 302 432 C362 422 414 318 400 236 C384 146 298 140 256 168Z" fill="url(#apple)"/>
+  <ellipse cx="190" cy="232" rx="30" ry="46" fill="#fff" opacity=".35" transform="rotate(-24 190 232)"/>
+  <path d="M256 176 C254 146 262 118 284 98" stroke="#6b4a36" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <path d="M276 132 C312 86 368 92 388 110 C352 152 306 156 276 132Z" fill="url(#leaf)"/>
+  <path d="M286 130 C318 118 346 112 372 110" stroke="#3f7d45" stroke-width="4" fill="none" opacity=".6"/>
+  <text x="256" y="350" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="104" fill="#fffaf0" stroke="#8e2a25" stroke-width="6" paint-order="stroke">NY</text>
+</svg>

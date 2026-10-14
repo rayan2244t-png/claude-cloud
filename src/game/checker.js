@@ -8,6 +8,10 @@ const CONTRACTIONS = [
   [/\bcan't\b/g, 'can not'], [/\bcannot\b/g, 'can not'], [/\bdon't\b/g, 'do not'], [/\bdoesn't\b/g, 'does not'],
   [/\bisn't\b/g, 'is not'], [/\baren't\b/g, 'are not'], [/\bwon't\b/g, 'will not'], [/\blet's\b/g, 'let us'],
   [/\bgonna\b/g, 'going to'], [/\bwanna\b/g, 'want to'],
+  [/\bdidn't\b/g, 'did not'], [/\bwasn't\b/g, 'was not'], [/\bweren't\b/g, 'were not'], [/\bhaven't\b/g, 'have not'],
+  [/\bhasn't\b/g, 'has not'], [/\bhadn't\b/g, 'had not'], [/\bshouldn't\b/g, 'should not'], [/\bwouldn't\b/g, 'would not'],
+  [/\bcouldn't\b/g, 'could not'], [/\bmustn't\b/g, 'must not'], [/\b(it|he|she|we|they|you|that)'ll\b/g, '$1 will'],
+  [/\b(we|you|they)'ve\b/g, '$1 have'], [/\b(he|she|we|they|you)'d\b/g, '$1 would'], [/\bgotta\b/g, 'got to'],
 ];
 
 export function normalize(text) {
@@ -63,6 +67,19 @@ function editDistance(a, b) {
 
 const BE = new Set(['am', 'is', 'are']);
 
+// Разница в окончании или форме глагола — это грамматика, а не опечатка (live/lives, play/played, Russia/Russian)
+const FORM_PAIRS = new Set(['is|are', 'am|is', 'am|are', 'was|were', 'has|have', 'do|does', 'did|does', 'did|do', 'this|these', 'that|those',
+  'a|an', 'man|men', 'woman|women', 'child|children', 'he|his', 'she|her', 'go|went', 'goes|went', 'can|could', 'will|would', 'its|it\'s', 'than|then']);
+function isWordForm(a, b) {
+  if (a === b) return false;
+  const [s, l] = a.length <= b.length ? [a, b] : [b, a];
+  if (FORM_PAIRS.has(`${s}|${l}`) || FORM_PAIRS.has(`${l}|${s}`)) return true;
+  for (const suf of ['s', 'es', 'ed', 'd', 'ing', 'n', 'er', 'est', 'ly', "'s", "s'"]) if (l === s + suf) return true;
+  if (s.endsWith('y') && (l === `${s.slice(0, -1)}ies` || l === `${s.slice(0, -1)}ied`)) return true;
+  if (s.endsWith('e') && l === `${s.slice(0, -1)}ing`) return true;
+  return false;
+}
+
 // Возвращает { ok, capture, nearOk, best, messages[] }.
 // nearOk — ответ принят, но с замечанием (например, опечатка).
 export function check(input, answers, hints = []) {
@@ -92,7 +109,7 @@ export function check(input, answers, hints = []) {
   // Опечатки: лишнее слово, очень похожее на пропущенное
   const typos = [];
   for (const m of [...missing]) {
-    const e = extra.find((x) => m.length >= 3 && editDistance(x, m) <= (m.length > 5 ? 2 : 1));
+    const e = extra.find((x) => m.length >= 3 && editDistance(x, m) <= (m.length > 5 ? 2 : 1) && !isWordForm(x, m));
     if (e) {
       typos.push([e, m]);
       missing.splice(missing.indexOf(m), 1);
@@ -107,6 +124,12 @@ export function check(input, answers, hints = []) {
     else if (h.single && u.length === 1) messages.push(h.text);
   }
 
+  if (!messages.length) {
+    for (const m of missing) {
+      const e = extra.find((x) => isWordForm(x, m));
+      if (e) messages.push(`Форма слова: нужно «${m}», а не «${e}». В английском окончание меняет смысл (he live**s**, I work**ed**, two dollar**s**).`);
+    }
+  }
   if (!messages.length) {
     const sameBag = !missing.length && !extra.length && typos.length === 0 && u.join(' ') !== bestTokens.join(' ');
     if (sameBag) messages.push('Все слова правильные, но порядок другой. В английском порядок слов строгий: сначала кто (I), потом действие (am / like / have), потом остальное.');

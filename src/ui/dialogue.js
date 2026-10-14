@@ -1,12 +1,23 @@
 // Диалоги-уроки. Каждый тип шага — отдельная функция в STEP_TYPES:
 // чтобы добавить новый тип упражнения, допишите сюда функцию (step, ctx) => Promise.
-import { el, ui, md, escapeHtml, shuffle, sleep, floatText, money } from './dom.js';
+import { el, ui, md, escapeHtml, shuffle, sleep, floatText, money, stickToBottom } from './dom.js';
 import { state, save, fillName, addMoney } from '../game/state.js';
 import { check, prettyAnswer } from '../game/checker.js';
 import { addXP, recordAnswer } from '../game/progress.js';
 import { addWord } from '../game/srs.js';
-import { speak, canSpeak, canListen, listen } from '../game/speech.js';
+import { speak, canSpeak, canListen, listen, stopSpeech, prefetchSpeech } from '../game/speech.js';
 import { DICTIONARY } from '../data/index.js';
+import { rulesForTopic } from '../data/learn/index.js';
+import { openRulePopup } from './library.js';
+import { openShadowing } from './shadow.js';
+import { sfx } from '../game/audio.js';
+
+// Кнопка «❓ Как это работает» — открывает правило по теме задания
+function ruleButton(topic, label = '❓ Как это работает?') {
+  const rule = rulesForTopic(topic)[0];
+  if (!rule) return null;
+  return el('button', { class: 'rule-btn', onclick: () => openRulePopup(rule) }, label);
+}
 
 const CONFUSED = ['Sorry, what?', 'Huh?', 'Hmm, come again?', 'Wait, what?', 'Sorry?'];
 
@@ -46,9 +57,10 @@ function bubble(ctx, who, en, ru) {
   enEl.addEventListener('click', (e) => { const w = e.target.closest('.w'); if (w) wordPopup(w); });
   const tools = isNpc
     ? el('div', { class: 'bubble-tools' },
-      el('button', { class: 'icon-btn small', title: 'Послушать', onclick: () => speak(text, { pitch: ctx.speaker.pitch, force: true }) }, '🔊'),
-      el('button', { class: 'icon-btn small', title: 'Послушать медленно', onclick: () => speak(text, { pitch: ctx.speaker.pitch, rate: 0.6, force: true }) }, '🐢'),
-      ru ? el('button', { class: 'icon-btn small ru-btn', title: 'Перевод', onclick: () => ruEl.classList.toggle('show') }, 'RU') : null)
+      el('button', { class: 'icon-btn small', title: 'Послушать', onclick: () => speak(text, { pitch: ctx.speaker.pitch, gender: ctx.speaker.gender, who: ctx.speaker.name, force: true }) }, '🔊'),
+      el('button', { class: 'icon-btn small', title: 'Послушать медленно', onclick: () => speak(text, { pitch: ctx.speaker.pitch, gender: ctx.speaker.gender, who: ctx.speaker.name, rate: 0.6, force: true }) }, '🐢'),
+      ru ? el('button', { class: 'icon-btn small ru-btn', title: 'Перевод', onclick: () => ruEl.classList.toggle('show') }, 'RU') : null,
+      el('button', { class: 'icon-btn small', title: 'Шэдовинг: повтори за персонажем', onclick: () => openShadowing([{ en: text, ru: ruText }], { title: ctx.speaker.name }) }, '🗣️'))
     : null;
   const b = el('div', { class: `bubble ${isNpc ? 'npc' : 'me'}` }, isNpc && ctx.speaker.mode !== 'phone' ? el('div', { class: 'bubble-name', style: { color: ctx.speaker.color } }, ctx.speaker.name) : null, enEl, ruEl, tools);
   ctx.log.append(b);
@@ -59,7 +71,7 @@ function bubble(ctx, who, en, ru) {
 function npcSays(ctx, en, ru) {
   bubble(ctx, 'npc', en, ru);
   ctx.onTalk?.(Math.min(4, 0.6 + en.length * 0.05));
-  return speak(fillName(en), { pitch: ctx.speaker.pitch });
+  return speak(fillName(en), { pitch: ctx.speaker.pitch, gender: ctx.speaker.gender, who: ctx.speaker.name });
 }
 
 function continueButton(ctx, label = 'Дальше ▸') {
@@ -81,8 +93,8 @@ function setTask(ctx, ...nodes) {
   ctx.task.replaceChildren(...nodes.filter((n) => n != null && n !== false));
 }
 
-function question(text) {
-  return el('div', { class: 'task-q' }, text);
+function question(text, topic) {
+  return el('div', { class: 'task-q' }, el('span', {}, text), topic ? ruleButton(topic) : null);
 }
 
 // Результат проверки: показывает объяснение ошибки или похвалу
@@ -96,10 +108,12 @@ function feedback(ctx, ok, { messages = [], correct, near = false } = {}) {
   }
   messages.forEach((m) => ctx.feedback.append(el('div', { class: 'fb-msg', html: md(m) })));
   if (!ok && correct) ctx.feedback.append(el('div', { class: 'fb-correct' }, '✓ Правильно: ', el('b', {}, correct)));
+  if (!ok && ctx.topic) { const rb = ruleButton(ctx.topic, '📘 Как это работает — правило'); if (rb) ctx.feedback.append(rb); }
+  sfx(ok ? 'correct' : 'wrong');
   if (!ok && ctx.speaker.mode !== 'phone') {
     const c = pick(CONFUSED);
     ctx.onTalk?.(0.8);
-    speak(c, { pitch: ctx.speaker.pitch });
+    speak(c, { pitch: ctx.speaker.pitch, gender: ctx.speaker.gender, who: ctx.speaker.name });
   }
 }
 
@@ -136,6 +150,9 @@ export const STEP_TYPES = {
   },
 
   async tip(step, ctx) {
+    // Все подсказки собираются в «Шпаргалку» в телефоне
+    state.tips ||= {};
+    if (!state.tips[step.title]) { state.tips[step.title] = step.text; save(); }
     const card = el('div', { class: 'tip-card' }, el('div', { class: 'tip-flag' }, '🇺🇸 Американский английский'), el('div', { class: 'tip-title' }, step.title), el('div', { class: 'tip-text', html: md(step.text) }));
     ctx.log.append(card);
     ctx.log.scrollTop = ctx.log.scrollHeight;
@@ -168,7 +185,7 @@ export const STEP_TYPES = {
         });
         list.append(b);
       });
-      setTask(ctx, question(step.q || 'Выбери ответ'), list);
+      setTask(ctx, question(step.q || 'Выбери ответ', step.topic), list);
     });
   },
 
@@ -210,7 +227,7 @@ export const STEP_TYPES = {
           g.wrong(answer || '(пусто)', step.answer, res.messages);
         }
       });
-      setTask(ctx, question(step.q), line, bank, el('div', { class: 'row' }, resetBtn, checkBtn));
+      setTask(ctx, question(step.q, step.topic), line, bank, el('div', { class: 'row' }, resetBtn, checkBtn));
     });
   },
 
@@ -224,7 +241,7 @@ export const STEP_TYPES = {
 
   async listen(step, ctx) {
     const g = graded(ctx, step);
-    const play = (rate) => speak(step.en, { pitch: ctx.speaker.pitch, rate, force: true });
+    const play = (rate) => speak(step.en, { pitch: ctx.speaker.pitch, gender: ctx.speaker.gender, who: ctx.speaker.name, rate, force: true });
     const showText = !canSpeak();
     return new Promise((resolve) => {
       const opts = step.opts.map((text, i) => ({ text, ok: i === step.ok }));
@@ -251,7 +268,7 @@ export const STEP_TYPES = {
         list.append(b);
       });
       setTask(ctx, 
-        question(`🎧 ${step.q}`),
+        question(`🎧 ${step.q}`, step.topic),
         el('div', { class: 'row center' },
           el('button', { class: 'btn listen', onclick: () => play() }, '🔊 Слушать'),
           el('button', { class: 'btn listen ghost', onclick: () => play(0.55) }, '🐢 Медленно')),
@@ -336,7 +353,7 @@ function freeAnswer(step, ctx, voiceFirst) {
 
     const voiceNote = voiceFirst && !canListen() ? el('div', { class: 'task-note' }, 'Микрофон не поддерживается этим браузером — напиши ответ (голос работает в Chrome).') : null;
     setTask(ctx, 
-      question(`${voiceFirst ? '🎤 ' : '✍️ '}${step.q}`),
+      question(`${voiceFirst ? '🎤 ' : '✍️ '}${step.q}`, step.topic),
       voiceFirst && micBtn ? el('div', { class: 'row center' }, micBtn) : null,
       voiceNote,
       el('div', { class: 'row' }, input, !voiceFirst && micBtn ? micBtn : null, checkBtn),
@@ -363,6 +380,7 @@ export async function runDialogue({ speaker, steps, idPrefix = 'x', title, onTal
     } }, 'RU'),
   );
   const log = el('div', { class: 'dlg-log' });
+  stickToBottom(log);
   const fb = el('div', { class: 'feedback' });
   const task = el('div', { class: 'dlg-task' });
   root.append(header, log, fb, task);
@@ -370,13 +388,18 @@ export async function runDialogue({ speaker, steps, idPrefix = 'x', title, onTal
   requestAnimationFrame(() => root.classList.add('open'));
 
   const ctx = { speaker, log, task, feedback: fb, onTalk, onCorrect, result: { mistakes: 0, xp: 0 } };
+  // Живые голоса готовим заранее: реплики персонажа по порядку
+  if (speaker.mode !== 'phone' && state.settings.voice) {
+    prefetchSpeech(steps.filter((s) => s.t === 'say' && s.en).map((s) => fillName(s.en)), { gender: speaker.gender, who: speaker.name }, { fresh: true });
+  }
   for (let i = 0; i < steps.length; i++) {
     const step = { ...steps[i], _id: steps[i]._id || `${idPrefix}:${i}` };
+    ctx.topic = step.topic;
     const fn = STEP_TYPES[step.t];
     if (!fn) { console.warn('Неизвестный тип шага', step.t); continue; }
     await fn(step, ctx);
   }
-  window.speechSynthesis?.cancel();
+  stopSpeech();
   root.classList.remove('open');
   setTimeout(() => root.remove(), 300);
   return ctx.result;

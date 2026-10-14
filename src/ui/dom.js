@@ -85,3 +85,33 @@ export function confetti() {
     setTimeout(() => c.remove(), 3800);
   }
 }
+
+// Чат всегда показывает последнюю реплику (даже если пузырь дорисовался позже — анимация, шрифты)
+export function stickToBottom(log) {
+  let pinned = true;
+  log.addEventListener('scroll', () => { pinned = log.scrollHeight - log.scrollTop - log.clientHeight < 40; });
+  const ro = new ResizeObserver(() => { if (pinned) log.scrollTop = log.scrollHeight; });
+  const mo = new MutationObserver(() => {
+    pinned = true;
+    for (const c of log.children) ro.observe(c);
+    requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
+  });
+  mo.observe(log, { childList: true });
+  ro.observe(log);
+}
+
+// Экранная клавиатура на телефоне: поднимаем окна над ней (--kb = её высота)
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const update = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--kb', `${kb}px`);
+    document.body.classList.toggle('kb-open', kb > 80);
+  };
+  vv.addEventListener('resize', update);
+  vv.addEventListener('scroll', update);
+}
+// Поле ввода в фокусе — прокручиваем к нему (iOS иногда прячет его под клавиатурой)
+document.addEventListener('focusin', (e) => {
+  if (e.target.matches?.('input, textarea')) setTimeout(() => e.target.scrollIntoView({ block: 'nearest' }), 300);
+});

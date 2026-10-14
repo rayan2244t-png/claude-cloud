@@ -3,7 +3,7 @@ import { el, ui, money, sleep, floatText } from './dom.js';
 import { state, save, addMoney } from '../game/state.js';
 import { addXP, recordAnswer } from '../game/progress.js';
 import { addWord } from '../game/srs.js';
-import { speak, canSpeak } from '../game/speech.js';
+import { speak, canSpeak, stopSpeech } from '../game/speech.js';
 import { BARISTA } from '../data/shop.js';
 
 const CUSTOMERS = 6;
@@ -46,7 +46,7 @@ export function startShift({ onDone }) {
 
   const close = () => {
     clearInterval(timer);
-    window.speechSynthesis?.cancel();
+    stopSpeech();
     root.classList.remove('open');
     setTimeout(() => root.remove(), 300);
     onDone?.();

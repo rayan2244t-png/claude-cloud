@@ -1,10 +1,23 @@
 // Телефон героя: сообщения, словарь, ошибки, задание дня, магазин, смена, настройки.
 import { el, ui, money, toast, shuffle, floatText } from './dom.js';
-import { state, save, resetSave, on } from '../game/state.js';
-import { levelInfo, weakTopics, LEVELS, addXP } from '../game/progress.js';
+import { state, save, resetSave, on, exportSave, importSave } from '../game/state.js';
+import { levelInfo, weakTopics, LEVELS, addXP, todayKey, dayStats } from '../game/progress.js';
 import { dueWords, grade, vocabStats } from '../game/srs.js';
-import { speak } from '../game/speech.js';
+import { speak, browserVoices, refreshVoices } from '../game/speech.js';
+import { neural, neuralEnabled, enableNeural, loadNeural } from '../game/neural-voice.js';
 import { SHOP } from '../data/shop.js';
+import { QUALITY } from '../world/render.js';
+import { setVolumes, sfx } from '../game/audio.js';
+import { OLLAMA_DEFAULTS, ollamaModels } from '../game/ai.js';
+import { COLLECTIBLES } from '../data/collectibles.js';
+import { friendLevel, hearts } from '../game/social.js';
+import { WARDROBE, COLORS, HAIR_COLORS, SKIN } from '../data/wardrobe.js';
+import { installButton } from './install.js';
+import { lessonToday } from './course.js';
+
+const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+
+const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
 
 export function createPhone(api) {
   const screen = el('div', { class: 'phone-screen' });
@@ -18,6 +31,7 @@ export function createPhone(api) {
 
   function open(app) {
     if (!isOpen) {
+      sfx('whoosh');
       ui().append(back);
       requestAnimationFrame(() => back.classList.add('open'));
       isOpen = true;
@@ -43,7 +57,7 @@ export function createPhone(api) {
     );
   }
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => todayKey();
 
   const APPS = {
     messages: {
@@ -97,6 +111,109 @@ export function createPhone(api) {
             m.why ? el('div', { class: 'muted' }, m.why) : null)));
       },
     },
+    contacts: {
+      icon: '👥', name: 'Контакты', color: '#e07a5f',
+      badge: () => 0,
+      render() {
+        const met = Object.values(api.npcs).filter((n) => (state.friends?.[n.id] || 0) > 0).sort((a, b) => (state.friends[b.id] || 0) - (state.friends[a.id] || 0));
+        page('Контакты',
+          el('div', { class: 'muted small-note' }, 'Дружба растёт от заданий и разговоров. За 3 сердца друг дарит подарок. Нажми, чтобы написать (ИИ).'),
+          met.length ? null : el('div', { class: 'empty' }, 'Пока ни с кем не знаком. Поговори с жителями!'),
+          ...met.map((n) => {
+            const fl = friendLevel(n.id);
+            return el('button', { class: 'list-row', onclick: () => { close(); api.chatWith(n.id); } },
+              el('div', { class: 'avatar' }, n.name[0]),
+              el('div', { class: 'grow' }, el('b', {}, n.name), el('div', { class: 'muted' }, `${n.role} · ${fl.name}`)),
+              el('span', { class: 'hearts' }, hearts(n.id)));
+          }));
+      },
+    },
+    trophies: {
+      icon: '🏅', name: 'Достижения', color: '#c98a1a',
+      badge: () => 0,
+      render() {
+        const got = state.achievements || {};
+        const n = Object.keys(got).length;
+        page(`Достижения ${n}/${api.achievements.length}`,
+          el('div', { class: 'ach-grid' }, ...api.achievements.map((a) => el('div', { class: `ach ${got[a.id] ? 'got' : ''}` },
+            el('div', { class: 'ach-icon' }, got[a.id] ? a.icon : '🔒'), el('b', {}, a.name), el('small', {}, a.desc)))));
+      },
+    },
+    wardrobe: {
+      icon: '👕', name: 'Гардероб', color: '#8b6fb3',
+      badge: () => 0,
+      render() {
+        const look = { ...state.look };
+        state.owned ||= {};
+        const apply = () => { api.setLook({ ...look }); APPS.wardrobe.render(); };
+        const swatches = (key, list) => el('div', { class: 'swatches' }, ...list.map((c) => el('button', { class: `sw ${look[key] === c ? 'sel' : ''}`, style: { background: c }, onclick: () => { look[key] = c; apply(); } })));
+        const options = (key, def) => el('div', { class: 'chips' }, ...def.options.map(([val, label, price]) => {
+          const id = `${key}:${val}`;
+          const owned = !price || state.owned[id];
+          const active = key === 'extras' ? !!look[val] : look[key] === val;
+          return el('button', { class: `chip-s ${active ? 'sel' : ''}`, onclick: () => {
+            if (!owned) {
+              if (state.money < price) { toast(`Нужно ${money(price)} — заработай на сменах`, { icon: '💸' }); return; }
+              state.money = Math.round((state.money - price) * 100) / 100;
+              state.owned[id] = true;
+              save();
+              toast(`Куплено: ${label}`, { icon: '🛍️' });
+            }
+            if (key === 'extras') look[val] = val === 'backpack' ? (look.backpack ? undefined : '#f2c230') : !look[val];
+            else look[key] = val;
+            apply();
+          } }, label, owned ? null : el('small', {}, ` ${money(price)}`));
+        }));
+        page('Гардероб',
+          el('div', { class: 'muted small-note' }, `У тебя ${money(state.money)}. Цвета — бесплатно, вещи покупаются один раз.`),
+          el('div', { class: 'section-title' }, 'Футболка'), swatches('shirt', COLORS),
+          el('div', { class: 'section-title' }, 'Брюки'), swatches('pants', ['#3f5a7a', '#2f3b52', '#3a3a3a', '#c9b28f', '#5b4b3b', '#7a8a9a']),
+          el('div', { class: 'section-title' }, WARDROBE.hat.label), options('hat', WARDROBE.hat), swatches('hatColor', COLORS),
+          el('div', { class: 'section-title' }, WARDROBE.hairStyle.label), options('hairStyle', WARDROBE.hairStyle), swatches('hair', HAIR_COLORS),
+          el('div', { class: 'section-title' }, WARDROBE.jacket.label), options('jacket', WARDROBE.jacket),
+          el('div', { class: 'section-title' }, WARDROBE.extras.label), options('extras', WARDROBE.extras),
+          el('div', { class: 'section-title' }, 'Кожа'), swatches('skin', SKIN));
+      },
+    },
+    map: {
+      icon: '🗺️', name: 'Карта', color: '#4fa3a5',
+      badge: () => 0,
+      render() { close(); api.travelMenu(); },
+    },
+    library: {
+      icon: '🎓', name: 'Учебник', color: '#3f6aa8',
+      badge: () => 0,
+      render() { close(); api.openLibrary('words'); },
+    },
+    shadowing: {
+      icon: '🗣️', name: 'Шэдовинг', color: '#c94f3d',
+      badge: () => 0,
+      render() { close(); api.openLibrary('shadow'); },
+    },
+    course: {
+      icon: '🏫', name: 'Курс A1→B1', color: '#2f7d6d',
+      badge: () => (lessonToday() ? 0 : 1),
+      render() { close(); api.openLibrary('course'); },
+    },
+    grammar: {
+      icon: '📘', name: 'Грамматика', color: '#5b2a86',
+      badge: () => 0,
+      render() { close(); api.openLibrary('grammar'); },
+    },
+    notes: {
+      icon: '📒', name: 'Шпаргалка', color: '#4fa3a5',
+      badge: () => 0,
+      render() {
+        const tips = Object.entries(state.tips || {});
+        const slang = COLLECTIBLES.filter((c) => state.apples?.[c.id]);
+        page('Шпаргалка',
+          el('div', { class: 'muted small-note' }, 'Все правила и американские фишки, которые ты встретил в игре.'),
+          tips.length ? null : el('div', { class: 'empty' }, 'Пока пусто — поговори с жителями города!'),
+          ...tips.map(([title, text]) => el('div', { class: 'note-card' }, el('b', {}, title), el('div', { html: mdLite(text) }))),
+          slang.length ? el('div', { class: 'section-title' }, `🍎 Сленг из золотых яблок (${slang.length}/${COLLECTIBLES.length})`) : null,
+          ...slang.map((c) => el('div', { class: 'note-card' }, el('b', {}, c.en, el('button', { class: 'icon-btn small', onclick: () => speak(c.en, { force: true }) }, '🔊')), el('div', { class: 'muted' }, c.ru), el('div', { html: mdLite(c.text) }))));
+      },
+    },
     daily: {
       icon: '🔥', name: 'Задание дня', color: '#f2a03c',
       badge: () => (state.daily === today() ? 0 : 1),
@@ -106,7 +223,7 @@ export function createPhone(api) {
           el('div', { class: 'daily-card' },
             el('div', { class: 'daily-emoji' }, done ? '✅' : '🔥'),
             el('div', { class: 'daily-title' }, done ? 'Сегодня выполнено!' : 'Ежедневная тренировка'),
-            el('div', { class: 'muted' }, done ? 'Приходи завтра за новым заданием.' : 'Повтори слова и исправь ошибки. Награда: $10 и 30 XP.'),
+            el('div', { class: 'muted' }, done ? 'Приходи завтра за новым заданием.' : 'Тренер подберёт упражнения под тебя: твои ошибки, слабые темы, повторение и новые слова. Награда: $10 и 30 XP.'),
             done ? null : el('button', { class: 'btn primary wide', onclick: () => { close(); api.runDaily(); } }, 'Начать')));
       },
     },
@@ -151,14 +268,35 @@ export function createPhone(api) {
         const info = levelInfo();
         const s = vocabStats();
         const doneQ = Object.keys(state.done).length;
+        const today = dayStats();
+        const st = state.stats || { streak: 0, best: 0, days: {} };
+        const days = [];
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i);
+          const key = d.toLocaleDateString('sv-SE');
+          days.push({ key, label: d.toLocaleDateString('ru-RU', { weekday: 'short' }).slice(0, 2), ...(st.days[key] || { xp: 0, min: 0 }) });
+        }
+        const maxXp = Math.max(30, ...days.map((d) => d.xp));
+        const totals = Object.values(st.days).reduce((a, d) => ({ ok: a.ok + d.ok, bad: a.bad + d.bad, min: a.min + d.min }), { ok: 0, bad: 0, min: 0 });
+        const acc = totals.ok + totals.bad ? Math.round((totals.ok / (totals.ok + totals.bad)) * 100) : 0;
+        const chart = el('div', { class: 'xp-chart' }, ...days.map((d) => el('div', { class: 'xp-col', title: `${d.key}: ${d.xp} XP, ${Math.round(d.min)} мин` },
+          el('div', { class: 'xp-bar-v', style: { height: `${Math.max(3, (d.xp / maxXp) * 100)}%` } }),
+          el('small', {}, d.label))));
         page('Мой прогресс',
           el('div', { class: 'progress-hero' },
             el('div', { class: 'lvl-big' }, info.cur.id),
             el('div', {}, el('b', {}, info.cur.title), el('div', { class: 'muted' }, info.next ? `До ${info.next.id}: ${info.next.xp - state.xp} XP` : 'Максимальный уровень!'))),
-          el('div', { class: 'stat-row' }, stat(state.xp, 'XP'), stat(doneQ, 'заданий'), stat(s.total, 'слов')),
+          el('div', { class: 'streak-card' }, el('div', { class: 'streak-fire' }, '🔥'), el('div', {}, el('b', {}, `${st.streak || 1} ${plural(st.streak || 1, 'день', 'дня', 'дней')} подряд`), el('div', { class: 'muted' }, `Рекорд: ${Math.max(st.best || 1, st.streak || 1)} · Занимайся каждый день, чтобы не потерять серию!`))),
+          el('div', { class: 'stat-row' }, stat(Math.round(today.xp), 'XP сегодня'), stat(Math.round(today.min), 'мин сегодня'), stat(today.words, 'новых слов')),
+          el('div', { class: 'section-title' }, 'Опыт за 2 недели'),
+          chart,
+          el('div', { class: 'stat-row' }, stat(state.xp, 'всего XP'), stat(`${acc}%`, 'точность'), stat(Math.round(totals.min), 'минут всего')),
+          el('div', { class: 'stat-row' }, stat(doneQ, 'заданий'), stat(s.total, 'слов в словаре'), stat(Object.keys(state.rulesDone || {}).length, 'правил')),
+          el('div', { class: 'stat-row' }, stat(state.shadow?.count || 0, 'шэдовинг'), stat(Object.keys(state.apples || {}).length, 'яблок 🍎'), stat(state.shifts || 0, 'смен')),
+          el('button', { class: 'btn wide', onclick: () => { close(); api.startPlacement(); } }, state.placement && !state.placement.skipped ? `🎯 Пройти тест уровня ещё раз (был: ${state.placement.level})` : '🎯 Пройти тест уровня'),
           el('div', { class: 'section-title' }, 'Путь'),
           ...LEVELS.map((l, i) => el('div', { class: `path-row ${i <= info.index ? 'reached' : ''}` }, el('span', { class: 'path-dot' }), el('b', {}, l.id), ' ', l.title,
-            i === 0 ? el('span', { class: 'muted' }, ' · Глава 1: Бруклин') : i === 3 ? el('span', { class: 'muted' }, ' · Глава 2: Манхэттен (скоро)') : null)));
+            el('span', { class: 'muted' }, ` · ${['Глава 1: Бруклин', 'Глава 1–2', 'Глава 2: Манхэттен', 'Глава 3: Банк и врач', 'Глава 4: Кони-Айленд', 'Шэдовинг, ИИ, идиомы'][i]}`))));
       },
     },
     settings: {
@@ -169,14 +307,69 @@ export function createPhone(api) {
         const rate = el('input', { type: 'range', min: '0.5', max: '1.2', step: '0.05', value: state.settings.rate });
         rate.addEventListener('change', () => { state.settings.rate = Number(rate.value); save(); speak('This is how fast I talk.', { force: true }); });
         page('Настройки',
+          el('label', { class: 'set-row col' }, '✨ Графика (шейдеры)', (() => {
+            const sel = el('select', { class: 'text-in' }, ...Object.entries(QUALITY).map(([id, q]) => {
+              const o = el('option', { value: id }, q.label);
+              if (state.settings.gfx === id) o.selected = true;
+              return o;
+            }));
+            sel.addEventListener('change', () => { state.settings.gfx = sel.value; save(); location.reload(); });
+            return sel;
+          })()),
+          el('div', { class: 'section-title' }, '🔊 Громкость'),
+          slider('🔈 Общая громкость', 'master', 0.7),
+          slider('🗣️ Голоса персонажей', 'voiceVol', 1, () => speak('Hi! Can you hear me okay?', { force: true, gender: 'f', who: 'Jess' })),
+          slider('🎵 Музыка', 'music', 0.25),
+          slider('🏙️ Звуки города', 'ambience', 0.3),
+          slider('🔔 Звуковые эффекты', 'sfx', 0.8),
+          el('div', { class: 'section-title' }, '🎙️ Голоса'),
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),
-          toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
+          voiceEngineBlock(),
           el('label', { class: 'set-row col' }, 'Скорость речи', rate),
-          el('div', { class: 'section-title' }, '🤖 ИИ-собеседники (Claude Haiku 5.5)'),
-          el('div', { class: 'muted small-note', html: 'Чтобы свободно болтать с персонажами, вставь свой API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Ключ хранится только в этом браузере.' }),
-          key,
-          el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
+          toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
+          el('div', { class: 'section-title' }, '🤖 ИИ-собеседники'),
+          el('div', { class: 'chips' }, ...[['claude', '☁️ Claude Haiku 5.5'], ['ollama', '💻 Локальная (Ollama)']].map(([id, label]) =>
+            el('button', { class: `chip-s ${(state.settings.aiProvider || 'claude') === id ? 'sel' : ''}`, onclick: () => { state.settings.aiProvider = id; save(); APPS.settings.render(); } }, label))),
+          ...((state.settings.aiProvider || 'claude') === 'claude' ? [
+            el('div', { class: 'muted small-note', html: 'Лучшее качество. Вставь API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Ключ хранится только в этом браузере.' }),
+            key,
+            el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
+          ] : (() => {
+            const url = el('input', { class: 'text-in', value: state.settings.ollamaUrl || OLLAMA_DEFAULTS.url, placeholder: OLLAMA_DEFAULTS.url });
+            const model = el('input', { class: 'text-in', value: state.settings.ollamaModel || OLLAMA_DEFAULTS.model, placeholder: OLLAMA_DEFAULTS.model });
+            const status = el('div', { class: 'muted small-note' });
+            return [
+              el('div', { class: 'muted small-note', html: 'Бесплатно, без ключа и интернета — модель работает на твоём компьютере (нужно 8+ ГБ памяти; с телефона не работает).<br><b>Как включить:</b><br>1. Установи <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama</a>.<br>2. В терминале: <code>ollama pull qwen2.5:7b</code><br>3. Разреши доступ из браузера и запусти:<br><code>OLLAMA_ORIGINS=* ollama serve</code><br>(Windows: <code>setx OLLAMA_ORIGINS *</code> и перезапусти Ollama)' }),
+              el('label', { class: 'set-row col' }, 'Адрес Ollama', url),
+              el('label', { class: 'set-row col' }, 'Модель', model),
+              el('button', { class: 'btn primary wide', onclick: async () => {
+                state.settings.ollamaUrl = url.value.trim();
+                state.settings.ollamaModel = model.value.trim();
+                save();
+                status.textContent = 'Проверяю…';
+                try {
+                  const models = await ollamaModels(url.value.trim());
+                  status.textContent = models.length ? `✅ Связь есть! Модели: ${models.join(', ')}` : '⚠️ Ollama работает, но моделей нет. Выполни: ollama pull qwen2.5:7b';
+                } catch {
+                  status.textContent = '❌ Нет связи. Проверь, что Ollama запущена с OLLAMA_ORIGINS=*';
+                }
+              } }, '💾 Сохранить и проверить связь'),
+              status,
+            ];
+          })()),
+          el('button', { class: 'btn wide', onclick: () => { api.resetTutorial(); toast('Обучение начнётся заново', { icon: '🎓' }); } }, '🎓 Пройти обучение заново'),
+          installButton(),
           el('div', { class: 'section-title' }, 'Сохранение'),
+          el('div', { class: 'muted small-note' }, 'Перенести прогресс на другое устройство: скопируй код здесь и вставь его там.'),
+          el('button', { class: 'btn wide', onclick: async () => {
+            const code = exportSave();
+            try { await navigator.clipboard.writeText(code); toast('Код сохранения скопирован 📋', { icon: '💾' }); } catch { prompt('Скопируй код сохранения:', code); }
+          } }, '💾 Скопировать код сохранения'),
+          el('button', { class: 'btn wide', onclick: () => {
+            const code = prompt('Вставь код сохранения с другого устройства:');
+            if (!code) return;
+            try { importSave(code); } catch (err) { toast(err.message || 'Неверный код', { icon: '⚠️' }); }
+          } }, '📥 Загрузить сохранение'),
           el('button', { class: 'btn danger wide', onclick: () => { if (confirm('Удалить весь прогресс и начать заново?')) resetSave(); } }, 'Начать игру заново'));
       },
     },
@@ -198,6 +391,67 @@ export function createPhone(api) {
 
   function stat(value, label) {
     return el('div', { class: 'stat' }, el('b', {}, value), el('span', {}, label));
+  }
+
+  function slider(label, key, def, onDone) {
+    const input = el('input', { type: 'range', min: '0', max: '1', step: '0.05', value: state.settings[key] ?? def });
+    input.addEventListener('input', () => { state.settings[key] = Number(input.value); setVolumes(); });
+    input.addEventListener('change', () => { save(); onDone?.(); });
+    return el('label', { class: 'set-row col' }, label, input);
+  }
+
+  // Выбор движка озвучки: нейроголоса (живые) или голоса браузера
+  function voiceEngineBlock() {
+    const box = el('div', { class: 'voice-engine' });
+    const test = () => speak("Hey! Welcome to Brooklyn. Want a coffee? It's on me.", { force: true, gender: 'm', who: 'Marcus' });
+    const render = () => {
+      const st = neural.status;
+      const on = neuralEnabled();
+      const parts = [el('div', { class: 've-title' }, '✨ Нейроголоса — как живые американцы')];
+      if (!on) {
+        parts.push(
+          el('div', { class: 'muted small-note' }, 'У каждого персонажа свой естественный американский голос (14 голосов). Работает прямо в браузере, без ключей и интернета после загрузки. Скачивается один раз: 92 МБ.'),
+          el('button', { class: 'btn primary wide', onclick: () => { enableNeural(true); render(); } }, '⬇️ Включить нейроголоса'));
+      } else if (st === 'loading') {
+        parts.push(
+          el('div', { class: 'progress' }, el('div', { style: { width: `${Math.round(neural.progress * 100)}%` } })),
+          el('div', { class: 'muted small-note' }, neural.progress >= 1 ? 'Запускаю голоса…' : `Скачиваю модель: ${Math.round(neural.progress * 92)} из 92 МБ. Можно играть — пока звучат голоса браузера.`));
+      } else if (st === 'ready') {
+        parts.push(
+          el('div', { class: 'small-note' }, '✅ Включены. Реплики звучат живыми голосами.'),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn wide', onclick: test }, '▶️ Послушать'),
+            el('button', { class: 'btn ghost wide', onclick: () => { enableNeural(false); render(); } }, 'Выключить')));
+      } else if (st === 'error') {
+        parts.push(
+          el('div', { class: 'small-note error' }, `⚠️ Не получилось: ${neural.error}`),
+          el('div', { class: 'muted small-note' }, 'Проверь интернет (нужен для первой загрузки). Пока работают голоса браузера.'),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn primary wide', onclick: () => { loadNeural(); render(); } }, '🔄 Ещё раз'),
+            el('button', { class: 'btn ghost wide', onclick: () => { enableNeural(false); render(); } }, 'Выключить')));
+      } else {
+        parts.push(el('button', { class: 'btn primary wide', onclick: () => { loadNeural(); render(); } }, '▶️ Запустить'));
+      }
+      if (!on || st !== 'ready') {
+        refreshVoices();
+        const list = browserVoices();
+        if (list.length) {
+          const sel = el('select', { class: 'text-in' }, el('option', { value: '' }, 'Автоматически (лучший)'),
+            ...list.map((v) => {
+              const o = el('option', { value: v.name }, v.name.replace(/^Microsoft |^Google /, '').slice(0, 48));
+              if (state.settings.browserVoice === v.name) o.selected = true;
+              return o;
+            }));
+          sel.addEventListener('change', () => { state.settings.browserVoice = sel.value; save(); refreshVoices(); speak('Hello! This is my voice.', { force: true }); });
+          parts.push(el('label', { class: 'set-row col' }, 'Голос браузера (рассказчик)', sel),
+            el('div', { class: 'muted small-note' }, 'Совет: в браузере Edge есть очень живые голоса «Natural» — они будут выбраны автоматически.'));
+        }
+      }
+      box.replaceChildren(...parts);
+    };
+    render();
+    const off = on('neural', () => { if (!box.isConnected) { off?.(); return; } render(); });
+    return box;
   }
 
   function toggle(label, value, onChange) {

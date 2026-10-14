@@ -1,5 +1,6 @@
 // Словарь героя с интервальным повторением (система Лейтнера).
 import { state, save, emit } from './state.js';
+import { dayStats } from './progress.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const INTERVALS = [0, 1, 2, 4, 8, 16, 32]; // дни для каждой «коробки»
@@ -8,6 +9,7 @@ export function addWord(en, ru) {
   const key = en.toLowerCase();
   if (state.vocab[key]) return false;
   state.vocab[key] = { en, ru, box: 0, due: Date.now(), added: Date.now() };
+  dayStats().words++;
   save();
   emit('word', key);
   return true;

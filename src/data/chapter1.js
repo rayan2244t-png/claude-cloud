@@ -13,34 +13,46 @@
 
 export const NPCS = {
   marcus: {
-    id: 'marcus', name: 'Marcus', role: 'Таксист', pitch: 0.8,
-    look: { skin: '#8d5a3b', shirt: '#f2c230', pants: '#3d4a5c', hat: 'cap', hatColor: '#2f3b52', hair: '#1d1d1d' },
+    id: 'marcus', name: 'Marcus', role: 'Таксист', pitch: 0.8, gender: 'm', hours: [6, 23.5],
+    look: { skin: '#8d5a3b', shirt: '#f2c230', pants: '#3d4a5c', hat: 'cap', hatColor: '#2f3b52', hair: '#1d1d1d', jacket: '#2f3b52' },
     pos: [-25.5, 0, 5.2],
     persona: 'You are a cheerful taxi driver in your 40s, born and raised in Queens. You love the Yankees, pizza and giving tourists tips about the city.',
   },
   jess: {
-    id: 'jess', name: 'Jess', role: 'Бариста', pitch: 1.25,
+    id: 'jess', name: 'Jess', role: 'Бариста', pitch: 1.25, gender: 'f', hours: [7, 20],
     look: { skin: '#f1c7a5', shirt: '#7fb38a', pants: '#4a3f5c', hat: 'bun', hair: '#c4572e', apron: '#f5efe2' },
     pos: [-8.2, 0, 10.4],
     persona: 'You are a friendly barista in your 20s who runs a coffee cart in a Brooklyn park. You are an art student, you love indie music and iced coffee.',
   },
   rodriguez: {
-    id: 'rodriguez', name: 'Mrs. Rodriguez', role: 'Хозяйка квартиры', pitch: 1.1,
+    id: 'rodriguez', name: 'Mrs. Rodriguez', role: 'Хозяйка квартиры', pitch: 1.1, gender: 'f', hours: [8, 22],
     look: { skin: '#c99a73', shirt: '#b0577a', pants: '#5b4b6b', hat: 'bun', hair: '#d9d4cc', glasses: true },
     pos: [9.9, 0, -5.3],
     persona: 'You are a kind but strict landlady in your 60s, originally from Puerto Rico, who has lived in Brooklyn for 40 years. You love your garden and cooking.',
   },
   tony: {
-    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75,
-    look: { skin: '#e8b48f', shirt: '#ffffff', pants: '#2f3b52', hat: 'paper', hair: '#3a2a20', apron: '#e0e0e0', mustache: true },
+    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75, gender: 'm', hours: [8, 25],
+    look: { skin: '#e8b48f', shirt: '#ffffff', pants: '#2f3b52', hat: 'paper', hair: '#3a2a20', apron: '#e0e0e0', mustache: true, sleeves: 'short' },
     pos: [16.2, 0, 9.2],
     persona: 'You are a loud, funny hot dog vendor from Brooklyn in your 50s. You call everyone "buddy" and you are proud of your hot dogs.',
   },
   dev: {
-    id: 'dev', name: 'Dev', role: 'Прохожий', pitch: 1.0,
-    look: { skin: '#a8714f', shirt: '#5b7fb3', pants: '#c9b28f', hat: 'none', hair: '#151515', backpack: '#e07a5f', headphones: true },
+    id: 'dev', name: 'Dev', role: 'Прохожий', pitch: 1.0, gender: 'm', hours: [6, 24],
+    look: { skin: '#a8714f', shirt: '#5b7fb3', pants: '#c9b28f', hat: 'none', hair: '#151515', hairStyle: 'curly', backpack: '#e07a5f', headphones: true, sleeves: 'short' },
     pos: [24, 0, 12.6],
     persona: 'You are a relaxed software developer in your 20s who lives in Brooklyn and rides the subway every day. You like basketball and street food.',
+  },
+  rosa: {
+    id: 'rosa', name: 'Rosa', role: 'Фермерский рынок (не каждый день)', pitch: 1.15, gender: 'f', hours: [8, 15], event: 'market',
+    look: { skin: '#c99a73', shirt: '#f2c230', pants: '#5b4b3b', hat: 'cap', hatColor: '#3e6b4f', hair: '#2a2420', hairStyle: 'long', apron: '#7fb38a', sleeves: 'short' },
+    pos: [17, 0, 13.3],
+    persona: 'You are Rosa, a cheerful farmer from upstate New York who sells fruit and vegetables at a Brooklyn farmers market on some days. You love talking about fresh food and recipes.',
+  },
+  luis: {
+    id: 'luis', name: 'Luis', role: 'Уличный музыкант (только вечером)', pitch: 0.9, gender: 'm', hours: [18.5, 27],
+    look: { skin: '#b07a55', shirt: '#2f3b52', pants: '#5b4b3b', hat: 'beanie', hatColor: '#e07a5f', hair: '#1d1d1d', mustache: true },
+    pos: [-15.5, 0, 13.5],
+    persona: 'You are Luis, a street musician who plays guitar in a Brooklyn park in the evenings. You are from Mexico City, you love jazz, salsa and old rock songs.',
   },
 };
 
@@ -326,6 +338,77 @@ export const QUESTS = [
     onDone: { flag: 'subway', toast: 'Метро на востоке улицы. Скоро: Глава 2 — Манхэттен!' },
   },
 ];
+
+QUESTS.push({
+  id: 'music', npc: 'luis', todo: 'Найти музыканта в парке (вечером)', xp: 50, requires: ['arrive'], optional: true,
+  words: [['like', 'нравиться'], ['music', 'музыка'], ['song', 'песня'], ['favorite', 'любимый'], ['kind of', 'вид, тип'], ['beautiful', 'красивый'], ['tonight', 'сегодня вечером']],
+  steps: [
+    { t: 'say', en: 'Good evening, my friend! Do you like music?', ru: 'Добрый вечер, друг! Ты любишь музыку?' },
+    { t: 'tip', title: 'Do you like…?', text: 'Чтобы спросить «Тебе нравится…?» — **Do you like…?** Ответ: **Yes, I do!** / **No, I don\'t.**' },
+    {
+      t: 'choice', q: 'Ответь «Да, люблю!»', topic: 'have',
+      opts: [
+        { en: 'Yes, I do! I love music.', ok: true },
+        { en: 'Yes, I like!', why: 'После like нужно что-то: I like music. Или короткий ответ: Yes, I do!' },
+        { en: 'Yes, I am like music.', why: 'Не смешивай am и like: I like music.' },
+      ],
+    },
+    { t: 'say', en: 'Me too! What kind of music do you like?', ru: 'Я тоже! Какую музыку ты любишь?' },
+    {
+      t: 'type', q: 'Ответь, какую музыку ты любишь', example: 'I like rock. / I like hip-hop.', topic: 'word_order',
+      answers: ['I like *', 'I love *', 'I like * music', 'I love * music', 'I really like *'],
+      hints: [{ single: true, text: 'Ответь полным предложением: I like rock / I love jazz.' }],
+    },
+    { t: 'say', en: 'Nice choice! My favorite song is about New York. Listen!', ru: 'Отличный выбор! Моя любимая песня — про Нью-Йорк. Слушай!' },
+    { t: 'listen', en: 'Start spreading the news, I am leaving today.', q: 'О чём поёт Луис?', topic: 'listening', opts: ['Расскажите всем — я уезжаю сегодня', 'Я остаюсь дома сегодня', 'Новости по телевизору', 'Я люблю пиццу'], ok: 0 },
+    { t: 'tip', title: 'New York, New York', text: 'Это начало знаменитой песни Фрэнка Синатры «New York, New York». Её поют на каждом празднике в городе!' },
+    {
+      t: 'choice', q: 'Похвали песню', topic: 'slang',
+      opts: [
+        { en: "Wow, that's beautiful!", ok: true },
+        { en: "Wow, that's beautifully!", why: 'После that\'s — прилагательное: beautiful.' },
+        { en: 'Wow, it beauty!', why: 'Правильно: That\'s beautiful! / It\'s beautiful!' },
+      ],
+    },
+    { t: 'say', en: 'Thank you! Come back any night. I play here every evening.', ru: 'Спасибо! Приходи в любой вечер. Я играю здесь каждый вечер.' },
+  ],
+});
+
+QUESTS.push({
+  id: 'market', npc: 'rosa', todo: 'Купить фрукты на фермерском рынке', xp: 45, requires: ['arrive'], optional: true,
+  words: [['pound', 'фунт (≈ 450 г)'], ['fresh', 'свежий'], ['organic', 'органический'], ['local', 'местный'], ['each', 'за штуку'], ['bag', 'пакет']],
+  steps: [
+    { t: 'say', en: "Good morning! Everything's fresh from the farm today. What can I get you?", ru: 'Доброе утро! Сегодня всё свежее с фермы. Что вам дать?' },
+    {
+      t: 'build', q: 'Скажи: «Можно мне яблок?»', topic: 'food',
+      answer: 'Can I have some apples?', extra: ['any', 'a'],
+      hints: [{ extra: 'any', text: 'В просьбе — some: Can I have some apples?' }, { extra: 'a', text: 'Apples — мн. число, без a.' }],
+    },
+    { t: 'say', en: 'Sure! How many pounds?', ru: 'Конечно! Сколько фунтов?' },
+    { t: 'tip', title: 'Фунты и унции', text: 'В США вес меряют в **pounds** (фунтах): **1 pound ≈ 450 г**, 2 pounds ≈ 1 кг. Мелкое — в **ounces** (унциях): 1 oz ≈ 28 г. Молоко — в **gallons** (≈ 3,8 л).' },
+    {
+      t: 'choice', q: 'Попроси два фунта (≈ 1 кг)', topic: 'numbers',
+      opts: [
+        { en: 'Two pounds, please.', ok: true },
+        { en: 'Two pound, please.', why: 'Больше одного — pounds (с -s).' },
+        { en: 'Two kilos, please.', why: 'Поймут, но в США считают в фунтах: two pounds.' },
+      ],
+    },
+    { t: 'say', en: "Here you go. Peaches are two for three dollars today. Want some?", ru: 'Держите. Персики сегодня — два за три доллара. Хотите?' },
+    { t: 'listen', en: 'Peaches are two for three dollars.', q: 'Сколько стоят персики?', topic: 'numbers', opts: ['2 персика за $3', '3 персика за $2', '$2 за штуку', '$23'], ok: 0 },
+    {
+      t: 'choice', q: 'Возьми и персики', topic: 'politeness',
+      opts: [
+        { en: "Sure, I'll take two.", ok: true },
+        { en: 'Sure, I take two.', why: 'Решение сейчас — will: I\'ll take two.' },
+        { en: 'Sure, give two peach.', why: 'Грубовато и без -es. Скажи: I\'ll take two.' },
+      ],
+    },
+    { t: 'say', en: "That's seven dollars total.", ru: 'Всего семь долларов.' },
+    { t: 'pay', amount: 7 },
+    { t: 'say', en: 'Thank you, sweetie! Come back on market day!', ru: 'Спасибо, милый! Приходи в рыночный день!' },
+  ],
+});
 
 // Переписка с другом в телефоне героя
 export const PHONE_THREADS = [

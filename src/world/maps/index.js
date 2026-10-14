@@ -2,8 +2,12 @@
 // и добавьте его сюда. Персонажи указывают карту полем map (по умолчанию brooklyn).
 import { buildBrooklyn } from './brooklyn.js';
 import { buildApartment } from './apartment.js';
+import { buildManhattan } from './manhattan.js';
+import { buildConey } from './coney.js';
 
 export const MAPS = {
   brooklyn: buildBrooklyn,
+  manhattan: buildManhattan,
+  coney: buildConey,
   apartment: buildApartment,
 };
