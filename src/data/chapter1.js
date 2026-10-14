@@ -31,7 +31,7 @@ export const NPCS = {
     persona: 'You are a kind but strict landlady in your 60s, originally from Puerto Rico, who has lived in Brooklyn for 40 years. You love your garden and cooking.',
   },
   tony: {
-    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75, gender: 'm', hours: [10, 25],
+    id: 'tony', name: 'Tony', role: 'Продавец хот-догов', pitch: 0.75, gender: 'm', hours: [8, 25],
     look: { skin: '#e8b48f', shirt: '#ffffff', pants: '#2f3b52', hat: 'paper', hair: '#3a2a20', apron: '#e0e0e0', mustache: true, sleeves: 'short' },
     pos: [16.2, 0, 9.2],
     persona: 'You are a loud, funny hot dog vendor from Brooklyn in your 50s. You call everyone "buddy" and you are proud of your hot dogs.',
