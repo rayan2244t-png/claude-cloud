@@ -8,6 +8,8 @@ import { SHOP } from '../data/shop.js';
 import { QUALITY } from '../world/render.js';
 import { setVolumes, sfx } from '../game/audio.js';
 import { COLLECTIBLES } from '../data/collectibles.js';
+import { friendLevel, hearts } from '../game/social.js';
+import { WARDROBE, COLORS, HAIR_COLORS, SKIN } from '../data/wardrobe.js';
 
 const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
@@ -103,6 +105,70 @@ export function createPhone(api) {
             el('div', { class: 'bad-ans' }, '✗ ', m.given),
             el('div', { class: 'good-ans' }, '✓ ', m.correct),
             m.why ? el('div', { class: 'muted' }, m.why) : null)));
+      },
+    },
+    contacts: {
+      icon: '👥', name: 'Контакты', color: '#e07a5f',
+      badge: () => 0,
+      render() {
+        const met = Object.values(api.npcs).filter((n) => (state.friends?.[n.id] || 0) > 0).sort((a, b) => (state.friends[b.id] || 0) - (state.friends[a.id] || 0));
+        page('Контакты',
+          el('div', { class: 'muted small-note' }, 'Дружба растёт от заданий и разговоров. За 3 сердца друг дарит подарок. Нажми, чтобы написать (ИИ).'),
+          met.length ? null : el('div', { class: 'empty' }, 'Пока ни с кем не знаком. Поговори с жителями!'),
+          ...met.map((n) => {
+            const fl = friendLevel(n.id);
+            return el('button', { class: 'list-row', onclick: () => { close(); api.chatWith(n.id); } },
+              el('div', { class: 'avatar' }, n.name[0]),
+              el('div', { class: 'grow' }, el('b', {}, n.name), el('div', { class: 'muted' }, `${n.role} · ${fl.name}`)),
+              el('span', { class: 'hearts' }, hearts(n.id)));
+          }));
+      },
+    },
+    trophies: {
+      icon: '🏅', name: 'Достижения', color: '#c98a1a',
+      badge: () => 0,
+      render() {
+        const got = state.achievements || {};
+        const n = Object.keys(got).length;
+        page(`Достижения ${n}/${api.achievements.length}`,
+          el('div', { class: 'ach-grid' }, ...api.achievements.map((a) => el('div', { class: `ach ${got[a.id] ? 'got' : ''}` },
+            el('div', { class: 'ach-icon' }, got[a.id] ? a.icon : '🔒'), el('b', {}, a.name), el('small', {}, a.desc)))));
+      },
+    },
+    wardrobe: {
+      icon: '👕', name: 'Гардероб', color: '#8b6fb3',
+      badge: () => 0,
+      render() {
+        const look = { ...state.look };
+        state.owned ||= {};
+        const apply = () => { api.setLook({ ...look }); APPS.wardrobe.render(); };
+        const swatches = (key, list) => el('div', { class: 'swatches' }, ...list.map((c) => el('button', { class: `sw ${look[key] === c ? 'sel' : ''}`, style: { background: c }, onclick: () => { look[key] = c; apply(); } })));
+        const options = (key, def) => el('div', { class: 'chips' }, ...def.options.map(([val, label, price]) => {
+          const id = `${key}:${val}`;
+          const owned = !price || state.owned[id];
+          const active = key === 'extras' ? !!look[val] : look[key] === val;
+          return el('button', { class: `chip-s ${active ? 'sel' : ''}`, onclick: () => {
+            if (!owned) {
+              if (state.money < price) { toast(`Нужно ${money(price)} — заработай на сменах`, { icon: '💸' }); return; }
+              state.money = Math.round((state.money - price) * 100) / 100;
+              state.owned[id] = true;
+              save();
+              toast(`Куплено: ${label}`, { icon: '🛍️' });
+            }
+            if (key === 'extras') look[val] = val === 'backpack' ? (look.backpack ? undefined : '#f2c230') : !look[val];
+            else look[key] = val;
+            apply();
+          } }, label, owned ? null : el('small', {}, ` ${money(price)}`));
+        }));
+        page('Гардероб',
+          el('div', { class: 'muted small-note' }, `У тебя ${money(state.money)}. Цвета — бесплатно, вещи покупаются один раз.`),
+          el('div', { class: 'section-title' }, 'Футболка'), swatches('shirt', COLORS),
+          el('div', { class: 'section-title' }, 'Брюки'), swatches('pants', ['#3f5a7a', '#2f3b52', '#3a3a3a', '#c9b28f', '#5b4b3b', '#7a8a9a']),
+          el('div', { class: 'section-title' }, WARDROBE.hat.label), options('hat', WARDROBE.hat), swatches('hatColor', COLORS),
+          el('div', { class: 'section-title' }, WARDROBE.hairStyle.label), options('hairStyle', WARDROBE.hairStyle), swatches('hair', HAIR_COLORS),
+          el('div', { class: 'section-title' }, WARDROBE.jacket.label), options('jacket', WARDROBE.jacket),
+          el('div', { class: 'section-title' }, WARDROBE.extras.label), options('extras', WARDROBE.extras),
+          el('div', { class: 'section-title' }, 'Кожа'), swatches('skin', SKIN));
       },
     },
     map: {

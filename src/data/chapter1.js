@@ -42,6 +42,12 @@ export const NPCS = {
     pos: [24, 0, 12.6],
     persona: 'You are a relaxed software developer in your 20s who lives in Brooklyn and rides the subway every day. You like basketball and street food.',
   },
+  rosa: {
+    id: 'rosa', name: 'Rosa', role: 'Фермерский рынок (не каждый день)', pitch: 1.15, gender: 'f', hours: [8, 15], event: 'market',
+    look: { skin: '#c99a73', shirt: '#f2c230', pants: '#5b4b3b', hat: 'cap', hatColor: '#3e6b4f', hair: '#2a2420', hairStyle: 'long', apron: '#7fb38a', sleeves: 'short' },
+    pos: [17, 0, 13.3],
+    persona: 'You are Rosa, a cheerful farmer from upstate New York who sells fruit and vegetables at a Brooklyn farmers market on some days. You love talking about fresh food and recipes.',
+  },
   luis: {
     id: 'luis', name: 'Luis', role: 'Уличный музыкант (только вечером)', pitch: 0.9, gender: 'm', hours: [18.5, 27],
     look: { skin: '#b07a55', shirt: '#2f3b52', pants: '#5b4b3b', hat: 'beanie', hatColor: '#e07a5f', hair: '#1d1d1d', mustache: true },
@@ -365,6 +371,42 @@ QUESTS.push({
       ],
     },
     { t: 'say', en: 'Thank you! Come back any night. I play here every evening.', ru: 'Спасибо! Приходи в любой вечер. Я играю здесь каждый вечер.' },
+  ],
+});
+
+QUESTS.push({
+  id: 'market', npc: 'rosa', todo: 'Купить фрукты на фермерском рынке', xp: 45, requires: ['arrive'], optional: true,
+  words: [['pound', 'фунт (≈ 450 г)'], ['fresh', 'свежий'], ['organic', 'органический'], ['local', 'местный'], ['each', 'за штуку'], ['bag', 'пакет']],
+  steps: [
+    { t: 'say', en: "Good morning! Everything's fresh from the farm today. What can I get you?", ru: 'Доброе утро! Сегодня всё свежее с фермы. Что вам дать?' },
+    {
+      t: 'build', q: 'Скажи: «Можно мне яблок?»', topic: 'food',
+      answer: 'Can I have some apples?', extra: ['any', 'a'],
+      hints: [{ extra: 'any', text: 'В просьбе — some: Can I have some apples?' }, { extra: 'a', text: 'Apples — мн. число, без a.' }],
+    },
+    { t: 'say', en: 'Sure! How many pounds?', ru: 'Конечно! Сколько фунтов?' },
+    { t: 'tip', title: 'Фунты и унции', text: 'В США вес меряют в **pounds** (фунтах): **1 pound ≈ 450 г**, 2 pounds ≈ 1 кг. Мелкое — в **ounces** (унциях): 1 oz ≈ 28 г. Молоко — в **gallons** (≈ 3,8 л).' },
+    {
+      t: 'choice', q: 'Попроси два фунта (≈ 1 кг)', topic: 'numbers',
+      opts: [
+        { en: 'Two pounds, please.', ok: true },
+        { en: 'Two pound, please.', why: 'Больше одного — pounds (с -s).' },
+        { en: 'Two kilos, please.', why: 'Поймут, но в США считают в фунтах: two pounds.' },
+      ],
+    },
+    { t: 'say', en: "Here you go. Peaches are two for three dollars today. Want some?", ru: 'Держите. Персики сегодня — два за три доллара. Хотите?' },
+    { t: 'listen', en: 'Peaches are two for three dollars.', q: 'Сколько стоят персики?', topic: 'numbers', opts: ['2 персика за $3', '3 персика за $2', '$2 за штуку', '$23'], ok: 0 },
+    {
+      t: 'choice', q: 'Возьми и персики', topic: 'politeness',
+      opts: [
+        { en: "Sure, I'll take two.", ok: true },
+        { en: 'Sure, I take two.', why: 'Решение сейчас — will: I\'ll take two.' },
+        { en: 'Sure, give two peach.', why: 'Грубовато и без -es. Скажи: I\'ll take two.' },
+      ],
+    },
+    { t: 'say', en: "That's seven dollars total.", ru: 'Всего семь долларов.' },
+    { t: 'pay', amount: 7 },
+    { t: 'say', en: 'Thank you, sweetie! Come back on market day!', ru: 'Спасибо, милый! Приходи в рыночный день!' },
   ],
 });
 

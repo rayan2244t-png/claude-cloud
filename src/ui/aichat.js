@@ -5,7 +5,7 @@ import { addXP } from '../game/progress.js';
 import { createChat, hasKey } from '../game/ai.js';
 import { speak, canListen, listen } from '../game/speech.js';
 
-export function openAiChat(npc, { onTalk, onClose, openSettings }) {
+export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
   const root = el('div', { class: 'dialogue ai open-later' });
   const log = el('div', { class: 'dlg-log' });
   const input = el('input', { class: 'text-in', placeholder: 'Напиши по-английски…', autocomplete: 'off', spellcheck: 'false' });
@@ -65,6 +65,7 @@ export function openAiChat(npc, { onTalk, onClose, openSettings }) {
     send.disabled = true;
     try {
       const r = await chat.send(text);
+      onReply?.();
       typing.remove();
       if (r.fix) {
         mine.after(el('div', { class: 'fix-card' },

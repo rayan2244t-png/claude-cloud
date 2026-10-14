@@ -71,12 +71,23 @@ export function createTimeSystem({ engine, state }) {
   engine.scene.add(rain);
   const drops = Array.from({ length: DROPS }, () => ({ x: (Math.random() - 0.5) * 40, y: Math.random() * 16, z: (Math.random() - 0.5) * 34, v: 14 + Math.random() * 6 }));
   const m4 = new THREE.Matrix4();
+  const FLAKES = 600;
+  const snow = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.07, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9 }), FLAKES);
+  snow.frustumCulled = false;
+  snow.visible = false;
+  engine.scene.add(snow);
+  const flakes = Array.from({ length: FLAKES }, () => ({ x: (Math.random() - 0.5) * 40, y: Math.random() * 16, z: (Math.random() - 0.5) * 34, v: 1.2 + Math.random() * 1.2, ph: Math.random() * 6, s: 0.6 + Math.random() * 0.9 }));
+  let snowAmount = state.weather === 'snow' ? 1 : 0;
+  if (state.weather === 'snow') SHADER.uSnow.value = 1;
   let rainAmount = state.weather === 'rain' ? 1 : 0;
   let lastHour = Math.floor(state.clock / 60);
 
   function rollWeather() {
     const prev = state.weather;
-    state.weather = Math.random() < 0.25 ? 'rain' : 'clear';
+    // Зимой (декабрь–февраль) вместо дождя бывает снег
+    const winter = [11, 0, 1].includes(new Date().getMonth()) || state.forceWinter;
+    const r = Math.random();
+    state.weather = winter ? (r < 0.4 ? 'snow' : r < 0.5 ? 'rain' : 'clear') : (r < 0.25 ? 'rain' : 'clear');
     if (prev !== state.weather) engine.emit?.('weather', state.weather);
   }
 
@@ -126,6 +137,24 @@ export function createTimeSystem({ engine, state }) {
     for (const { m, strength } of NIGHT_GLOW) m.emissiveIntensity = glow * strength;
     LIGHT_POOL_MAT.opacity = k.night * 0.5;
 
+    // Снег: хлопья кружатся, а на земле и крышах постепенно появляется белый слой
+    snowAmount += ((state.weather === 'snow' ? 1 : 0) - snowAmount) * Math.min(1, dt * 0.4);
+    SHADER.uSnow.value += ((state.weather === 'snow' ? 1 : 0) - SHADER.uSnow.value) * Math.min(1, dt * (state.weather === 'snow' ? 0.05 : 0.01));
+    snow.visible = snowAmount > 0.02 && !indoor;
+    if (snow.visible) {
+      snow.material.opacity = 0.9 * snowAmount;
+      const p = engine.playerPos;
+      flakes.forEach((f, i) => {
+        f.y -= f.v * dt;
+        f.x += Math.sin(engine.time + f.ph) * dt * 0.6;
+        if (f.y < 0) { f.y = 14 + Math.random() * 3; f.x = (Math.random() - 0.5) * 40; f.z = (Math.random() - 0.5) * 34; }
+        m4.makeScale(f.s, f.s, f.s);
+        m4.setPosition(p.x + f.x, f.y, p.z + f.z + 4);
+        snow.setMatrixAt(i, m4);
+      });
+      snow.instanceMatrix.needsUpdate = true;
+    }
+
     rain.visible = rainAmount > 0.02 && !indoor;
     if (rain.visible) {
       rain.material.opacity = 0.55 * rainAmount;
@@ -151,6 +180,7 @@ export function createTimeSystem({ engine, state }) {
     get isNight() { const h = this.hour; return h >= 21 || h < 5.5; },
     get clockText() { return formatClock(state.clock); },
     get raining() { return state.weather === 'rain'; },
+    get snowing() { return state.weather === 'snow'; },
     setPaused(p) { paused = p; },
     update(dt) {
       if (!paused) {

@@ -296,6 +296,49 @@ export function buildBrooklyn() {
     flyMat.size = 0.18 + Math.sin(t * 3) * 0.04;
   });
 
+  // ---------- Фермерский рынок (событие: появляется в некоторые дни) ----------
+  const market = new THREE.Group();
+  const marketColliders = [];
+  [[13, 15, '#e07a5f'], [17, 15, '#7fb38a'], [21, 15, '#5b7fb3']].forEach(([x, z, c]) => {
+    const tent = group(
+      ...[[-1.4, -0.9], [1.4, -0.9], [-1.4, 0.9], [1.4, 0.9]].map(([dx, dz]) => cyl(0.05, 0.05, 2.3, '#f6f3ec', x + dx, 0, z + dz, 6)),
+      block(3.1, 0.08, 2.1, '#f6f3ec', x, 2.3, z),
+      block(2.8, 0.85, 1.2, PAL.wood, x, 0, z - 0.2),
+    );
+    const roof = mesh(new THREE.ConeGeometry(2.2, 0.8, 4), c);
+    roof.rotation.y = Math.PI / 4;
+    roof.position.set(x, 2.75, z);
+    tent.add(roof);
+    // ящики с фруктами и овощами
+    ['#e94f4f', '#f2c230', '#7db374', '#f29a3c', '#8b6fb3'].forEach((fc, k) => {
+      for (let j = 0; j < 4; j++) tent.add(sphere(0.11, fc, x - 1.1 + k * 0.55 + (j % 2) * 0.18, 0.95, z - 0.4 + Math.floor(j / 2) * 0.2, 0, { shadow: false }));
+    });
+    market.add(tent);
+    marketColliders.push({ type: 'box', minX: x - 1.5, maxX: x + 1.5, minZ: z - 0.9, maxZ: z + 0.9 });
+  });
+  // гирлянда-флажки
+  for (let i = 0; i < 18; i++) {
+    const f = mesh(new THREE.ConeGeometry(0.16, 0.3, 3), pick(r, ['#e07a5f', '#f2c230', '#5b7fb3', '#7fb38a']), { shadow: false });
+    f.rotation.x = Math.PI;
+    f.position.set(11.5 + i * 0.6, 2.35 - Math.sin((i / 17) * Math.PI) * 0.25, 13.95);
+    market.add(f);
+  }
+  const marketSign = sign('FARMERS MARKET', 3.6, 0.6, { bg: '#3e6b4f', fg: '#f2c230' });
+  marketSign.position.set(17, 3.35, 13.9);
+  market.add(marketSign);
+  market.visible = false;
+  root.add(market);
+
+  function setEvent(name) {
+    const on = name === 'market';
+    market.visible = on;
+    for (const c of marketColliders) {
+      const i = colliders.indexOf(c);
+      if (on && i < 0) colliders.push(c);
+      if (!on && i >= 0) colliders.splice(i, 1);
+    }
+  }
+
   // ---------- Прохожие ----------
   const crowd = createCrowd({
     lanes: [{ z: 4.75, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 5.5, x0: -36, x1: 27, y: SIDEWALK_Y }, { z: 24.2, x0: -36, x1: 36 }],
@@ -386,6 +429,7 @@ export function buildBrooklyn() {
     id: 'brooklyn',
     root,
     crowd,
+    setEvent,
     colliders,
     bounds: { minX: -38, maxX: 38, minZ: -7.4, maxZ: 25 },
     heightAt: (x, z) => ((z > -8 && z < -3.5) || (z > 3.5 && z < 7) ? SIDEWALK_Y : 0),

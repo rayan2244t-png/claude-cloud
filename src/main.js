@@ -21,6 +21,11 @@ import { initAudio, sfx, babble, updateAudio, setMusicMood } from './game/audio.
 import { openLibrary, setLibraryHooks } from './ui/library.js';
 import { WORLD } from './world/kit.js';
 import { launchFireworks } from './world/fireworks.js';
+import { friendLevel, addFriendship, hearts, checkAchievements, addGameStat, ACHIEVEMENTS } from './game/social.js';
+import { startTaxi, startDiner, startKaraoke } from './ui/minigames.js';
+import { SMALLTALK } from './data/smalltalk.js';
+import { DEFAULT_LOOK } from './data/wardrobe.js';
+import { GRAMMAR } from './data/learn/index.js';
 import { createTutorial } from './ui/tutorial.js';
 
 const tutorial = createTutorial();
@@ -35,7 +40,8 @@ const SPEAKER_COLORS = {
 const speakerOf = (npc) => ({ ...npc, color: npc.color || SPEAKER_COLORS[npc.id] || '#5b7fb3', mode: 'world' });
 
 state.settings.gfx ??= defaultQuality();
-const engine = createEngine(document.getElementById('game'), { npcs: NPCS, quality: state.settings.gfx });
+state.look ||= { ...DEFAULT_LOOK };
+const engine = createEngine(document.getElementById('game'), { npcs: NPCS, quality: state.settings.gfx, playerLook: state.look });
 let busy = false; // открыт диалог / мини-игра
 
 // ---------- Время суток, расписания, прохожие ----------
@@ -50,7 +56,13 @@ function isOpen(npc) {
   return (h >= a && h < b) || (h + 24 >= a && h + 24 < b);
 }
 const hoursText = (npc) => `${Math.floor(npc.hours[0])}:${npc.hours[0] % 1 ? '30' : '00'}`;
-engine.setNpcFilter((id) => (NPCS[id].map || 'brooklyn') === engine.mapId && isOpen(NPCS[id]));
+// События в городе: фермерский рынок в парке — через день
+const activeEvent = () => (state.day % 2 === 1 ? 'market' : null);
+let lastEvent = null;
+engine.setNpcFilter((id) => {
+  const npc = NPCS[id];
+  return (npc.map || 'brooklyn') === engine.mapId && isOpen(npc) && (!npc.event || activeEvent() === npc.event);
+});
 
 const collectibles = createCollectibles(COLLECTIBLES);
 collectibles.attach(engine.maps);
@@ -89,6 +101,13 @@ engine.onFrame((dt, t) => {
   if (state.weather !== lastWeather) {
     lastWeather = state.weather;
     if (state.weather === 'rain' && engine.mapId !== 'apartment') toast('Пошёл дождь ☔ It\'s raining! (дождь идёт)', { icon: '🌧️', time: 4500 });
+    if (state.weather === 'snow' && engine.mapId !== 'apartment') toast('Пошёл снег ❄️ It\'s snowing! (идёт снег)', { icon: '❄️', time: 4500 });
+  }
+  const ev = activeEvent();
+  if (ev !== lastEvent) {
+    lastEvent = ev;
+    engine.maps.brooklyn.setEvent(ev);
+    if (ev === 'market' && state.done.arrive) setTimeout(() => toast('Сегодня в парке фермерский рынок 🍎🥕 Загляни к Розе!', { icon: '🧺', time: 5000 }), 2500);
   }
   saveTimer += dt;
   if (saveTimer > 10) { saveTimer = 0; save(); }
@@ -191,10 +210,16 @@ async function talkTo(npcId) {
     return;
   }
   // Задание выполнено — меню действий
+  const fl = friendLevel(npcId);
+  const game = (label, fn) => el('button', { class: 'btn wide', onclick: () => { m.close(); playGame(fn); } }, label);
   const m = modal([
-    el('div', { class: 'menu-head' }, el('div', { class: 'dlg-avatar', style: { background: speakerOf(npc).color } }, npc.name[0]), el('div', {}, el('b', {}, npc.name), el('div', { class: 'muted' }, npc.role))),
+    el('div', { class: 'menu-head' }, el('div', { class: 'dlg-avatar', style: { background: speakerOf(npc).color } }, npc.name[0]), el('div', { class: 'grow' }, el('b', {}, npc.name), el('div', { class: 'muted' }, npc.role)),
+      el('div', { class: 'friend-box' }, el('div', {}, hearts(npcId)), el('small', {}, fl.name))),
     el('button', { class: 'btn primary wide', onclick: () => { m.close(); chatWith(npc); } }, '💬 Поболтать (ИИ)'),
     npcId === 'jess' && state.flags.job ? el('button', { class: 'btn wide', onclick: () => { m.close(); shift(); } }, '☕ Начать смену бариста') : null,
+    npcId === 'marcus' ? game('🚕 Такси-навигатор: подмени Маркуса', startTaxi) : null,
+    npcId === 'linda' && isDone('diner') ? game('🥞 Смена в дайнере', startDiner) : null,
+    npcId === 'luis' && isDone('music') ? game('🎤 Караоке с Луисом', startKaraoke) : null,
     el('button', { class: 'btn ghost wide', onclick: () => { m.close(); replayQuest(npcId); } }, '🔁 Повторить диалог (тренировка)'),
   ]);
 }
@@ -218,6 +243,7 @@ async function playQuest(quest, { replay = false } = {}) {
     return;
   }
   state.done[quest.id] = true;
+  addFriendship(npc.id, 4);
   for (const [en, ru] of quest.words || []) addWord(en, ru);
   save();
   addXP(quest.xp);
@@ -378,6 +404,32 @@ function buy(item) {
   return true;
 }
 
+function playGame(fn) {
+  setBusy(true);
+  fn({ onDone: () => setBusy(false) });
+}
+
+// Короткий разговор со случайным прохожим
+async function smallTalk(walker) {
+  const st = SMALLTALK[Math.floor(Math.random() * SMALLTALK.length)];
+  setBusy(true);
+  await runDialogue({
+    speaker: { name: 'Прохожий', avatar: '🙂', color: '#8a909b', role: 'Small talk', gender: walker.gender, pitch: 0.9 + Math.random() * 0.3 },
+    steps: [{ t: 'say', en: st.en, ru: st.ru }, { t: 'choice', q: 'Как ответишь?', topic: 'greetings', opts: st.opts }],
+    idPrefix: 'smalltalk',
+  });
+  setBusy(false);
+  addGameStat('smalltalk');
+}
+
+function nearestWalker(maxDist = 1.7) {
+  const crowd = engine.maps[engine.mapId]?.crowd;
+  if (!crowd) return null;
+  const p = engine.playerPos;
+  return crowd.walkers.filter((w) => w.c.root.visible && w.c.root.position.distanceTo(p) < maxDist)
+    .sort((a, b) => a.c.root.position.distanceTo(p) - b.c.root.position.distanceTo(p))[0] || null;
+}
+
 function shift() {
   setBusy(true);
   startShift({ onDone: () => setBusy(false) });
@@ -389,6 +441,7 @@ function chatWith(npc) {
   openAiChat(speakerOf(npc), {
     onTalk: (s) => engine.npcTalk(npc.id, s),
     onClose: () => setBusy(false),
+    onReply: () => addFriendship(npc.id, 1),
     openSettings: () => phone.open('settings'),
   });
 }
@@ -408,6 +461,8 @@ function interaction() {
     const npcM = engine.nearestNpc();
     if (npcM) return { label: `💬 ${NPCS[npcM].name}`, run: () => talkTo(npcM) };
     if (near(engine.maps[engine.mapId].spots.subway, 2.4)) return { label: '🚇 Метро', run: travelMenu };
+    const w2 = nearestWalker();
+    if (w2) return { label: '💬 Заговорить с прохожим', run: () => smallTalk(w2) };
     return null;
   }
   const b = engine.maps.brooklyn.spots;
@@ -426,6 +481,8 @@ function interaction() {
       : toast('Сначала узнай у Дева, как пользоваться метро', { icon: '🚇' })) };
   }
   if (npc) return { label: `💬 ${NPCS[npc].name}`, run: () => talkTo(npc) };
+  const w = nearestWalker();
+  if (w && state.done.arrive) return { label: '💬 Заговорить с прохожим', run: () => smallTalk(w) };
   return null;
 }
 
@@ -523,6 +580,10 @@ const phone = createPhone({
   buy,
   openLibrary: (tab) => openLibrary(tab),
   travelMenu: () => travelMenu(),
+  npcs: NPCS,
+  chatWith: (id) => chatWith(NPCS[id]),
+  setLook: (look) => { state.look = look; save(); engine.setPlayerLook(look); },
+  achievements: ACHIEVEMENTS,
   resetTutorial: () => tutorial.reset(),
   startPlacement: () => startPlacement(),
   startShift: shift,
@@ -536,7 +597,7 @@ const hud = createHud({
   getTodos: todos,
   getNpcStatus: npcStatus,
   getInteraction: interaction,
-  getClock: () => `${time.raining ? '🌧️' : time.phase.icon} ${time.clockText}${(state.stats?.streak || 0) > 1 ? ` · 🔥${state.stats.streak}` : ''}`,
+  getClock: () => `${time.snowing ? '❄️' : time.raining ? '🌧️' : time.phase.icon} ${time.clockText}${(state.stats?.streak || 0) > 1 ? ` · 🔥${state.stats.streak}` : ''}`,
   onPhone: () => (phone.isOpen ? phone.close() : phone.open()),
   onLibrary: () => { if (!busy) openLibrary('words'); },
   onAction: () => interaction()?.run(),
@@ -546,6 +607,12 @@ createImmersion({ engine, time, isBusy: () => busy || phone.isOpen });
 setLibraryHooks({ busy: (b) => setBusy(b) });
 
 on('money', (amount) => { if (amount > 0) sfx('coin'); });
+
+// Достижения и дружба
+let achTimer = null;
+on('change', () => { clearTimeout(achTimer); achTimer = setTimeout(() => checkAchievements({ applesTotal: COLLECTIBLES.length, rulesTotal: GRAMMAR.length }), 600); });
+on('achievement', (a) => whenFree(() => { sfx('sparkle'); toast(`Достижение: ${a.name} — ${a.desc}`, { icon: a.icon, time: 5000 }); }));
+on('friendup', ({ id, level }) => whenFree(() => { sfx('ding'); toast(`${NPCS[id]?.name || 'Друг'}: теперь вы — «${level.name}» ${'❤️'.repeat(level.hearts)}${level.hearts >= 3 ? ' · подарок $15!' : ''}`, { icon: '🤝', time: 5000 }); }));
 // Мягкий щелчок на любые кнопки интерфейса
 document.addEventListener('click', (e) => { if (e.target.closest?.('button')) sfx('click'); }, true);
 

@@ -14,13 +14,16 @@ export const SHADER = {
   uTime: { value: 0 },
   uCloud: { value: 0.5 }, // сила теней от облаков (0 — ясно)
   uWind: { value: 1 },
+  uSnow: { value: 0 }, // сколько снега лежит на поверхностях (0..1)
 };
 
 const NOISE = /* glsl */ `
 uniform float uTime;
 uniform float uCloud;
 uniform float uWind;
+uniform float uSnow;
 varying vec3 vWPos;
+varying vec3 vWNorm;
 float bHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float bNoise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
@@ -39,6 +42,7 @@ export function shaderize(m, { wave = 0 } = {}) {
     shader.uniforms.uTime = SHADER.uTime;
     shader.uniforms.uCloud = SHADER.uCloud;
     shader.uniforms.uWind = SHADER.uWind;
+    shader.uniforms.uSnow = SHADER.uSnow;
     shader.vertexShader = NOISE + shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
@@ -49,9 +53,16 @@ export function shaderize(m, { wave = 0 } = {}) {
       bWp = modelMatrix * bWp;
       ${wave === 1 ? 'transformed += vec3(sin(uTime * 1.7 + bWp.x * 0.5 + bWp.z * 0.3), sin(uTime * 2.3 + bWp.x) * 0.4, cos(uTime * 1.3 + bWp.z * 0.5)) * 0.07 * uWind;' : ''}
       ${wave === 2 ? 'transformed.x += sin(uTime * 2.4 + bWp.x * 0.7 + bWp.z * 0.4) * 0.09 * uWind * clamp(position.y + 0.16, 0.0, 1.0) * 3.0;' : ''}
-      vWPos = bWp.xyz;`,
+      vWPos = bWp.xyz;
+      vWNorm = normalize(mat3(modelMatrix) * objectNormal);`,
     );
     shader.fragmentShader = NOISE + shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      // Снег ложится на горизонтальные поверхности
+      float bSnow = smoothstep(0.55, 0.85, vWNorm.y) * uSnow * (0.85 + 0.15 * bNoise(vWPos.xz * 1.7));
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 1.0), bSnow);`,
+    ).replace(
       '#include <lights_fragment_end>',
       `#include <lights_fragment_end>
       // Тени от облаков: мягкие пятна, медленно плывущие по ветру

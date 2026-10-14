@@ -51,7 +51,7 @@ export function createCrowd({ lanes, count = 8, seed = 11 }) {
       scale: 0.92 + r() * 0.16,
     });
     const w = {
-      c, lane,
+      c, lane, gender,
       x: lane.x0 + r() * (lane.x1 - lane.x0),
       z: lane.z + (r() - 0.5) * 0.8,
       dir: r() < 0.5 ? 1 : -1,

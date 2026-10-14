@@ -8,7 +8,7 @@ import { SHADER } from './kit.js';
 const PLAYER_R = 0.35;
 const SPEED = 4.2;
 
-export function createEngine(container, { npcs, quality = 'high' }) {
+export function createEngine(container, { npcs, quality = 'high', playerLook }) {
   const scene = new THREE.Scene();
   const SKY = new THREE.Color('#d8e8e4');
   scene.background = SKY;
@@ -50,7 +50,7 @@ export function createEngine(container, { npcs, quality = 'high' }) {
   scene.updateMatrixWorld(true);
 
   // ---------- Герой ----------
-  const player = makeCharacter({
+  let player = makeCharacter(playerLook || {
     skin: '#f0c4a0', shirt: '#e07a5f', pants: '#3f5a7a', hat: 'cap', hatColor: '#2f5d8a', hair: '#5a3d2b', backpack: '#f2c230',
   });
   scene.add(player.root);
@@ -279,6 +279,7 @@ export function createEngine(container, { npcs, quality = 'high' }) {
     scene,
     get playerPos() { return pos; },
     get playerSpeed() { return speed; },
+    get time() { return clock.elapsedTime; },
     get mapId() { return map.id; },
     maps,
     npcObjs,
@@ -294,6 +295,12 @@ export function createEngine(container, { npcs, quality = 'high' }) {
     npcTalk(id, seconds) { npcObjs[id]?.char.talk(seconds); },
     npcWave(id) { npcObjs[id]?.char.wave(); },
     playerWave() { player.wave(); },
+    // Переодеть героя (гардероб)
+    setPlayerLook(look) {
+      scene.remove(player.root);
+      player = makeCharacter(look);
+      scene.add(player.root);
+    },
     enterMap(id, spot = 'start') {
       map = maps[id];
       const [x, z] = map.spots[spot];
