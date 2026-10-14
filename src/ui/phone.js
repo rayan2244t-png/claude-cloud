@@ -3,7 +3,8 @@ import { el, ui, money, toast, shuffle, floatText } from './dom.js';
 import { state, save, resetSave, on, exportSave, importSave } from '../game/state.js';
 import { levelInfo, weakTopics, LEVELS, addXP, todayKey, dayStats } from '../game/progress.js';
 import { dueWords, grade, vocabStats } from '../game/srs.js';
-import { speak } from '../game/speech.js';
+import { speak, browserVoices, refreshVoices } from '../game/speech.js';
+import { neural, neuralEnabled, enableNeural, loadNeural } from '../game/neural-voice.js';
 import { SHOP } from '../data/shop.js';
 import { QUALITY } from '../world/render.js';
 import { setVolumes, sfx } from '../game/audio.js';
@@ -309,12 +310,17 @@ export function createPhone(api) {
             sel.addEventListener('change', () => { state.settings.gfx = sel.value; save(); location.reload(); });
             return sel;
           })()),
+          el('div', { class: 'section-title' }, '🔊 Громкость'),
+          slider('🔈 Общая громкость', 'master', 0.9),
+          slider('🗣️ Голоса персонажей', 'voiceVol', 1, () => speak('Hi! Can you hear me okay?', { force: true, gender: 'f', who: 'Jess' })),
           slider('🎵 Музыка', 'music', 0.35),
           slider('🏙️ Звуки города', 'ambience', 0.6),
           slider('🔔 Звуковые эффекты', 'sfx', 0.8),
+          el('div', { class: 'section-title' }, '🎙️ Голоса'),
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),
-          toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
+          voiceEngineBlock(),
           el('label', { class: 'set-row col' }, 'Скорость речи', rate),
+          toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
           el('div', { class: 'section-title' }, '🤖 ИИ-собеседники'),
           el('div', { class: 'chips' }, ...[['claude', '☁️ Claude Haiku 5.5'], ['ollama', '💻 Локальная (Ollama)']].map(([id, label]) =>
             el('button', { class: `chip-s ${(state.settings.aiProvider || 'claude') === id ? 'sel' : ''}`, onclick: () => { state.settings.aiProvider = id; save(); APPS.settings.render(); } }, label))),
@@ -381,11 +387,65 @@ export function createPhone(api) {
     return el('div', { class: 'stat' }, el('b', {}, value), el('span', {}, label));
   }
 
-  function slider(label, key, def) {
+  function slider(label, key, def, onDone) {
     const input = el('input', { type: 'range', min: '0', max: '1', step: '0.05', value: state.settings[key] ?? def });
     input.addEventListener('input', () => { state.settings[key] = Number(input.value); setVolumes(); });
-    input.addEventListener('change', () => save());
+    input.addEventListener('change', () => { save(); onDone?.(); });
     return el('label', { class: 'set-row col' }, label, input);
+  }
+
+  // Выбор движка озвучки: нейроголоса (живые) или голоса браузера
+  function voiceEngineBlock() {
+    const box = el('div', { class: 'voice-engine' });
+    const test = () => speak("Hey! Welcome to Brooklyn. Want a coffee? It's on me.", { force: true, gender: 'm', who: 'Marcus' });
+    const render = () => {
+      const st = neural.status;
+      const on = neuralEnabled();
+      const parts = [el('div', { class: 've-title' }, '✨ Нейроголоса — как живые американцы')];
+      if (!on) {
+        parts.push(
+          el('div', { class: 'muted small-note' }, 'У каждого персонажа свой естественный американский голос (14 голосов). Работает прямо в браузере, без ключей и интернета после загрузки. Скачивается один раз: 92 МБ.'),
+          el('button', { class: 'btn primary wide', onclick: () => { enableNeural(true); render(); } }, '⬇️ Включить нейроголоса'));
+      } else if (st === 'loading') {
+        parts.push(
+          el('div', { class: 'progress' }, el('div', { style: { width: `${Math.round(neural.progress * 100)}%` } })),
+          el('div', { class: 'muted small-note' }, neural.progress >= 1 ? 'Запускаю голоса…' : `Скачиваю модель: ${Math.round(neural.progress * 92)} из 92 МБ. Можно играть — пока звучат голоса браузера.`));
+      } else if (st === 'ready') {
+        parts.push(
+          el('div', { class: 'small-note' }, '✅ Включены. Реплики звучат живыми голосами.'),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn wide', onclick: test }, '▶️ Послушать'),
+            el('button', { class: 'btn ghost wide', onclick: () => { enableNeural(false); render(); } }, 'Выключить')));
+      } else if (st === 'error') {
+        parts.push(
+          el('div', { class: 'small-note error' }, `⚠️ Не получилось: ${neural.error}`),
+          el('div', { class: 'muted small-note' }, 'Проверь интернет (нужен для первой загрузки). Пока работают голоса браузера.'),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn primary wide', onclick: () => { loadNeural(); render(); } }, '🔄 Ещё раз'),
+            el('button', { class: 'btn ghost wide', onclick: () => { enableNeural(false); render(); } }, 'Выключить')));
+      } else {
+        parts.push(el('button', { class: 'btn primary wide', onclick: () => { loadNeural(); render(); } }, '▶️ Запустить'));
+      }
+      if (!on || st !== 'ready') {
+        refreshVoices();
+        const list = browserVoices();
+        if (list.length) {
+          const sel = el('select', { class: 'text-in' }, el('option', { value: '' }, 'Автоматически (лучший)'),
+            ...list.map((v) => {
+              const o = el('option', { value: v.name }, v.name.replace(/^Microsoft |^Google /, '').slice(0, 48));
+              if (state.settings.browserVoice === v.name) o.selected = true;
+              return o;
+            }));
+          sel.addEventListener('change', () => { state.settings.browserVoice = sel.value; save(); refreshVoices(); speak('Hello! This is my voice.', { force: true }); });
+          parts.push(el('label', { class: 'set-row col' }, 'Голос браузера (рассказчик)', sel),
+            el('div', { class: 'muted small-note' }, 'Совет: в браузере Edge есть очень живые голоса «Natural» — они будут выбраны автоматически.'));
+        }
+      }
+      box.replaceChildren(...parts);
+    };
+    render();
+    const off = on('neural', () => { if (!box.isConnected) { off?.(); return; } render(); });
+    return box;
   }
 
   function toggle(label, value, onChange) {

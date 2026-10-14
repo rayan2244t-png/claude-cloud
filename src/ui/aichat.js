@@ -3,7 +3,7 @@ import { el, ui, escapeHtml, floatText } from './dom.js';
 import { state } from '../game/state.js';
 import { addXP } from '../game/progress.js';
 import { createChat, hasKey } from '../game/ai.js';
-import { speak, canListen, listen } from '../game/speech.js';
+import { speak, canListen, listen, stopSpeech } from '../game/speech.js';
 
 export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
   const root = el('div', { class: 'dialogue ai open-later' });
@@ -12,7 +12,7 @@ export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
   const send = el('button', { class: 'btn primary' }, '➤');
   const mic = canListen() ? el('button', { class: 'btn mic' }, '🎤') : null;
   const close = () => {
-    window.speechSynthesis?.cancel();
+    stopSpeech();
     root.classList.remove('open');
     setTimeout(() => root.remove(), 300);
     onClose?.();

@@ -4,15 +4,8 @@ import { el, ui } from './dom.js';
 import { state, save } from '../game/state.js';
 import { addXP } from '../game/progress.js';
 import { normalize } from '../game/checker.js';
-import { canListen } from '../game/speech.js';
+import { canListen, speak, stopSpeech } from '../game/speech.js';
 import { sfx } from '../game/audio.js';
-
-let voice = null;
-function pickVoice() {
-  const vs = window.speechSynthesis?.getVoices() || [];
-  voice = vs.find((v) => v.lang === 'en-US' && /Google US English|Samantha|Aria|Jenny/.test(v.name)) || vs.find((v) => v.lang === 'en-US') || null;
-}
-if ('speechSynthesis' in window) { pickVoice(); window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
 
 // Сравнение: какие слова оригинала прозвучали у игрока (по порядку, LCS)
 export function compareWords(target, said) {
@@ -46,7 +39,7 @@ export function openShadowing(items, { start = 0, title = 'Шэдовинг', on
   ui().append(back);
 
   const close = () => {
-    window.speechSynthesis?.cancel();
+    stopSpeech();
     stopRec();
     back.classList.add('out');
     setTimeout(() => back.remove(), 250);
@@ -71,25 +64,17 @@ export function openShadowing(items, { start = 0, title = 'Шэдовинг', on
     const result = el('div', { class: 'sh-result' });
     const status = el('div', { class: 'task-note' });
 
-    const speakIt = () => new Promise((resolve) => {
-      if (!('speechSynthesis' in window)) return resolve();
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(item.en);
-      u.lang = 'en-US';
-      if (voice) u.voice = voice;
-      u.rate = rate;
+    // Подсветка слов «караоке» в такт речи
+    const speakIt = () => {
       const spans = [...textEl.querySelectorAll('.sh-w')];
-      // Подсветка слов «караоке» в такт речи
-      u.onboundary = (e) => {
-        if (e.name && e.name !== 'word') return;
-        spans.forEach((s) => s.classList.toggle('on', Number(s.dataset.start) <= e.charIndex && Number(s.dataset.start) + s.textContent.length > e.charIndex));
-      };
-      u.onend = u.onerror = () => { spans.forEach((s) => s.classList.remove('on')); resolve(); };
-      window.speechSynthesis.speak(u);
-    });
+      return speak(item.en, { rate, force: true, onProgress: (f) => {
+        const pos = f * item.en.length;
+        spans.forEach((s) => s.classList.toggle('on', Number(s.dataset.start) <= pos && Number(s.dataset.start) + s.textContent.length > pos));
+      } }).then(() => spans.forEach((s) => s.classList.remove('on')));
+    };
 
     async function listenLoop() {
-      if (playing) { playing = false; window.speechSynthesis.cancel(); return; }
+      if (playing) { playing = false; stopSpeech(); return; }
       playing = true;
       do {
         await speakIt();

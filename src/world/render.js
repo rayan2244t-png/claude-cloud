@@ -73,7 +73,7 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   if (!q.post) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.92;
   }
   container.appendChild(renderer.domElement);
 
@@ -103,7 +103,7 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
     const ao = new N8AOPostPass(scene, camera, w, h);
     ao.configuration.aoRadius = 1.6;
     ao.configuration.distanceFalloff = 1.0;
-    ao.configuration.intensity = 3.8;
+    ao.configuration.intensity = 2.4;
     ao.configuration.color = new THREE.Color('#2b2340');
     ao.configuration.halfRes = q.aoHalf;
     ao.setQualityMode(q.ao);
@@ -112,16 +112,16 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
 
     if (q.godRays) {
       fx.godRays = new GodRaysEffect(camera, sunDisc, {
-        resolutionScale: 0.5, density: 0.96, decay: 0.93, weight: 0.4, exposure: 0.55, samples: 60, clampMax: 1, blur: true,
+        resolutionScale: 0.5, density: 0.96, decay: 0.93, weight: 0.25, exposure: 0.4, samples: 60, clampMax: 1, blur: true,
       });
       composer.addPass(new EffectPass(camera, fx.godRays));
     }
 
-    fx.bloom = new BloomEffect({ mipmapBlur: true, intensity: 0.8, luminanceThreshold: 0.85, luminanceSmoothing: 0.2, radius: 0.8 });
-    fx.hue = new HueSaturationEffect({ saturation: 0.2 });
-    fx.contrast = new BrightnessContrastEffect({ brightness: -0.01, contrast: 0.12 });
+    fx.bloom = new BloomEffect({ mipmapBlur: true, intensity: 0.55, luminanceThreshold: 0.88, luminanceSmoothing: 0.2, radius: 0.8 });
+    fx.hue = new HueSaturationEffect({ saturation: -0.04 });
+    fx.contrast = new BrightnessContrastEffect({ brightness: -0.035, contrast: 0.04 });
     fx.tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
-    fx.vignette = new VignetteEffect({ offset: 0.32, darkness: 0.5 });
+    fx.vignette = new VignetteEffect({ offset: 0.4, darkness: 0.28 });
     composer.addPass(new EffectPass(camera, fx.bloom, fx.hue, fx.contrast, fx.tone, fx.vignette));
 
     fx.tilt = new TiltShiftEffect({ focusArea: 0.74, feather: 0.26, offset: 0.04, kernelSize: KernelSize.SMALL });
@@ -151,7 +151,7 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
       sky.position.copy(camera.position);
       sunDisc.visible = glow > 0.01;
       sunDisc.material.opacity = Math.min(1, glow * 1.5);
-      if (fx.godRays) fx.godRays.godRaysMaterial.exposure = 0.55 * glow;
+      if (fx.godRays) fx.godRays.godRaysMaterial.exposure = 0.4 * glow;
     },
     setSize(w, h) {
       renderer.setSize(w, h);

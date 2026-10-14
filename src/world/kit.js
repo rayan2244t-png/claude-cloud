@@ -1,6 +1,7 @@
 // Общие «кирпичики» для low-poly мира в пастельном стиле:
 // материалы, простые фигуры и надписи на вывесках.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 const matCache = new Map();
@@ -89,7 +90,7 @@ export function mat(color, opts = {}) {
   const key = color + JSON.stringify(opts);
   if (!matCache.has(key)) {
     const { wave, ...rest } = opts;
-    const m = new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, metalness: 0, ...rest });
+    const m = new THREE.MeshStandardMaterial({ color, flatShading: false, roughness: 0.95, metalness: 0, ...rest });
     matCache.set(key, shaderize(m, { wave }));
   }
   return matCache.get(key);
@@ -98,7 +99,7 @@ export function mat(color, opts = {}) {
 // Поверхности, которые блестят в дождь (асфальт, плитка)
 export const WET = [];
 export function wetMat(color, extra = {}) {
-  const m = shaderize(new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, metalness: 0, ...extra }));
+  const m = shaderize(new THREE.MeshStandardMaterial({ color, flatShading: false, roughness: 0.95, metalness: 0, ...extra }));
   m.userData.dryRoughness = m.roughness;
   WET.push(m);
   return m;
@@ -107,7 +108,7 @@ export function wetMat(color, extra = {}) {
 // Материалы, которые светятся ночью (окна, фонари, неон). Яркость задаёт world/time.js
 export const NIGHT_GLOW = [];
 export function glowMat(color, emissive, strength = 1, extra = {}) {
-  const m = shaderize(new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 0, flatShading: true, roughness: 0.6, metalness: 0, ...extra }));
+  const m = shaderize(new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 0, flatShading: false, roughness: 0.8, metalness: 0, ...extra }));
   NIGHT_GLOW.push({ m, strength });
   return m;
 }
@@ -167,8 +168,23 @@ export function cyl(rt, rb, h, color, x = 0, y = 0, z = 0, seg = 12, o) {
   return m;
 }
 
+// Округлые формы — мягкие, без граней (кроны, кусты, камни), как в Goose Game
+const SPHERES = new Map();
+function softSphere(r, detail) {
+  const key = `${r.toFixed(3)}|${detail}`;
+  if (!SPHERES.has(key)) {
+    let g = new THREE.IcosahedronGeometry(r, Math.max(detail, 2));
+    g.deleteAttribute('normal');
+    g.deleteAttribute('uv');
+    g = mergeVertices(g);
+    g.computeVertexNormals();
+    SPHERES.set(key, g);
+  }
+  return SPHERES.get(key);
+}
+
 export function sphere(r, color, x = 0, y = 0, z = 0, detail = 1, o) {
-  const m = mesh(new THREE.IcosahedronGeometry(r, detail), color, o);
+  const m = mesh(softSphere(r, detail), color, o);
   m.position.set(x, y, z);
   return m;
 }
@@ -226,10 +242,10 @@ export const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
 
 // Цветовая палитра мира
 export const PAL = {
-  grass: '#86b47c', grassDark: '#74a36c', grassLight: '#9cc48f',
-  slab: '#dcd6c8', slabDark: '#cfc8b8', curb: '#c4bdae',
+  grass: '#7aab78', grassDark: '#6a9c6c', grassLight: '#8cb985',
+  slab: '#cbc3b2', slabDark: '#bdb5a3', curb: '#b3ab9a',
   asphalt: '#6f7784', line: '#f2d16b', white: '#f6f3ec',
-  trunk: '#8a6a4f', leaf: ['#6fa36a', '#5f9660', '#7db374', '#88bb7a'],
+  trunk: '#8a6a4f', leaf: ['#5f9a62', '#548e5a', '#6aa66a', '#77ae72'],
   iron: '#2e3238', green: '#3e6b4f',
   brick: ['#b0664f', '#9a5844', '#c07a5c', '#a7604c', '#c99a78', '#8f5242', '#d1ae8c'],
   wood: '#b98b5e', woodDark: '#8e6a47',

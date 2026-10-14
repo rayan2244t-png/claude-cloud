@@ -3,7 +3,7 @@ import { el, ui, escapeHtml, shuffle, floatText } from './dom.js';
 import { state, save } from '../game/state.js';
 import { addWord, grade } from '../game/srs.js';
 import { addXP } from '../game/progress.js';
-import { speak } from '../game/speech.js';
+import { speak, stopSpeech } from '../game/speech.js';
 import { sfx } from '../game/audio.js';
 import { openShadowing, compareWords } from './shadow.js';
 import { canListen, listen } from '../game/speech.js';
@@ -41,7 +41,7 @@ export function openLibrary(tab = 'words', opts = {}) {
   sfx('whoosh');
 
   const close = () => {
-    window.speechSynthesis?.cancel();
+    stopSpeech();
     back.classList.remove('open');
     setTimeout(() => back.remove(), 250);
     onBusy(false);

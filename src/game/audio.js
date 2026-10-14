@@ -6,7 +6,7 @@
 import { state } from './state.js';
 
 let ctx = null;
-let master, sfxBus, musicBus, ambBus;
+let master, sfxBus, musicBus, ambBus, voiceBus;
 const amb = {};
 
 const vol = () => state.settings;
@@ -17,10 +17,11 @@ export function initAudio() {
   if (!AC) return;
   ctx = new AC();
   master = ctx.createGain();
-  master.gain.value = 0.9;
+  master.gain.value = vol().master ?? 0.9;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -16;
   master.connect(comp).connect(ctx.destination);
+  voiceBus = gain(vol().voiceVol ?? 1, master);
   sfxBus = gain(vol().sfx ?? 0.8, master);
   musicBus = gain(vol().music ?? 0.35, master);
   ambBus = gain(vol().ambience ?? 0.6, master);
@@ -31,8 +32,44 @@ export function initAudio() {
 export function setVolumes() {
   if (!ctx) return;
   sfxBus.gain.value = vol().sfx ?? 0.8;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime);
   musicBus.gain.value = vol().music ?? 0.35;
   ambBus.gain.value = vol().ambience ?? 0.6;
+  master.gain.value = vol().master ?? 0.9;
+  voiceBus.gain.value = vol().voiceVol ?? 1;
+}
+
+// Громкость для голосов браузера (они играют мимо Web Audio)
+export const voiceVolume = () => (vol().master ?? 0.9) * (vol().voiceVol ?? 1);
+
+// Проиграть синтезированную речь через канал голосов; музыка на это время приглушается
+export function playVoice(samples, rate, { volume = 1 } = {}) {
+  initAudio();
+  if (!ctx) return { done: Promise.resolve(), stop() {}, progress: () => 1 };
+  const buf = ctx.createBuffer(1, samples.length, rate);
+  buf.copyToChannel(samples, 0);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const g = gain(volume, voiceBus);
+  src.connect(g);
+  const t0 = ctx.currentTime;
+  const duck = musicBus.gain;
+  duck.cancelScheduledValues(t0);
+  duck.setTargetAtTime((vol().music ?? 0.35) * 0.45, t0, 0.15);
+  src.start();
+  let stopped = false;
+  const done = new Promise((resolve) => {
+    src.onended = () => {
+      g.disconnect();
+      duck.setTargetAtTime(vol().music ?? 0.35, ctx.currentTime, 0.4);
+      resolve();
+    };
+  });
+  return {
+    done,
+    stop() { if (!stopped) { stopped = true; try { src.stop(); } catch { /* уже остановлен */ } } },
+    progress: () => Math.min(1, (ctx.currentTime - t0) / buf.duration),
+  };
 }
 
 function gain(v, to) {

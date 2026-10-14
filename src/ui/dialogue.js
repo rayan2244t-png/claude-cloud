@@ -5,7 +5,7 @@ import { state, save, fillName, addMoney } from '../game/state.js';
 import { check, prettyAnswer } from '../game/checker.js';
 import { addXP, recordAnswer } from '../game/progress.js';
 import { addWord } from '../game/srs.js';
-import { speak, canSpeak, canListen, listen } from '../game/speech.js';
+import { speak, canSpeak, canListen, listen, stopSpeech, prefetchSpeech } from '../game/speech.js';
 import { DICTIONARY } from '../data/index.js';
 import { rulesForTopic } from '../data/learn/index.js';
 import { openRulePopup } from './library.js';
@@ -387,6 +387,10 @@ export async function runDialogue({ speaker, steps, idPrefix = 'x', title, onTal
   requestAnimationFrame(() => root.classList.add('open'));
 
   const ctx = { speaker, log, task, feedback: fb, onTalk, onCorrect, result: { mistakes: 0, xp: 0 } };
+  // Живые голоса готовим заранее: реплики персонажа по порядку
+  if (speaker.mode !== 'phone' && state.settings.voice) {
+    prefetchSpeech(steps.filter((s) => s.t === 'say' && s.en).map((s) => fillName(s.en)), { gender: speaker.gender, who: speaker.name }, { fresh: true });
+  }
   for (let i = 0; i < steps.length; i++) {
     const step = { ...steps[i], _id: steps[i]._id || `${idPrefix}:${i}` };
     ctx.topic = step.topic;
@@ -394,7 +398,7 @@ export async function runDialogue({ speaker, steps, idPrefix = 'x', title, onTal
     if (!fn) { console.warn('Неизвестный тип шага', step.t); continue; }
     await fn(step, ctx);
   }
-  window.speechSynthesis?.cancel();
+  stopSpeech();
   root.classList.remove('open');
   setTimeout(() => root.remove(), 300);
   return ctx.result;

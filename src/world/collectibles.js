@@ -4,13 +4,21 @@ import { mesh } from './kit.js';
 
 function appleMesh() {
   const g = new THREE.Group();
-  const gold = new THREE.MeshStandardMaterial({ color: '#f2c230', emissive: '#f29a3c', emissiveIntensity: 0.6, metalness: 0.85, roughness: 0.25, flatShading: true });
-  const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), gold);
-  body.scale.set(1, 0.9, 1);
+  // Матовое «золотое» яблоко: без металла (металл без отражений выглядит чёрным), со свечением
+  const gold = new THREE.MeshStandardMaterial({ color: '#ffcf3d', emissive: '#ffb02e', emissiveIntensity: 0.55, metalness: 0, roughness: 0.55 });
+  const profile = [[0, -0.27], [0.16, -0.29], [0.28, -0.2], [0.33, -0.04], [0.32, 0.12], [0.25, 0.25], [0.12, 0.28], [0.04, 0.22], [0, 0.2]]
+    .map(([x, y]) => new THREE.Vector2(x, y));
+  const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 24), gold);
   body.castShadow = true;
-  const stem = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.18, 5), '#6b4a36');
-  stem.position.y = 0.32;
-  const leaf = mesh(new THREE.BoxGeometry(0.18, 0.03, 0.1), '#7db374');
+  const shine = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: '#fffbe6' }));
+  shine.scale.set(0.7, 1.2, 0.5);
+  shine.position.set(-0.17, 0.1, 0.22);
+  body.add(shine);
+  const stem = mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.18, 6), '#6b4a36');
+  stem.position.y = 0.3;
+  stem.rotation.z = -0.2;
+  const leaf = mesh(new THREE.SphereGeometry(0.1, 10, 6), '#7db374');
+  leaf.scale.set(1, 0.25, 0.5);
   leaf.position.set(0.09, 0.36, 0);
   leaf.rotation.z = 0.4;
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.6, 24), new THREE.MeshBasicMaterial({ color: '#fff3c9', transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));

@@ -3,7 +3,7 @@ import { el, ui, money, sleep, floatText } from './dom.js';
 import { addMoney } from '../game/state.js';
 import { addXP, recordAnswer } from '../game/progress.js';
 import { addWord } from '../game/srs.js';
-import { speak, canListen, listen } from '../game/speech.js';
+import { speak, canListen, listen, stopSpeech } from '../game/speech.js';
 import { sfx } from '../game/audio.js';
 import { addGameStat } from '../game/social.js';
 import { compareWords } from './shadow.js';
@@ -15,7 +15,7 @@ function shell(title, onClose) {
   ui().append(root);
   requestAnimationFrame(() => root.classList.add('open'));
   const close = () => {
-    window.speechSynthesis?.cancel();
+    stopSpeech();
     root.classList.remove('open');
     setTimeout(() => root.remove(), 300);
     onClose?.();
@@ -220,18 +220,13 @@ export function startKaraoke({ onDone } = {}) {
     const play = () => {
       const spans = [...words.children];
       spans.forEach((s) => s.classList.remove('on'));
-      const total = en.length;
-      let pos = 0;
-      const u = new SpeechSynthesisUtterance(en);
-      u.lang = 'en-US';
-      u.rate = 0.82;
-      u.pitch = 1.15;
-      u.onboundary = (e) => { pos = e.charIndex; let acc = 0; spans.forEach((s) => { s.classList.toggle('on', acc <= pos); acc += s.textContent.length; }); };
-      u.onend = () => spans.forEach((s) => s.classList.add('on'));
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
       sfx('click');
-      void total;
+      // Луис поёт: подсветка слов в такт голосу
+      speak(en, { rate: 0.82, pitch: 1.15, gender: 'm', who: 'Luis', force: true, onProgress: (f) => {
+        const pos = f * en.length;
+        let acc = 0;
+        spans.forEach((s) => { s.classList.toggle('on', acc <= pos); acc += s.textContent.length; });
+      } }).then(() => spans.forEach((s) => s.classList.add('on')));
     };
     const sing = async () => {
       if (!canListen()) { scores.push(70); i++; line(); return; }

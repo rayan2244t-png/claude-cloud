@@ -1,16 +1,17 @@
 // Точка входа: связывает 3D-мир, сюжет, уроки и интерфейс.
 import { createEngine } from './world/engine.js';
 import { NPCS, QUESTS, THREADS, CHAPTERS } from './data/index.js';
-import { state, save, setFlag, on, addMoney } from './game/state.js';
+import { state, save, setFlag, on, addMoney, fillName } from './game/state.js';
 import { addXP, clearMistake, dayStats, todayKey } from './game/progress.js';
 import { buildDailySteps } from './game/coach.js';
 import { startPlacement } from './ui/placement.js';
 import { addWord, dueWords } from './game/srs.js';
-import { speak } from './game/speech.js';
+import { speak, prefetchSpeech } from './game/speech.js';
 import { runDialogue } from './ui/dialogue.js';
 import { createHud } from './ui/hud.js';
 import { createPhone } from './ui/phone.js';
 import { installButton } from './ui/install.js';
+import { enableNeural, neural, synth } from './game/neural-voice.js';
 import { startShift } from './ui/barista.js';
 import { openAiChat } from './ui/aichat.js';
 import { startRide } from './ui/subway.js';
@@ -72,6 +73,7 @@ let lastWeather = state.weather;
 let saveTimer = 0;
 let stepDist = 0;
 const greeted = new Set();
+const voicePrepared = new Set();
 engine.onFrame((dt, t) => {
   time.update(dt);
   // ---------- Звук ----------
@@ -89,6 +91,14 @@ engine.onFrame((dt, t) => {
       babble('Hey there friend!', { pitch: NPCS[n].pitch, gender: NPCS[n].gender });
     }
     if (!n) greeted.clear();
+    // Подходишь к персонажу — его первые реплики уже готовятся живым голосом
+    const far = engine.nearestNpc(9);
+    if (far && !voicePrepared.has(far)) {
+      voicePrepared.add(far);
+      const q = questFor(far);
+      if (q?.steps) prefetchSpeech(q.steps.filter((s) => s.t === 'say' && s.en).slice(0, 4).map((s) => fillName(s.en)), { gender: NPCS[far].gender, who: NPCS[far].name });
+    }
+    if (!far) voicePrepared.clear();
   }
   const h = time.hour;
   const density = h >= 7 && h < 20 ? 1 : h >= 20 && h < 23 ? 0.6 : 0.25;
@@ -660,9 +670,22 @@ function intro() {
     if (!state.placement) setTimeout(() => startPlacement({ onDone: afterTest }), 700);
     else afterTest();
     checkNewMessages();
+    if (!state.settings.voiceEngine) setTimeout(() => whenFree(offerVoices), 45000);
   }
 }
 intro();
+
+// Один раз предлагаем живые голоса вместо голосов браузера
+function offerVoices() {
+  if (state.settings.voiceEngine) return;
+  const m = modal(el('div', { class: 'complete' },
+    el('div', { class: 'daily-emoji' }, '🎙️'),
+    el('div', { class: 'daily-title' }, 'Живые голоса'),
+    el('div', {}, 'Персонажи могут говорить естественными американскими голосами — как настоящие люди, а не робот. Это лучше для слуха и произношения.'),
+    el('div', { class: 'muted small-note' }, 'Скачивается один раз (92 МБ), дальше работает без интернета. Громкость — Телефон → Настройки.'),
+    el('button', { class: 'btn primary wide', onclick: () => { enableNeural(true); m.close(); toast('Скачиваю голоса — можно играть дальше', { icon: '⬇️' }); } }, '✨ Включить живые голоса'),
+    el('button', { class: 'btn ghost wide', onclick: () => { state.settings.voiceEngine = 'browser'; save(); m.close(); } }, 'Не сейчас')));
+}
 
 // ---------- Офлайн-режим и установка как приложение ----------
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -698,4 +721,4 @@ engine.onFrame((dt) => {
 });
 
 // Для отладки из консоли браузера
-window.bigApple = { state, engine, time, ride };
+window.bigApple = { state, engine, time, ride, neural, voiceApi: { synth, speak, prefetchSpeech } };

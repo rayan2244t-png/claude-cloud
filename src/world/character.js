@@ -1,5 +1,6 @@
-// Персонажи: «игрушечные» фигурки с живой мимикой —
-// глаза моргают, брови двигаются, рот открывается при разговоре, голова поворачивается.
+// Персонажи в духе Untitled Goose Game: безликие «игрушечные» фигурки, как жители
+// из британских детских мультфильмов — большой нос, уши, мягкие формы, плоские цвета.
+// Эмоции передаются позой: кивки головой, жесты руками, походка, взмах рукой.
 import * as THREE from 'three';
 import { mesh, mat } from './kit.js';
 
@@ -23,6 +24,8 @@ const HIPS = (() => {
 })();
 
 const DARK = '#2a2420';
+// Чуть темнее/светлее основного цвета (нос, подошвы)
+const shade = (hex, d) => '#' + new THREE.Color(hex).offsetHSL(0, 0, d).getHexString();
 
 export function makeCharacter(look = {}) {
   const {
@@ -120,8 +123,8 @@ export function makeCharacter(look = {}) {
   body.add(head);
   const neck = mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.16, 10), skin);
   neck.position.y = -0.2;
-  const skull = mesh(new THREE.SphereGeometry(0.26, 24, 18), skin);
-  skull.scale.set(1, 1.05, 0.98);
+  const skull = mesh(new THREE.SphereGeometry(0.29, 28, 20), skin);
+  skull.scale.set(1, 1.08, 0.98);
   head.add(neck, skull);
   // уши
   [-1, 1].forEach((s) => {
@@ -130,61 +133,27 @@ export function makeCharacter(look = {}) {
     ear.position.set(s * 0.255, -0.01, 0);
     head.add(ear);
   });
-  // нос
-  const nose = mesh(new THREE.SphereGeometry(0.05, 12, 10), skin);
-  nose.scale.set(0.9, 1, 1.1);
-  nose.position.set(0, -0.03, 0.255);
+  // нос — главная деталь лица (глаз и рта нет, как у жителей деревни в Goose Game)
+  const nose = mesh(new THREE.CapsuleGeometry(0.06, 0.05, 4, 10), shade(skin, -0.06));
+  nose.rotation.x = Math.PI / 2 - 0.25;
+  nose.scale.set(gender === 'f' ? 0.8 : 1, 1, 1);
+  nose.position.set(0, -0.02, 0.27);
   head.add(nose);
-  // щёки (лёгкий румянец)
-  const blushMat = new THREE.MeshStandardMaterial({ color: '#f08a7a', transparent: true, opacity: 0.35, roughness: 1 });
-  [-1, 1].forEach((s) => {
-    const b = new THREE.Mesh(new THREE.CircleGeometry(0.045, 12), blushMat);
-    b.position.set(s * 0.15, -0.06, 0.215);
-    b.rotation.y = s * 0.55;
-    head.add(b);
-  });
-  // глаза
-  const eyeMat = new THREE.MeshStandardMaterial({ color: '#1e1a18', roughness: 0.25 });
-  const shineMat = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-  const eyes = [-1, 1].map((s) => {
-    const g = new THREE.Group();
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 10), eyeMat);
-    e.scale.set(0.85, 1.15, 0.5);
-    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 6), shineMat);
-    shine.position.set(0.012, 0.016, 0.018);
-    g.add(e, shine);
-    g.position.set(s * 0.09, 0.04, 0.228);
-    head.add(g);
-    return g;
-  });
-  // брови
-  const brows = [-1, 1].map((s) => {
-    const b = mesh(new THREE.CapsuleGeometry(0.014, 0.06, 2, 6), hair);
-    b.rotation.z = Math.PI / 2 + s * 0.12;
-    b.position.set(s * 0.09, 0.115, 0.232);
-    head.add(b);
-    return b;
-  });
-  // рот
-  const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), new THREE.MeshStandardMaterial({ color: '#7a3b34', roughness: 0.8 }));
-  mouth.scale.set(1.1, 0.25, 0.4);
-  mouth.position.set(0, -0.12, 0.225);
-  head.add(mouth);
   if (mustache) {
     const m = mesh(new THREE.CapsuleGeometry(0.025, 0.12, 3, 6), hair);
     m.rotation.z = Math.PI / 2;
-    m.position.set(0, -0.085, 0.25);
+    m.position.set(0, -0.1, 0.27);
     head.add(m);
   }
   if (glasses) {
     const gm = '#2e3238';
     [-0.09, 0.09].forEach((x) => {
       const g = mesh(new THREE.TorusGeometry(0.058, 0.011, 6, 16), gm);
-      g.position.set(x, 0.04, 0.245);
+      g.position.set(x, 0.05, 0.27);
       head.add(g);
     });
     const bridge = mesh(new THREE.BoxGeometry(0.06, 0.012, 0.012), gm);
-    bridge.position.set(0, 0.05, 0.25);
+    bridge.position.set(0, 0.06, 0.28);
     head.add(bridge);
   }
 
@@ -273,7 +242,6 @@ export function makeCharacter(look = {}) {
   let talkTimer = 0;
   let wave = 0;
   let dancing = false;
-  let blinkTimer = 2 + Math.random() * 3;
   let lookTimer = 3 + Math.random() * 4;
   let lookTarget = 0;
 
@@ -285,12 +253,6 @@ export function makeCharacter(look = {}) {
       const walk = Math.min(speed / 4, 1);
       const s = Math.sin(phase);
 
-      // Моргание
-      blinkTimer -= dt;
-      const blink = blinkTimer < 0.12 ? 0.1 : 1;
-      if (blinkTimer < 0) blinkTimer = 2.5 + Math.random() * 3.5;
-      eyes.forEach((e) => { e.scale.y = blink; });
-
       if (dancing) {
         const d = phase * 1.6;
         body.position.y = Math.abs(Math.sin(d)) * 0.25;
@@ -299,8 +261,7 @@ export function makeCharacter(look = {}) {
         arms[1].rotation.z = 2.2 - Math.sin(d) * 0.6;
         legs[0].rotation.x = Math.sin(d) * 0.5;
         legs[1].rotation.x = -Math.sin(d) * 0.5;
-        mouth.scale.y = 0.5;
-        brows.forEach((b) => { b.position.y = 0.13; });
+        head.rotation.x = Math.sin(d * 2) * 0.12;
         phase += dt * 3;
         return;
       }
@@ -321,22 +282,22 @@ export function makeCharacter(look = {}) {
 
       if (talkTimer > 0) {
         talkTimer -= dt;
-        head.rotation.x = Math.sin(talkTimer * 14) * 0.07;
-        mouth.scale.y = 0.25 + Math.abs(Math.sin(talkTimer * 22)) * 0.9;
-        brows.forEach((b, i) => { b.position.y = 0.115 + Math.max(0, Math.sin(talkTimer * 5 + i)) * 0.025; });
-        arms[1].rotation.x = -0.4 + Math.sin(talkTimer * 6) * 0.25;
-        arms[0].rotation.x = -0.15 + Math.sin(talkTimer * 4) * 0.12;
+        // Говорит: кивает, покачивает головой и жестикулирует
+        head.rotation.x = Math.sin(talkTimer * 9) * 0.09;
+        head.rotation.z = Math.sin(talkTimer * 3.3) * 0.06;
+        body.rotation.z = Math.sin(talkTimer * 2.2) * 0.02;
+        arms[1].rotation.x = -0.55 + Math.sin(talkTimer * 6) * 0.3;
+        arms[1].rotation.z = 0.25 + Math.sin(talkTimer * 4.5) * 0.12;
+        arms[0].rotation.x = -0.2 + Math.sin(talkTimer * 4) * 0.15;
       } else {
         head.rotation.x *= 0.9;
-        mouth.scale.y += (0.25 - mouth.scale.y) * 0.3;
-        brows.forEach((b) => { b.position.y += (0.115 - b.position.y) * 0.2; });
+        head.rotation.z *= 0.9;
         arms[1].rotation.x += (s * 0.5 * walk - arms[1].rotation.x) * 0.3;
       }
       if (wave > 0) {
         wave -= dt;
         arms[1].rotation.z = 2.6 + Math.sin(wave * 18) * 0.3;
-        mouth.scale.y = 0.6;
-        brows.forEach((b) => { b.position.y = 0.135; });
+        head.rotation.z = -0.12;
       } else {
         arms[1].rotation.z += (0.1 - arms[1].rotation.z) * 0.2;
       }
