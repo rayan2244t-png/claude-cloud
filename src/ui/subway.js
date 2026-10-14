@@ -16,7 +16,14 @@ const ANNOUNCEMENTS = {
   ],
 };
 
-const NAMES = { manhattan: 'Манхэттен · Times Square', brooklyn: 'Бруклин · Bedford Av' };
+ANNOUNCEMENTS.coney = [
+  { en: 'This is a Coney Island-bound F train. The last stop is Stillwell Avenue.', q: 'Где конечная?', opts: ['Stillwell Avenue', 'Times Square', 'Bedford Avenue', 'Union Square'] },
+  { en: 'This is the last stop on this train. Everyone please leave the train.', q: 'Что просят сделать?', opts: ['Всем выйти — конечная', 'Пересесть на другую линию', 'Оплатить проезд', 'Подождать пять минут'] },
+  { en: 'Next stop: Coney Island. Transfer is available to the D, N and Q trains.', q: 'Какая следующая станция?', opts: ['Coney Island', 'Brooklyn Bridge', 'Queens Plaza', 'Wall Street'] },
+];
+
+const NAMES = { manhattan: 'Манхэттен · Times Square', brooklyn: 'Бруклин · Bedford Av', coney: 'Кони-Айленд · Stillwell Av' };
+const LINES = { manhattan: ['L', '#a7a9ac'], brooklyn: ['L', '#a7a9ac'], coney: ['F', '#f58025'] };
 
 export function startRide({ to, onArrive }) {
   const a = ANNOUNCEMENTS[to][Math.floor(Math.random() * ANNOUNCEMENTS[to].length)];
@@ -24,7 +31,7 @@ export function startRide({ to, onArrive }) {
   const windows = el('div', { class: 'train-windows' }, ...[0, 1, 2].map(() => el('div', { class: 'train-window' }, el('div', { class: 'tunnel' }))));
   const panel = el('div', { class: 'train-panel' });
   const car = el('div', { class: 'train-car' },
-    el('div', { class: 'train-line' }, el('span', { class: 'line-bullet' }, 'L'), ` → ${NAMES[to]}`),
+    el('div', { class: 'train-line' }, el('span', { class: 'line-bullet', style: { background: LINES[to][1] } }, LINES[to][0]), ` → ${NAMES[to]}`),
     windows,
     el('div', { class: 'train-poles' }, el('span'), el('span'), el('span'), el('span')),
     el('div', { class: 'train-seats' }),
@@ -68,7 +75,7 @@ export function startRide({ to, onArrive }) {
 
   function arrive() {
     root.classList.add('arrive');
-    speak(to === 'manhattan' ? 'Welcome to Manhattan!' : 'Welcome back to Brooklyn!', { force: true });
+    speak({ manhattan: 'Welcome to Manhattan!', brooklyn: 'Welcome back to Brooklyn!', coney: 'Welcome to Coney Island!' }[to], { force: true });
     setTimeout(() => {
       root.classList.remove('open');
       setTimeout(() => root.remove(), 500);

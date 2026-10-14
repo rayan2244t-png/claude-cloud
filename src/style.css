@@ -482,3 +482,5 @@ body.in-dialogue .lib-btn { opacity: 0; pointer-events: none; }
 .pair-row { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; padding: 6px 8px; }
 .pair-btn { flex: 1; border: none; background: var(--paper-2); border-radius: 10px; padding: 8px; font-weight: 900; font-size: 1.02rem; }
 .option.big-word { text-align: center; font-size: 1.4rem; padding: 20px; }
+.modal .rule-card { width: 100%; margin-top: 8px; }
+.rule-card:disabled { opacity: .6; cursor: default; }

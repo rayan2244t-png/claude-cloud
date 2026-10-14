@@ -132,6 +132,10 @@ const SFX = {
     tone({ freq: 698, type: 'sine', dur: 0.4, vol: 0.15, at: 0.1 });
     tone({ freq: 554, type: 'sine', dur: 0.5, vol: 0.15, at: 0.45 });
   },
+  firework: () => {
+    noiseBurst({ dur: 0.9, vol: 0.25, freq: 300, q: 0.6, at: 0.05 });
+    for (let i = 0; i < 10; i++) noiseBurst({ dur: 0.05, vol: 0.08, freq: 3000 + Math.random() * 3000, q: 2, at: 0.3 + Math.random() * 0.8 });
+  },
   horn: () => { tone({ freq: 392, type: 'sawtooth', dur: 0.35, vol: 0.05, filter: 1200, to: ambBus }); tone({ freq: 466, type: 'sawtooth', dur: 0.35, vol: 0.05, filter: 1200, to: ambBus }); },
 };
 

@@ -105,6 +105,11 @@ export function createPhone(api) {
             m.why ? el('div', { class: 'muted' }, m.why) : null)));
       },
     },
+    map: {
+      icon: '🗺️', name: 'Карта', color: '#4fa3a5',
+      badge: () => 0,
+      render() { close(); api.travelMenu(); },
+    },
     library: {
       icon: '🎓', name: 'Учебник', color: '#3f6aa8',
       badge: () => 0,

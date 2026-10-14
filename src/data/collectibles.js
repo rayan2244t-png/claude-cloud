@@ -17,4 +17,9 @@ export const COLLECTIBLES = [
   { id: 'm4', map: 'manhattan', pos: [-30.5, 22], en: 'uptown / downtown', ru: 'на север / на юг Манхэттена', text: 'В Манхэттене говорят **uptown** (на север) и **downtown** (на юг). Поезда тоже подписаны: Uptown / Downtown.' },
   { id: 'm5', map: 'manhattan', pos: [19.5, 8], en: 'block', ru: 'квартал', text: 'Расстояния в Нью-Йорке меряют **blocks**: «It\'s three blocks away» — три квартала отсюда.' },
   { id: 'm6', map: 'manhattan', pos: [-36, -8.6], en: 'deli', ru: 'гастроном с сэндвичами', text: '**Deli** — магазин-кафе, где делают огромные сэндвичи. Классика — pastrami on rye (пастрами на ржаном хлебе).' },
+  { id: 'c1', map: 'coney', pos: [-58, -4.6], en: "it's a blast", ru: 'это очень весело', text: '**It was a blast!** — «Было супервесело!» Blast — взрыв, но в сленге — отличное время.' },
+  { id: 'c2', map: 'coney', pos: [57, 23], en: 'brain freeze', ru: 'мозг замёрз (от мороженого)', text: '**Brain freeze** — резкая головная боль, когда быстро ешь мороженое или пьёшь холодное. Очень американское выражение!' },
+  { id: 'c3', map: 'coney', pos: [46, 6], en: 'sunburn', ru: 'солнечный ожог', text: '**I got a sunburn** — я обгорел. Поэтому спасатели и говорят: wear sunscreen!' },
+  { id: 'c4', map: 'coney', pos: [-40, 21], en: 'catch some rays', ru: 'позагорать', text: '**Catch some rays** — «поймать лучей», позагорать. Let\'s catch some rays at the beach!' },
+  { id: 'c5', map: 'coney', pos: [24, 4.5], en: 'grab a bite', ru: 'перекусить', text: '**Grab a bite** — быстро перекусить. На Кони-Айленде — хот-дог на променаде, классика!' },
 ];

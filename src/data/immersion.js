@@ -34,6 +34,12 @@ export const CHATTER = [
   { en: 'The show starts at eight.', ru: 'Шоу начинается в восемь.', map: 'manhattan' },
   { en: 'Wow, look at those lights!', ru: 'Вау, посмотри на эти огни!', map: 'manhattan', when: 'night' },
   { en: "We're lost. Let's ask someone.", ru: 'Мы заблудились. Давай у кого-нибудь спросим.', map: 'manhattan' },
+  { en: "Let's go on the Cyclone!", ru: 'Пошли на «Циклон»!', map: 'coney' },
+  { en: 'The water is freezing!', ru: 'Вода ледяная!', map: 'coney' },
+  { en: "Don't forget the sunscreen!", ru: 'Не забудь крем от солнца!', map: 'coney' },
+  { en: 'Who wants ice cream?', ru: 'Кто хочет мороженого?', map: 'coney' },
+  { en: "I'm gonna get a tan.", ru: 'Я собираюсь позагорать.', map: 'coney', when: 'day' },
+  { en: 'Look at the fireworks!', ru: 'Смотри на фейерверк!', map: 'coney', when: 'night' },
 ];
 
 export const LABELS = [
@@ -74,4 +80,14 @@ export const LABELS = [
   { map: 'manhattan', pos: [-22, 0], en: 'crosswalk', ru: 'пешеходный переход' },
   { map: 'manhattan', pos: [-24, 8], en: 'subway', ru: 'метро', note: 'В Лондоне — underground / tube' },
   { map: 'manhattan', pos: [-30, 8.5], en: 'planter', ru: 'кадка для растений' },
+  { map: 'coney', pos: [-24, -5.4], en: 'Ferris wheel', ru: 'колесо обозрения' },
+  { map: 'coney', pos: [20, -5.4], en: 'roller coaster', ru: 'американские горки' },
+  { map: 'coney', pos: [0, 2], en: 'boardwalk', ru: 'деревянный променад' },
+  { map: 'coney', pos: [10, 13.5], en: 'lifeguard tower', ru: 'вышка спасателя' },
+  { map: 'coney', pos: [0, 12], en: 'sand', ru: 'песок' },
+  { map: 'coney', pos: [20, 24], en: 'ocean', ru: 'океан' },
+  { map: 'coney', pos: [-13, 12], en: 'beach umbrella', ru: 'пляжный зонт' },
+  { map: 'coney', pos: [46, 24], en: 'pier', ru: 'пирс' },
+  { map: 'coney', pos: [4, -5.4], en: 'arcade', ru: 'зал игровых автоматов' },
+  { map: 'coney', pos: [14, -5.4], en: 'ice cream', ru: 'мороженое' },
 ];

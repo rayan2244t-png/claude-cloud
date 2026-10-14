@@ -284,7 +284,7 @@ export function createEngine(container, { npcs, quality = 'high' }) {
     npcObjs,
     onInteract(fn) { handlers.interact = fn; },
     onNpcClick(fn) { handlers.npcClick = fn; },
-    onFrame(fn) { frameHooks.push(fn); },
+    onFrame(fn) { frameHooks.push(fn); return () => { const i = frameHooks.indexOf(fn); if (i >= 0) frameHooks.splice(i, 1); }; },
     setPaused(p) { paused = p; if (p) { keys.clear(); moveTarget = null; tapMarker.visible = false; } },
     focusOn(id) {
       const n = npcObjs[id];

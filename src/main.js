@@ -20,6 +20,7 @@ import { createImmersion } from './ui/immersion.js';
 import { initAudio, sfx, babble, updateAudio, setMusicMood } from './game/audio.js';
 import { openLibrary, setLibraryHooks } from './ui/library.js';
 import { WORLD } from './world/kit.js';
+import { launchFireworks } from './world/fireworks.js';
 import { createTutorial } from './ui/tutorial.js';
 
 const tutorial = createTutorial();
@@ -29,6 +30,7 @@ import { COLLECTIBLES } from './data/collectibles.js';
 const SPEAKER_COLORS = {
   marcus: '#c99a1a', jess: '#4f8a5f', rodriguez: '#a2456c', tony: '#c94f3d', dev: '#3f6aa8', luis: '#7a5a8f',
   sal: '#3e7d4f', emily: '#3f8ab0', jay: '#c98a1a', linda: '#2f9a8a',
+  priya: '#2f3b52', kim: '#3f6aa8', ortiz: '#2f9a8a', maria: '#e94f4f', mike: '#5b7fb3', joe: '#8a6347', samnpc: '#e07a5f',
 };
 const speakerOf = (npc) => ({ ...npc, color: npc.color || SPEAKER_COLORS[npc.id] || '#5b7fb3', mode: 'world' });
 
@@ -114,7 +116,7 @@ function collectApple(apple) {
 }
 
 // ---------- Квесты ----------
-const isDone = (id) => !!state.done[id];
+const isDone = (id) => !!state.done[id] || !!state.phone.doneThreads[id];
 const unlocked = (q) => (q.requires || []).every(isDone);
 const questFor = (npcId) => QUESTS.find((q) => q.npc === npcId && !isDone(q.id) && unlocked(q));
 const lockedQuestFor = (npcId) => QUESTS.find((q) => q.npc === npcId && !isDone(q.id) && !unlocked(q));
@@ -223,10 +225,19 @@ async function playQuest(quest, { replay = false } = {}) {
   questComplete(quest, result);
   if (quest.onDone?.flag) setFlag(quest.onDone.flag);
   if (quest.onDone?.money) { addMoney(quest.onDone.money); floatText(`+${money(quest.onDone.money)}`, 'money'); }
+  if (quest.id === 'finale') celebrate();
   if (quest.onDone?.toast) setTimeout(() => toast(quest.onDone.toast, { icon: '📍', time: 6000 }), 2600);
   checkNewMessages();
   checkChapterDone();
   setTimeout(() => { tutorial.hint('phone'); tutorial.hint('world'); tutorial.hint('time'); }, 1500);
+}
+
+// Финал: ночь и фейерверк над пляжем
+function celebrate() {
+  time.setTime(21.3);
+  const fw = launchFireworks(engine.scene, engine.playerPos, { onBoom: () => sfx('firework') });
+  const stop = engine.onFrame((dt) => { if (!fw.update(dt)) { fw.dispose(); stop?.(); } });
+  confetti();
 }
 
 function replayQuest(npcId) {
@@ -262,7 +273,9 @@ function checkNewMessages() {
 
 const CHAPTER_TEXT = {
   1: ['знакомство, кафе, деньги, вопросы и направления', 'Спустись в метро — тебя ждёт Манхэттен! 🚇'],
-  2: ['прошедшее время, can / can\'t, -ing и работа', 'Продолжай: собирай золотые яблоки, гуляй ночью, болтай с жителями через ИИ. Глава 3 — скоро!'],
+  2: ['прошедшее время, can / can\'t, -ing и работа', 'Глава 3: банк, аптека и врач — всё в Манхэттене и Бруклине.'],
+  3: ['банк, здоровье, звонки, Present Perfect и should', 'Сэм зовёт на Кони-Айленд — садись в метро!'],
+  4: ['будущее, опыт, сравнения, условия и used to', 'Ты прошёл сюжет! Дальше — шэдовинг, тренировка дня, ИИ-разговоры и правила B1.'],
 };
 function checkChapterDone() {
   for (const ch of CHAPTERS) {
@@ -391,10 +404,10 @@ function interaction() {
     if (near(ap.bed, 2.0)) return { label: '😴 Лечь спать', run: goToSleep };
     return null;
   }
-  if (engine.mapId === 'manhattan') {
+  if (engine.mapId !== 'brooklyn') {
     const npcM = engine.nearestNpc();
     if (npcM) return { label: `💬 ${NPCS[npcM].name}`, run: () => talkTo(npcM) };
-    if (near(engine.maps.manhattan.spots.subway, 2.2)) return { label: '🚇 Метро → Бруклин', run: () => ride('brooklyn') };
+    if (near(engine.maps[engine.mapId].spots.subway, 2.4)) return { label: '🚇 Метро', run: travelMenu };
     return null;
   }
   const b = engine.maps.brooklyn.spots;
@@ -408,12 +421,32 @@ function interaction() {
       : { label: '🚪 Дверь', run: () => toast('Заперто. Ключ у миссис Родригес 🔑', { icon: '🚪' }) };
   }
   if (near(b.subway, 2)) {
-    return { label: '🚇 Метро → Манхэттен', run: () => (isDone('subway')
-      ? ride('manhattan')
+    return { label: '🚇 Метро', run: () => (isDone('subway')
+      ? travelMenu()
       : toast('Сначала узнай у Дева, как пользоваться метро', { icon: '🚇' })) };
   }
   if (npc) return { label: `💬 ${NPCS[npc].name}`, run: () => talkTo(npc) };
   return null;
+}
+
+// Куда можно поехать на метро
+const DESTINATIONS = [
+  { id: 'brooklyn', name: 'Бруклин', sub: 'Дом, парк, кофе у Джесс', icon: '🌳', open: () => true },
+  { id: 'manhattan', name: 'Манхэттен', sub: 'Таймс-сквер, пицца, дайнер, банк', icon: '🏙️', open: () => isDone('subway') },
+  { id: 'coney', name: 'Кони-Айленд', sub: 'Пляж, колесо обозрения, горки', icon: '🎡', open: () => isDone('sam4') || isDone('doctor') },
+];
+
+function travelMenu() {
+  if (busy) return;
+  const m = modal([
+    el('div', { class: 'daily-title' }, '🗺️ Куда едем?'),
+    el('div', { class: 'muted small-note' }, `Проезд в метро — ${money(FARE)}. В вагоне будет объявление — проверь, поймёшь ли ты его!`),
+    ...DESTINATIONS.map((d) => el('button', {
+      class: `rule-card ${d.id === engine.mapId ? 'done' : ''}`,
+      disabled: !d.open() || d.id === engine.mapId,
+      onclick: () => { m.close(); ride(d.id); },
+    }, el('span', { class: 'rule-mark' }, d.icon), el('div', { class: 'grow' }, el('b', {}, d.name), el('div', { class: 'muted' }, d.id === engine.mapId ? 'Ты здесь' : d.open() ? d.sub : '🔒 Откроется по сюжету')))),
+  ]);
 }
 
 const FARE = 2.9;
@@ -430,11 +463,15 @@ function ride(to) {
   startRide({
     to,
     onArrive: () => {
-      engine.enterMap(to, to === 'manhattan' ? 'start' : 'subway');
+      engine.enterMap(to, to === 'brooklyn' ? 'subway' : 'start');
       setBusy(false);
       if (to === 'manhattan' && !state.flags.visitedManhattan) {
         setFlag('visitedManhattan');
         setTimeout(() => toast('Добро пожаловать в Манхэттен! Найди пиццерию Сала, танцора и потерявшуюся туристку 🗽', { icon: '🏙️', time: 6500 }), 800);
+      }
+      if (to === 'coney' && !state.flags.visitedConey) {
+        setFlag('visitedConey');
+        setTimeout(() => toast('Кони-Айленд! Пляж, колесо обозрения и горки. Найди спасателя Марию, Большого Майка и дедушку Джо 🎡', { icon: '🌊', time: 7000 }), 800);
       }
     },
   });
@@ -485,6 +522,7 @@ const phone = createPhone({
   runDaily,
   buy,
   openLibrary: (tab) => openLibrary(tab),
+  travelMenu: () => travelMenu(),
   resetTutorial: () => tutorial.reset(),
   startPlacement: () => startPlacement(),
   startShift: shift,

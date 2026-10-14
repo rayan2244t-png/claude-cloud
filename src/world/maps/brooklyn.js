@@ -1,7 +1,7 @@
 // Карта «Бруклин»: улица с браунстоунами, дорога и парк.
 // Новые районы делаются по образцу этого файла и регистрируются в world/maps/index.js.
 import * as THREE from 'three';
-import { mat, mesh, box, block, cyl, sphere, group, rng, pick, PAL, wetMat, cloneMat, WORLD } from '../kit.js';
+import { mat, mesh, box, block, cyl, sphere, group, sign, rng, pick, PAL, wetMat, cloneMat, WORLD } from '../kit.js';
 import {
   brownstone, tree, treePit, streetLamp, hydrant, trashCan, mailbox, bench, bush, flowerBed,
   car, coffeeCart, hotDogStand, subwayEntrance, hoopFence, deliFront,
@@ -65,7 +65,7 @@ export function buildBrooklyn() {
   const specials = {
     '-32': { deli: true, floors: 3, color: '#c99a78' },
     '-24': { fireEscape: true },
-    '-16': { waterTower: true, floors: 5 },
+    '-16': { waterTower: true, floors: 5, clinic: true },
     '-8': { windowBoxes: true },
     '0': { fireEscape: true, floors: 3 },
     '8': { door: '#3e7d5a', windowBoxes: true, color: '#b0664f', home: true },
@@ -78,6 +78,11 @@ export function buildBrooklyn() {
     const b = brownstone(r, { floors: sp.floors || 3 + Math.floor(r() * 2), ...sp });
     b.group.position.set(x, 0, -8);
     root.add(b.group);
+    if (sp.clinic) {
+      const cs = sign('✚ FAMILY CLINIC', 4.2, 0.6, { bg: '#2f9a8a', fg: '#ffffff', w: 768, h: 110, font: 'bold 66px Nunito, sans-serif' });
+      cs.position.set(x + 1.2, 1.25, -7.9);
+      root.add(cs);
+    }
     if (sp.deli) {
       const d = deliFront(7.6);
       d.position.set(x + 0.6, 0, -8);
