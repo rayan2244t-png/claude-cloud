@@ -3,14 +3,14 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {
-  EffectComposer, RenderPass, EffectPass, BloomEffect, GodRaysEffect, TiltShiftEffect,
-  ToneMappingEffect, ToneMappingMode, VignetteEffect, HueSaturationEffect, BrightnessContrastEffect,
-  SMAAEffect, SMAAPreset, KernelSize,
+  EffectComposer, RenderPass, EffectPass, BloomEffect, GodRaysEffect,
+  ToneMappingEffect, ToneMappingMode, HueSaturationEffect, BrightnessContrastEffect,
+  SMAAEffect, SMAAPreset,
 } from 'postprocessing';
 import { N8AOPostPass } from 'n8ao';
 
 export const QUALITY = {
-  high: { label: 'Высокое', pixelRatio: 2, shadow: 4096, post: true, ao: 'Medium', aoHalf: false, godRays: true, smaa: true },
+  high: { label: 'Высокое', pixelRatio: 2, shadow: 4096, post: true, ao: 'Medium', aoHalf: false, godRays: false, smaa: true },
   medium: { label: 'Среднее', pixelRatio: 1.5, shadow: 2048, post: true, ao: 'Low', aoHalf: true, godRays: false, smaa: false },
   low: { label: 'Низкое (быстро)', pixelRatio: 1, shadow: 1024, post: false },
 };
@@ -101,9 +101,9 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
 
     const w = container.clientWidth, h = container.clientHeight;
     const ao = new N8AOPostPass(scene, camera, w, h);
-    ao.configuration.aoRadius = 1.6;
+    ao.configuration.aoRadius = 1.0;
     ao.configuration.distanceFalloff = 1.0;
-    ao.configuration.intensity = 2.4;
+    ao.configuration.intensity = 1.4;
     ao.configuration.color = new THREE.Color('#2b2340');
     ao.configuration.halfRes = q.aoHalf;
     ao.setQualityMode(q.ao);
@@ -117,15 +117,13 @@ export function createRenderPipeline(container, scene, camera, qualityId) {
       composer.addPass(new EffectPass(camera, fx.godRays));
     }
 
-    fx.bloom = new BloomEffect({ mipmapBlur: true, intensity: 0.55, luminanceThreshold: 0.88, luminanceSmoothing: 0.2, radius: 0.8 });
-    fx.hue = new HueSaturationEffect({ saturation: -0.04 });
+    fx.bloom = new BloomEffect({ mipmapBlur: true, intensity: 0.3, luminanceThreshold: 0.9, luminanceSmoothing: 0.2, radius: 0.8 });
+    fx.hue = new HueSaturationEffect({ saturation: -0.1 });
     fx.contrast = new BrightnessContrastEffect({ brightness: -0.035, contrast: 0.04 });
     fx.tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
-    fx.vignette = new VignetteEffect({ offset: 0.4, darkness: 0.28 });
-    composer.addPass(new EffectPass(camera, fx.bloom, fx.hue, fx.contrast, fx.tone, fx.vignette));
+    // Стиль Goose Game: без виньетки и размытия, чистая плоская картинка
+    composer.addPass(new EffectPass(camera, fx.bloom, fx.hue, fx.contrast, fx.tone));
 
-    fx.tilt = new TiltShiftEffect({ focusArea: 0.74, feather: 0.26, offset: 0.04, kernelSize: KernelSize.SMALL });
-    composer.addPass(new EffectPass(camera, fx.tilt));
 
     if (q.smaa) composer.addPass(new EffectPass(camera, new SMAAEffect({ preset: SMAAPreset.HIGH })));
   }

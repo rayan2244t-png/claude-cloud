@@ -27,7 +27,8 @@ export function createEngine(container, { npcs, quality = 'high', playerLook }) 
   const SUN_OFFSET = new THREE.Vector3(-14, 26, 10);
 
   const camera = new THREE.PerspectiveCamera(32, container.clientWidth / container.clientHeight, 0.5, 200);
-  const CAM_OFFSET = new THREE.Vector3(0, 14.5, 20.5);
+  // Ракурс как в Goose Game: ближе и сверху (~45°), герой крупно
+  const CAM_OFFSET = new THREE.Vector3(0, 11.5, 11.5);
   let zoom = 1;
 
   const pipe = createRenderPipeline(container, scene, camera, quality);
@@ -243,11 +244,11 @@ export function createEngine(container, { npcs, quality = 'high', playerLook }) 
     // Камера плавно следует за героем; во время разговора — немного приближается
     // У каждой карты свой ракурс: в Манхэттене камера смотрит вверх, на небоскрёбы
     const focus = talkFocus ? pos.clone().lerp(talkFocus, 0.5) : pos;
-    const z = (talkFocus ? 0.72 : zoom) * (map.camZoom || 1);
+    const z = (talkFocus ? 0.95 : zoom) * (map.camZoom || 1);
     const offset = map.cam ? tmpV.set(...map.cam.offset) : tmpV.copy(CAM_OFFSET);
     const wantPos = focus.clone().add(offset.multiplyScalar(z));
     camPos.lerp(wantPos, Math.min(1, dt * 4));
-    const look = map.cam?.look && !talkFocus ? tmpL.set(...map.cam.look) : tmpL.set(0, talkFocus ? 1.2 : 0.6, talkFocus ? 0 : -1.5);
+    const look = map.cam?.look && !talkFocus ? tmpL.set(...map.cam.look) : tmpL.set(0, talkFocus ? -1.2 : 0.4, talkFocus ? 2.2 : -0.5);
     camLook.lerp(focus.clone().add(look), Math.min(1, dt * 4));
     camera.position.copy(camPos);
     camera.lookAt(camLook);

@@ -242,8 +242,8 @@ export const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
 
 // Цветовая палитра мира
 export const PAL = {
-  grass: '#7aab78', grassDark: '#6a9c6c', grassLight: '#8cb985',
-  slab: '#cbc3b2', slabDark: '#bdb5a3', curb: '#b3ab9a',
+  grass: '#6c9f70', grassDark: '#5f9165', grassLight: '#7aab78',
+  slab: '#bdb5a2', slabDark: '#aea693', curb: '#a39b88',
   asphalt: '#6f7784', line: '#f2d16b', white: '#f6f3ec',
   trunk: '#8a6a4f', leaf: ['#5f9a62', '#548e5a', '#6aa66a', '#77ae72'],
   iron: '#2e3238', green: '#3e6b4f',

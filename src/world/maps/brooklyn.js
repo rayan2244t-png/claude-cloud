@@ -1,6 +1,7 @@
 // Карта «Бруклин»: улица с браунстоунами, дорога и парк.
 // Новые районы делаются по образцу этого файла и регистрируются в world/maps/index.js.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { mat, mesh, box, block, cyl, sphere, group, sign, rng, pick, PAL, wetMat, cloneMat, WORLD } from '../kit.js';
 import {
   brownstone, tree, treePit, streetLamp, hydrant, trashCan, mailbox, bench, bush, flowerBed,
@@ -229,18 +230,41 @@ export function buildBrooklyn() {
   });
   root.add(bench(9.5, 16.2, -Math.PI / 2)); circC(9.5, 16.2, 1.0);
 
-  // Травяные кустики (инстансы)
-  const tuftGeo = new THREE.ConeGeometry(0.06, 0.32, 3);
-  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff', { wave: 2 }), 1600);
-  for (let i = 0; i < 1600; i++) {
-    let x, z;
-    if (i < 220) { x = -60 + r() * 120; z = r() < 0.5 ? -3.25 + (r() - 0.5) * 0.2 : 7.0 + r() * 0.4; }
-    else { x = -50 + r() * 100; z = 7.5 + r() * 20; }
-    m4.makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 0.5, r() * 3, (r() - 0.5) * 0.5));
-    m4.setPosition(x, 0.12, z);
-    tufts.setMatrixAt(i, m4);
-    tufts.setColorAt(i, col.set(pick(r, [PAL.grassDark, '#6b9a63', PAL.grassLight])));
+  const tmpS = new THREE.Vector3();
+  // Пучки травы как в Goose Game: веер из 5–6 травинок, гуще всего — у краёв плитки и газона
+  const blades = [];
+  for (let k = 0; k < 6; k++) {
+    const bl = new THREE.ConeGeometry(0.035, 0.28 + (k % 3) * 0.07, 3);
+    bl.translate(0, 0.14 + (k % 3) * 0.035, 0);
+    bl.rotateZ((k - 2.5) * 0.2);
+    bl.rotateY(k * 1.1);
+    bl.translate((k - 2.5) * 0.035, 0, ((k * 7) % 5 - 2) * 0.02);
+    blades.push(bl);
   }
+  const tuftGeo = mergeGeometries(blades);
+  const TUFTS = 1500;
+  const tufts = new THREE.InstancedMesh(tuftGeo, mat('#ffffff', { wave: 2 }), TUFTS);
+  let i = 0;
+  const putTuft = (x, z, sc = 1) => {
+    if (i >= TUFTS) return;
+    m4.makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 0.25, r() * 6, (r() - 0.5) * 0.25));
+    m4.scale(tmpS.set(sc, sc * (0.8 + r() * 0.5), sc));
+    m4.setPosition(x, 0.02, z);
+    tufts.setMatrixAt(i, m4);
+    tufts.setColorAt(i, col.set(pick(r, ['#5e8f63', '#679a68', '#57885d', '#72a26f'])));
+    i++;
+  };
+  // Кучки у края газона и у бордюров
+  for (let c = 0; c < 170; c++) {
+    const x = -60 + r() * 120;
+    const z = r() < 0.6 ? 7.05 + r() * 0.35 : -3.25 + (r() - 0.5) * 0.25;
+    const n = 2 + Math.floor(r() * 4);
+    for (let k = 0; k < n; k++) putTuft(x + (r() - 0.5) * 0.7, z + (r() - 0.5) * 0.25, 0.8 + r() * 0.5);
+  }
+  // Редкие пучки на газоне и в щелях тротуара
+  while (i < TUFTS - 60) putTuft(-50 + r() * 100, 7.6 + r() * 20, 0.7 + r() * 0.5);
+  while (i < TUFTS) putTuft(-55 + r() * 110, r() < 0.5 ? 3.5 + r() * 3.4 : -6.9 + r() * 3.4, 0.6);
+  tufts.count = i;
   tufts.receiveShadow = true;
   root.add(tufts);
 
@@ -368,7 +392,8 @@ export function buildBrooklyn() {
         const c = tr.userData.center;
         const t = THREE.MathUtils.clamp(tmp.subVectors(c, rayA).dot(rayD) / len2, 0, 1);
         const d = tmp.copy(rayA).addScaledVector(rayD, t).distanceTo(c);
-        blocking = t < 0.96 && d < tr.userData.radius;
+        // Камера теперь ближе и выше: прячем и деревья, которые просто закрывают низ экрана рядом с героем
+        blocking = (t < 0.96 && d < tr.userData.radius * 1.5) || (c.distanceTo(camPos) < 13 && c.z > playerPos.z - 1);
       }
       const want = blocking ? 0 : 1;
       if (Math.abs(tr.userData.fade - want) > 0.01) {

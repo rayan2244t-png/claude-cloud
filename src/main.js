@@ -1,5 +1,6 @@
 // Точка входа: связывает 3D-мир, сюжет, уроки и интерфейс.
 import { createEngine } from './world/engine.js';
+import { loadCharacterModel } from './world/character.js';
 import { NPCS, QUESTS, THREADS, CHAPTERS } from './data/index.js';
 import { state, save, setFlag, on, addMoney, fillName } from './game/state.js';
 import { addXP, clearMistake, dayStats, todayKey } from './game/progress.js';
@@ -43,6 +44,8 @@ const speakerOf = (npc) => ({ ...npc, color: npc.color || SPEAKER_COLORS[npc.id]
 
 state.settings.gfx ??= defaultQuality();
 state.look ||= { ...DEFAULT_LOOK };
+// Модель персонажей (Blender) грузим до создания мира
+await loadCharacterModel();
 const engine = createEngine(document.getElementById('game'), { npcs: NPCS, quality: state.settings.gfx, playerLook: state.look });
 let busy = false; // открыт диалог / мини-игра
 

@@ -191,17 +191,68 @@ export function bench(x, z, rotY = 0) {
   return g;
 }
 
+// Куст как в Goose Game: тёмная основа, покрытая сотнями листиков, и белые цветы-звёздочки
+const LEAF = (() => {
+  const g = new THREE.SphereGeometry(0.1, 6, 4);
+  g.scale(1, 0.28, 0.62);
+  g.translate(0.05, 0, 0);
+  return g;
+})();
+const PETAL_STAR = (() => {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const rr = i % 2 ? 0.045 : 0.11;
+    pts.push(new THREE.Vector2(Math.cos(a) * rr, Math.sin(a) * rr));
+  }
+  const g = new THREE.ShapeGeometry(new THREE.Shape(pts));
+  g.rotateX(-Math.PI / 2);
+  return g;
+})();
+const leafMat = mat('#ffffff', { wave: 1 });
+
 export function bush(r, x, z, s = 1, flowers = true) {
   const g = new THREE.Group();
   const n = 3 + Math.floor(r() * 3);
+  const blobs = [];
   for (let i = 0; i < n; i++) {
-    g.add(sphere((0.5 + r() * 0.35) * s, pick(r, ['#4f8a57', '#5a9660', '#46804f']), (r() - 0.5) * 1.2 * s, 0.4 * s, (r() - 0.5) * 0.9 * s, 0, { opts: { wave: 1 } }));
+    const rad = (0.5 + r() * 0.35) * s;
+    const b = sphere(rad, '#3f7748', (r() - 0.5) * 1.2 * s, 0.4 * s, (r() - 0.5) * 0.9 * s, 0, { opts: { wave: 1 } });
+    blobs.push({ c: b.position.clone(), rad });
+    g.add(b);
   }
+  // Листья по поверхности (верх и бока), каждый смотрит наружу
+  const count = Math.round(70 * n * s);
+  const leaves = new THREE.InstancedMesh(LEAF, leafMat, count);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3(), p = new THREE.Vector3();
+  const col = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const bl = blobs[i % blobs.length];
+    dir.set(r() - 0.5, r() * 0.9 - 0.15, r() - 0.5).normalize();
+    p.copy(bl.c).addScaledVector(dir, bl.rad * 0.98);
+    if (p.y < 0.08) p.y = 0.08;
+    q.setFromUnitVectors(up, dir);
+    q.multiply(new THREE.Quaternion().setFromAxisAngle(up, r() * 6.28));
+    const sc = (0.8 + r() * 0.6) * s;
+    m4.compose(p, q, new THREE.Vector3(sc, sc, sc));
+    leaves.setMatrixAt(i, m4);
+    leaves.setColorAt(i, col.set(pick(r, ['#4c8a55', '#3f7a4a', '#5a9a5f', '#467f4e', '#61a064'])));
+  }
+  leaves.castShadow = true;
+  leaves.receiveShadow = true;
+  g.add(leaves);
   if (flowers) {
-    for (let i = 0; i < 6; i++) {
-      const f = sphere(0.09, '#f6f3ec', (r() - 0.5) * 1.3 * s, (0.5 + r() * 0.4) * s, (r() - 0.5) * 1.0 * s + 0.35 * s, 0, { shadow: false });
+    const nf = 4 + Math.floor(r() * 5);
+    for (let i = 0; i < nf; i++) {
+      const bl = blobs[i % blobs.length];
+      dir.set(r() - 0.5, 0.5 + r() * 0.6, r() - 0.5).normalize();
+      const fp = bl.c.clone().addScaledVector(dir, bl.rad + 0.03);
+      const f = new THREE.Mesh(PETAL_STAR, mat('#f8f6ef', { side: THREE.DoubleSide }));
+      f.position.copy(fp);
+      f.quaternion.setFromUnitVectors(up, dir);
+      const c = sphere(0.035, '#f29a2e', 0, 0.015, 0, 0, { shadow: false });
+      f.add(c);
       g.add(f);
-      g.add(sphere(0.04, '#f2a03c', f.position.x, f.position.y + 0.02, f.position.z + 0.06, 0, { shadow: false }));
     }
   }
   g.position.set(x, 0, z);
