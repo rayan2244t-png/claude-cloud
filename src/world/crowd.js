@@ -69,6 +69,19 @@ export function createCrowd({ lanes, count = 8, seed = 11 }) {
   return {
     group,
     walkers,
+    // Герой крикнул «Hey!» — прохожие рядом останавливаются и оборачиваются, собаки лают
+    startle(pos, radius = 9) {
+      let people = 0, dogs = 0;
+      walkers.forEach((w) => {
+        if (!w.c.root.visible || Math.hypot(w.x - pos.x, w.z - pos.z) > radius) return;
+        w.pause = Math.max(w.pause, 2.2);
+        w.look = 2.2;
+        people++;
+        if (w.dog) dogs++;
+        if (Math.random() < 0.5) setTimeout(() => w.c.wave(0.8), 300 + Math.random() * 500);
+      });
+      return { people, dogs };
+    },
     // density 0..1 — доля прохожих на улице (ночью меньше)
     setDensity(d) { density = d; },
     update(dt, t, playerPos) {
@@ -79,6 +92,7 @@ export function createCrowd({ lanes, count = 8, seed = 11 }) {
         if (!visible) return;
         let moving = true;
         if (w.pause > 0) { w.pause -= dt; moving = false; }
+        if (w.look > 0) w.look -= dt;
         // Уступают дорогу герою
         const ahead = (playerPos.x - w.x) * w.dir;
         if (Math.abs(playerPos.z - w.z) < 0.9 && ahead > 0 && ahead < 1.4) moving = false;
@@ -91,7 +105,10 @@ export function createCrowd({ lanes, count = 8, seed = 11 }) {
         }
         const y = w.lane.y ?? 0;
         w.c.root.position.set(w.x, y, w.z);
-        w.c.root.rotation.y = w.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+        const face = w.look > 0 ? Math.atan2(playerPos.x - w.x, playerPos.z - w.z) : w.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+        let dr = face - w.c.root.rotation.y;
+        dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+        w.c.root.rotation.y += dr * Math.min(1, dt * 6);
         w.c.update(dt, moving ? w.speed : 0);
         if (w.dog) {
           w.dog.g.position.set(w.x + w.dir * 1.1, y, w.z + 0.55);

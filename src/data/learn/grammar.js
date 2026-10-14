@@ -37,7 +37,7 @@ export const GRAMMAR = [
     ],
   },
   {
-    id: `pronouns`, level: `A1`, title: `Местоимения: I / me / my`, topics: [],
+    id: `pronouns`, level: `A1`, title: `Местоимения: I / me / my`, topics: [`pronouns`],
     short: `Три формы: кто делает (I), кого/кому (me), чей (my).`,
     text: `У каждого местоимения три основные формы:
 
@@ -507,7 +507,7 @@ I **work** in Brooklyn (вообще, постоянно) — I'**m working** in
     ],
   },
   {
-    id: `past_simple`, level: `A2`, title: `Past Simple: worked, went, saw`, topics: [],
+    id: `past_simple`, level: `A2`, title: `Past Simple: worked, went, saw`, topics: [`past_simple`],
     short: `Прошлое: правильные глаголы + -ed, неправильные — особая форма.`,
     text: `**Past Simple** — что случилось в прошлом и закончилось: yesterday, last week, in 2020, ago.
 

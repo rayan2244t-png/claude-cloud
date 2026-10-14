@@ -106,8 +106,9 @@ a { color: var(--blue); }
 .todo-item.done { color: #9a958a; }
 .todo-item.done::after {
   content: ''; position: absolute; left: -4px; right: 0; top: 52%; height: 2.5px; background: #3b3a36; border-radius: 2px;
-  transform: rotate(-1.5deg); animation: strike 0.5s ease-out;
+  transform: rotate(-1.5deg);
 }
+.todo-item.fresh::after { animation: strike 0.7s ease-out; }
 @keyframes strike { from { right: 100%; } }
 .todo.collapsed { transform: translateX(-120%) rotate(-1.2deg); }
 .todo-toggle { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: -1; width: 44px; height: 44px; border-radius: 12px; border: none; background: var(--paper); box-shadow: var(--shadow); font-size: 1.3rem; }
@@ -522,3 +523,8 @@ body.in-dialogue .lib-btn { opacity: 0; pointer-events: none; }
 .voice-engine .progress > div { height: 100%; background: linear-gradient(90deg, #7db374, #5f9b6b); transition: width .3s; }
 .voice-engine .row { display: flex; gap: 8px; }
 .small-note.error { color: #c0392b; }
+
+/* ---------- «Hey!» ---------- */
+.shout-btn { position: absolute; right: 16px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 144px); width: 56px; height: 56px; border-radius: 18px; border: none; background: var(--paper); box-shadow: var(--shadow); font-size: 1.6rem; transition: opacity 0.3s, transform 0.15s; }
+.shout-btn:active { transform: scale(0.9); }
+body.in-dialogue .shout-btn { opacity: 0; pointer-events: none; }

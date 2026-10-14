@@ -60,6 +60,7 @@ export function createEngine(container, { npcs, quality = 'high', playerLook }) 
   let speed = 0;
   let moveTarget = null;
   let pendingTalk = null;
+  let held = null; // предмет в руках
 
   // ---------- Персонажи ----------
   const npcObjs = {};
@@ -232,7 +233,8 @@ export function createEngine(container, { npcs, quality = 'high', playerLook }) 
       n.char.root.visible = npcFilter(n.id);
       if (!n.char.root.visible) continue;
       const d = n.pos.distanceTo(pos);
-      const target = d < 4 || n.lookAt ? Math.atan2(pos.x - n.pos.x, pos.z - n.pos.z) : n.baseRot;
+      if (n.attention > 0) n.attention -= dt;
+      const target = d < 4 || n.lookAt || n.attention > 0 ? Math.atan2(pos.x - n.pos.x, pos.z - n.pos.z) : n.baseRot;
       let diff = target - n.char.root.rotation.y;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       n.char.root.rotation.y += diff * Math.min(1, dt * 5);
@@ -301,6 +303,40 @@ export function createEngine(container, { npcs, quality = 'high', playerLook }) 
       scene.remove(player.root);
       player = makeCharacter(look);
       scene.add(player.root);
+      if (held) { player.root.add(held); player.setCarry?.(true); }
+    },
+    // ---------- Предметы в руках (как гусь носит вещи в Goose Game) ----------
+    holdItem(obj) {
+      held = obj;
+      obj.position.set(0, 1.0, 0.42);
+      obj.rotation.set(0, 0, 0);
+      player.root.add(obj);
+      player.setCarry?.(true);
+    },
+    dropItem() {
+      if (!held) return null;
+      const obj = held;
+      held = null;
+      player.root.remove(obj);
+      player.setCarry?.(false);
+      obj.position.set(pos.x + Math.sin(heading) * 0.8, 0, pos.z + Math.cos(heading) * 0.8);
+      obj.rotation.set(0, heading, 0);
+      return obj;
+    },
+    get heldItem() { return held; },
+    get player() { return player; },
+    // «Эй!» — все вокруг оборачиваются на героя
+    shout(radius = 9) {
+      player.wave(0.8);
+      const turned = [];
+      for (const n of Object.values(npcObjs)) {
+        if (!n.char.root.visible || n.pos.distanceTo(pos) > radius) continue;
+        n.attention = 3;
+        turned.push(n.id);
+        setTimeout(() => n.char.wave(0.9), 350 + Math.random() * 400);
+      }
+      const startled = map.crowd?.startle?.(pos, radius) || { people: 0, dogs: 0 };
+      return { npcs: turned, ...startled };
     },
     enterMap(id, spot = 'start') {
       map = maps[id];

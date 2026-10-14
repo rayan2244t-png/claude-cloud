@@ -12,6 +12,7 @@ import { runDialogue } from './ui/dialogue.js';
 import { createHud } from './ui/hud.js';
 import { createPhone } from './ui/phone.js';
 import { installButton } from './ui/install.js';
+import { createErrands } from './ui/errands.js';
 import { enableNeural, neural, synth } from './game/neural-voice.js';
 import { startShift } from './ui/barista.js';
 import { openAiChat } from './ui/aichat.js';
@@ -20,7 +21,7 @@ import { el, ui, toast, modal, confetti, floatText, money, md } from './ui/dom.j
 import { createTimeSystem } from './world/time.js';
 import { defaultQuality } from './world/render.js';
 import { createImmersion } from './ui/immersion.js';
-import { initAudio, sfx, babble, updateAudio, setMusicMood } from './game/audio.js';
+import { initAudio, sfx, babble, updateAudio, setMusicMood, setMusicIntensity } from './game/audio.js';
 import { openLibrary, setLibraryHooks } from './ui/library.js';
 import { WORLD } from './world/kit.js';
 import { launchFireworks } from './world/fireworks.js';
@@ -70,11 +71,13 @@ engine.setNpcFilter((id) => {
 });
 
 const collectibles = createCollectibles(COLLECTIBLES);
+let errands = null; // поручения — создаются ниже, когда готов интерфейс
 collectibles.attach(engine.maps);
 
 let lastWeather = state.weather;
 let saveTimer = 0;
 let stepDist = 0;
+let shoutBoost = 0;
 const greeted = new Set();
 const voicePrepared = new Set();
 engine.onFrame((dt, t) => {
@@ -84,7 +87,15 @@ engine.onFrame((dt, t) => {
   updateAudio(dt, { map: engine.mapId, night: WORLD.night, rain: WORLD.rain, indoor: engine.mapId === 'apartment', nearTraffic: Math.abs(p0.z) < 9 });
   setMusicMood(WORLD.night);
   stepDist += engine.playerSpeed * dt;
-  if (stepDist > 0.62) { stepDist = 0; if (engine.playerSpeed > 1) sfx('step'); }
+  if (stepDist > 0.62) {
+    stepDist = 0;
+    // По газону в парке шаги мягкие, по тротуару — чёткие
+    const onGrass = engine.mapId === 'brooklyn' && p0.z > 7.3;
+    if (engine.playerSpeed > 1) sfx(onGrass ? 'stepGrass' : 'step');
+  }
+  // Музыка как в Goose Game: следит за тем, что делает герой
+  shoutBoost = Math.max(0, shoutBoost - dt * 0.25);
+  setMusicIntensity(busy ? 0.15 : Math.min(1, 0.2 + engine.playerSpeed / 6 + (engine.heldItem ? 0.2 : 0) + shoutBoost));
   // Персонаж с заданием машет и «здоровается», когда подходишь
   if (!busy) {
     const n = engine.nearestNpc(3.2);
@@ -177,6 +188,7 @@ function todos() {
       const closed = !isDone(q.id) && npc.hours && !isOpen(npc);
       list.push({ text: closed ? `${q.todo} (с ${hoursText(npc)})` : q.todo, done: isDone(q.id), optional: q.optional });
     }
+    if (errands) list.push(...errands.todos());
     const apples = Object.keys(state.apples).length;
     list.push({ text: `Найти золотые яблоки 🍎 ${apples}/${COLLECTIBLES.length}`, done: apples >= COLLECTIBLES.length, optional: true });
     // Одна строка на собеседника: зачёркнута, когда прочитаны все его сообщения
@@ -482,6 +494,8 @@ function interaction() {
   const b = engine.maps.brooklyn.spots;
   const npc = engine.nearestNpc();
   const npcDist = npc ? engine.npcObjs[npc].pos.distanceTo(p) : Infinity;
+  const errand = errands?.interaction(npc);
+  if (errand) return errand;
   const doorDist = Math.hypot(p.x - b.homeDoor[0], p.z - b.homeDoor[1]);
   if (npc && npcDist < doorDist) return { label: `💬 ${NPCS[npc].name}`, run: () => talkTo(npc) };
   if (near(b.homeDoor, 1.3)) {
@@ -615,7 +629,40 @@ const hud = createHud({
   onPhone: () => (phone.isOpen ? phone.close() : phone.open()),
   onLibrary: () => { if (!busy) openLibrary('words'); },
   onAction: () => interaction()?.run(),
+  onShout: () => shout(),
 });
+
+// ---------- Поручения (предметы в руках) ----------
+errands = createErrands({ engine, npcs: NPCS, isDone, speakerOf, setBusy, onDone: () => checkAchievements({ applesTotal: COLLECTIBLES.length, rulesTotal: GRAMMAR.length }) });
+on('change', () => errands.spawn());
+engine.onFrame((dt, t) => errands.update(t));
+
+// ---------- «Hey!» — как гогот гуся в Goose Game: все вокруг оборачиваются ----------
+const SHOUTS = [
+  ['Hey!', 'Эй! / Привет!'], ['Excuse me!', 'Извините! (чтобы привлечь внимание)'], ['Hi there!', 'Привет!'],
+  ['Over here!', 'Я здесь! / Сюда!'], ['Good morning!', 'Доброе утро!'], ['Yoo-hoo!', 'Ау! (шутливо)'],
+];
+let shoutCd = 0;
+function shout() {
+  if (busy || phone.isOpen || performance.now() < shoutCd) return;
+  shoutCd = performance.now() + 1200;
+  const morning = time.hour >= 5 && time.hour < 12;
+  const pool = SHOUTS.filter(([en]) => en !== 'Good morning!' || morning);
+  const [en, ru] = pool[Math.floor(Math.random() * pool.length)];
+  speak(en, { force: true, gender: state.look?.gender || 'm', who: 'player', rate: 1 });
+  floatText(`📣 ${en}  ·  ${ru}`);
+  const r = engine.shout();
+  sfx('shout');
+  shoutBoost = 0.6;
+  if (r.dogs) setTimeout(() => sfx('bark'), 350);
+  // Персонаж с заданием отвечает
+  if (r.npcs.length) {
+    const id = r.npcs[0];
+    const reply = ['Hey!', 'Oh, hi!', 'Yes?', 'Hi! Over here!', 'Hello there!'][Math.floor(Math.random() * 5)];
+    setTimeout(() => { engine.npcTalk(id, 1); speak(reply, { force: true, gender: NPCS[id].gender, who: NPCS[id].name, pitch: NPCS[id].pitch }); }, 900);
+  }
+  addGameStat('shouts');
+}
 
 createImmersion({ engine, time, isBusy: () => busy || phone.isOpen });
 setLibraryHooks({ busy: (b) => setBusy(b) });
@@ -644,6 +691,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && !busy && !e.target.closest?.('input')) phone.isOpen ? phone.close() : phone.open();
   if (e.code === 'KeyL' && !busy && !phone.isOpen && !e.target.closest?.('input')) openLibrary('words');
   if (e.code === 'Escape' && phone.isOpen) phone.close();
+  if (e.code === 'KeyH' && !e.target.closest?.('input')) shout();
 });
 
 if (state.items.length) engine.maps.apartment.setItems(state.items);

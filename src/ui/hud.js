@@ -1,11 +1,12 @@
 // Верхняя панель (уровень, опыт, деньги), список дел в блокноте,
 // значки над персонажами и кнопка действия.
 import * as THREE from 'three';
+import { sfx } from '../game/audio.js';
 import { el, ui, money } from './dom.js';
 import { state, on } from '../game/state.js';
 import { levelInfo } from '../game/progress.js';
 
-export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onLibrary, onAction }) {
+export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onLibrary, onAction, onShout }) {
   const lvlBadge = el('div', { class: 'lvl-badge' });
   const lvlTitle = el('div', { class: 'lvl-title' });
   const xpFill = el('div', { class: 'xp-fill' });
@@ -24,9 +25,10 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
   const phoneBtn = el('button', { class: 'phone-btn', onclick: onPhone, title: 'Телефон' }, '📱', el('span', { class: 'badge hidden' }));
   const libBtn = el('button', { class: 'lib-btn', onclick: () => onLibrary(), title: 'Учебник (L)' }, '🎓');
   const actionBtn = el('button', { class: 'action-btn hidden', onclick: () => onAction() });
-  const help = el('div', { class: 'controls-help' }, 'WASD / стрелки или тап — идти · E — говорить');
+  const shoutBtn = el('button', { class: 'shout-btn', onclick: () => onShout?.(), title: 'Крикнуть «Hey!» (H)' }, '📣');
+  const help = el('div', { class: 'controls-help' }, 'WASD / стрелки или тап — идти · E — действие · H — «Hey!»');
 
-  ui().append(top, todoToggle, todo, phoneBtn, libBtn, actionBtn, help);
+  ui().append(top, todoToggle, todo, phoneBtn, libBtn, shoutBtn, actionBtn, help);
   // На телефоне список дел по умолчанию свёрнут, чтобы не закрывать город
   if (window.innerWidth < 640) todo.classList.add('collapsed');
   setTimeout(() => help.classList.add('fade'), 9000);
@@ -39,6 +41,7 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
     markers[npc.id] = m;
   }
 
+  const seen = new Map();
   function refresh() {
     const info = levelInfo();
     lvlBadge.textContent = info.cur.id;
@@ -47,10 +50,17 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
     xpText.textContent = info.next ? `${state.xp} / ${info.next.xp} XP` : `${state.xp} XP`;
     moneyEl.textContent = money(state.money);
 
+    // Зачёркиваем «карандашом» только то, что выполнено только что
     todo.replaceChildren(el('div', { class: 'todo-title' }, 'To-do list'));
+    let fresh = false;
     for (const t of getTodos()) {
-      todo.append(el('div', { class: `todo-item ${t.done ? 'done' : ''} ${t.optional ? 'opt' : ''}` }, t.text));
+      const key = t.text.replace(/ — несу!$/, '');
+      const isNew = t.done && seen.has(key) && !seen.get(key);
+      if (isNew) fresh = true;
+      seen.set(key, !!t.done);
+      todo.append(el('div', { class: `todo-item ${t.done ? 'done' : ''} ${isNew ? 'fresh' : ''} ${t.optional ? 'opt' : ''}` }, t.text));
     }
+    if (fresh) { sfx('scribble'); todo.classList.remove('collapsed'); }
     const unread = state.phone.unread.length;
     const badge = phoneBtn.querySelector('.badge');
     badge.textContent = unread;

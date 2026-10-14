@@ -59,6 +59,9 @@ export const TOPICS = {
   slang: 'Американский разговорный',
   food: 'Еда и кафе',
   listening: 'Понимание на слух',
+  phrases: 'Устойчивые фразы',
+  past_simple: 'Past Simple (прошедшее время)',
+  pronouns: 'Местоимения (my / your / these)',
 };
 
 export function recordAnswer(topic, ok, mistake) {
