@@ -5,7 +5,7 @@
 //  1) с jsDelivr (npm-пакет kokoro-q8-shards — тот же файл, разрезанный на 6 частей),
 //  2) если не вышло — напрямую с Hugging Face.
 // Файл проверяется по SHA-256, так что подменённая модель не загрузится.
-// Голоса (по 0,5 МБ) лежат рядом с игрой в папке voices/.
+// Голоса (по 0,5 МБ) лежат рядом с игрой в папке voices/ (или берутся из npm-пакета kokoro-js на jsDelivr).
 import { KokoroTTS } from 'kokoro-js';
 import { StyleTextToSpeech2Model, Tensor, env } from '@huggingface/transformers';
 
@@ -14,6 +14,7 @@ const MODEL_SIZE = 92361116;
 const MODEL_SHA256 = 'fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478';
 const SHARDS = Array.from({ length: 6 }, (_, i) => `https://cdn.jsdelivr.net/npm/kokoro-q8-shards@1.0.0/kokoro-q8.part${i}.bin`);
 const HF_MODEL = `https://huggingface.co/${REPO}/resolve/main/onnx/model_quantized.onnx`;
+const VOICES_CDN = 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/voices/';
 const CONFIG = '{\n  "model_type": "style_text_to_speech_2"\n}';
 
 // Фонемы → номера (словарь Kokoro-82M)
@@ -94,7 +95,14 @@ function patchFetch() {
     if (!url.includes(REPO)) return realFetch(input, init);
     if (url.endsWith('/config.json')) return new Response(CONFIG, { headers: { 'content-type': 'application/json' } });
     const v = url.match(/\/voices\/(\w+)\.bin$/);
-    if (v) return realFetch(`${voiceBase}${v[1]}.bin`);
+    if (v) {
+      // Голоса: сначала рядом с игрой, иначе — из npm-пакета kokoro-js через jsDelivr
+      try {
+        const r = await realFetch(`${voiceBase}${v[1]}.bin`);
+        if (r.ok) return r;
+      } catch { /* нет рядом — берём с CDN */ }
+      return realFetch(`${VOICES_CDN}${v[1]}.bin`);
+    }
     if (url.endsWith('/onnx/model_quantized.onnx')) {
       const buf = await downloadModel(realFetch);
       return new Response(buf, { headers: { 'content-type': 'application/octet-stream', 'content-length': String(buf.length) } });

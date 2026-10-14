@@ -721,7 +721,7 @@ function intro() {
     if (!state.placement) setTimeout(() => startPlacement({ onDone: afterTest }), 700);
     else afterTest();
     checkNewMessages();
-    if (!state.settings.voiceEngine) setTimeout(() => whenFree(offerVoices), 45000);
+    if (!state.settings.voiceEngine) setTimeout(() => whenFree(offerVoices), 20000);
   }
 }
 intro();

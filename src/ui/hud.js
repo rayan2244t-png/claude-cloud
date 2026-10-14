@@ -1,9 +1,11 @@
 // Верхняя панель (уровень, опыт, деньги), список дел в блокноте,
 // значки над персонажами и кнопка действия.
 import * as THREE from 'three';
-import { sfx } from '../game/audio.js';
+import { sfx, setVolumes } from '../game/audio.js';
+import { speak } from '../game/speech.js';
+import { neural, neuralEnabled, enableNeural } from '../game/neural-voice.js';
 import { el, ui, money } from './dom.js';
-import { state, on } from '../game/state.js';
+import { state, on, save } from '../game/state.js';
 import { levelInfo } from '../game/progress.js';
 
 export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction, getClock, onPhone, onLibrary, onAction, onShout }) {
@@ -25,10 +27,46 @@ export function createHud({ engine, npcs, getTodos, getNpcStatus, getInteraction
   const phoneBtn = el('button', { class: 'phone-btn', onclick: onPhone, title: 'Телефон' }, '📱', el('span', { class: 'badge hidden' }));
   const libBtn = el('button', { class: 'lib-btn', onclick: () => onLibrary(), title: 'Учебник (L)' }, '🎓');
   const actionBtn = el('button', { class: 'action-btn hidden', onclick: () => onAction() });
+  // Быстрая громкость: 🔊 на экране
+  const volBtn = el('button', { class: 'vol-btn', title: 'Громкость и голоса' }, state.settings.muted ? '🔇' : '🔊');
+  const volPanel = el('div', { class: 'vol-panel hidden' });
+  const volSlider = (label, key, def, onDone) => {
+    const input = el('input', { type: 'range', min: '0', max: '1', step: '0.05', value: state.settings[key] ?? def });
+    input.addEventListener('input', () => { state.settings[key] = Number(input.value); setVolumes(); });
+    input.addEventListener('change', () => { save(); onDone?.(); });
+    return el('label', { class: 'vol-row' }, el('span', {}, label), input);
+  };
+  const renderVol = () => {
+    const st = neural.status;
+    const live = neuralEnabled()
+      ? st === 'ready' ? '✅ Живые голоса включены' : st === 'loading' ? `⬇️ Скачиваю живые голоса: ${Math.round(neural.progress * 100)}%` : st === 'error' ? `⚠️ Живые голоса: ${neural.error}` : '…'
+      : null;
+    volPanel.replaceChildren(...[
+      el('div', { class: 'vol-title' }, 'Звук'),
+      volSlider('🔈 Всё', 'master', 0.7),
+      volSlider('🗣️ Голоса', 'voiceVol', 1, () => speak('Can you hear me okay?', { force: true, gender: 'f', who: 'Jess' })),
+      volSlider('🎵 Музыка', 'music', 0.25),
+      volSlider('🔔 Эффекты', 'sfx', 0.8),
+      volSlider('🏙️ Город', 'ambience', 0.3),
+      el('button', { class: 'btn wide', onclick: () => {
+        state.settings.muted = !state.settings.muted;
+        save(); setVolumes();
+        volBtn.textContent = state.settings.muted ? '🔇' : '🔊';
+        renderVol();
+      } }, state.settings.muted ? '🔊 Включить звук' : '🔇 Выключить звук'),
+      live
+        ? el('div', { class: 'vol-note' }, live)
+        : el('button', { class: 'btn primary wide', onclick: () => { enableNeural(true); renderVol(); } }, '🎙️ Включить живые голоса'),
+      live ? null : el('div', { class: 'vol-note' }, 'Естественные американские голоса вместо робота. Скачиваются один раз (92 МБ).'),
+    ].filter(Boolean));
+  };
+  volBtn.addEventListener('click', () => { volPanel.classList.toggle('hidden'); if (!volPanel.classList.contains('hidden')) renderVol(); });
+  on('neural', () => { if (!volPanel.classList.contains('hidden')) renderVol(); });
+
   const shoutBtn = el('button', { class: 'shout-btn', onclick: () => onShout?.(), title: 'Крикнуть «Hey!» (H)' }, '📣');
   const help = el('div', { class: 'controls-help' }, 'WASD / стрелки или тап — идти · E — действие · H — «Hey!»');
 
-  ui().append(top, todoToggle, todo, phoneBtn, libBtn, shoutBtn, actionBtn, help);
+  ui().append(top, todoToggle, todo, phoneBtn, libBtn, shoutBtn, volBtn, volPanel, actionBtn, help);
   // На телефоне список дел по умолчанию свёрнут, чтобы не закрывать город
   if (window.innerWidth < 640) todo.classList.add('collapsed');
   setTimeout(() => help.classList.add('fade'), 9000);

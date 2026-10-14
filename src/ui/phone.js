@@ -311,10 +311,10 @@ export function createPhone(api) {
             return sel;
           })()),
           el('div', { class: 'section-title' }, '🔊 Громкость'),
-          slider('🔈 Общая громкость', 'master', 0.9),
+          slider('🔈 Общая громкость', 'master', 0.7),
           slider('🗣️ Голоса персонажей', 'voiceVol', 1, () => speak('Hi! Can you hear me okay?', { force: true, gender: 'f', who: 'Jess' })),
-          slider('🎵 Музыка', 'music', 0.35),
-          slider('🏙️ Звуки города', 'ambience', 0.6),
+          slider('🎵 Музыка', 'music', 0.25),
+          slider('🏙️ Звуки города', 'ambience', 0.3),
           slider('🔔 Звуковые эффекты', 'sfx', 0.8),
           el('div', { class: 'section-title' }, '🎙️ Голоса'),
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),

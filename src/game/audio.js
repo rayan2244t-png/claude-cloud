@@ -17,14 +17,14 @@ export function initAudio() {
   if (!AC) return;
   ctx = new AC();
   master = ctx.createGain();
-  master.gain.value = vol().master ?? 0.9;
+  master.gain.value = vol().muted ? 0 : vol().master ?? 0.7;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -16;
   master.connect(comp).connect(ctx.destination);
   voiceBus = gain(vol().voiceVol ?? 1, master);
   sfxBus = gain(vol().sfx ?? 0.8, master);
-  musicBus = gain(vol().music ?? 0.35, master);
-  ambBus = gain(vol().ambience ?? 0.6, master);
+  musicBus = gain(vol().music ?? 0.25, master);
+  ambBus = gain(vol().ambience ?? 0.3, master);
   // Фортепиано: сухой сигнал + тёплая реверберация «зала»
   reverb = ctx.createConvolver();
   reverb.buffer = impulse(2.6, 2.2);
@@ -42,14 +42,14 @@ export function setVolumes() {
   if (!ctx) return;
   sfxBus.gain.value = vol().sfx ?? 0.8;
   musicBus.gain.cancelScheduledValues(ctx.currentTime);
-  musicBus.gain.value = vol().music ?? 0.35;
-  ambBus.gain.value = vol().ambience ?? 0.6;
-  master.gain.value = vol().master ?? 0.9;
+  musicBus.gain.value = vol().music ?? 0.25;
+  ambBus.gain.value = vol().ambience ?? 0.3;
+  master.gain.value = vol().muted ? 0 : vol().master ?? 0.7;
   voiceBus.gain.value = vol().voiceVol ?? 1;
 }
 
 // Громкость для голосов браузера (они играют мимо Web Audio)
-export const voiceVolume = () => (vol().master ?? 0.9) * (vol().voiceVol ?? 1);
+export const voiceVolume = () => (vol().muted ? 0 : vol().master ?? 0.7) * (vol().voiceVol ?? 1);
 
 // Проиграть синтезированную речь через канал голосов; музыка на это время приглушается
 export function playVoice(samples, rate, { volume = 1 } = {}) {
@@ -64,13 +64,13 @@ export function playVoice(samples, rate, { volume = 1 } = {}) {
   const t0 = ctx.currentTime;
   const duck = musicBus.gain;
   duck.cancelScheduledValues(t0);
-  duck.setTargetAtTime((vol().music ?? 0.35) * 0.45, t0, 0.15);
+  duck.setTargetAtTime((vol().music ?? 0.25) * 0.45, t0, 0.15);
   src.start();
   let stopped = false;
   const done = new Promise((resolve) => {
     src.onended = () => {
       g.disconnect();
-      duck.setTargetAtTime(vol().music ?? 0.35, ctx.currentTime, 0.4);
+      duck.setTargetAtTime(vol().music ?? 0.25, ctx.currentTime, 0.4);
       resolve();
     };
   });
@@ -314,10 +314,11 @@ let timers = { bird: 2, cricket: 1, horn: 8, car: 3 };
 export function updateAudio(dt, world) {
   if (!ctx) return;
   const t = ctx.currentTime;
-  const city = world.indoor ? 0.08 : world.map === 'manhattan' ? 0.55 : 0.32;
+  // Гул города — фоном, тихо: не должен заглушать голоса
+  const city = world.indoor ? 0.03 : world.map === 'manhattan' ? 0.16 : 0.09;
   amb.hum.gain.setTargetAtTime(city * (1 - world.night * 0.4), t, 0.5);
-  amb.rain.gain.setTargetAtTime(world.indoor ? world.rain * 0.06 : world.rain * 0.28, t, 0.8);
-  amb.wind.gain.setTargetAtTime(world.indoor ? 0 : 0.05 + world.rain * 0.08, t, 1);
+  amb.rain.gain.setTargetAtTime(world.indoor ? world.rain * 0.03 : world.rain * 0.12, t, 0.8);
+  amb.wind.gain.setTargetAtTime(world.indoor ? 0 : 0.015 + world.rain * 0.03, t, 1);
 
   for (const k of Object.keys(timers)) timers[k] -= dt;
   if (world.indoor) return;
@@ -335,7 +336,7 @@ export function updateAudio(dt, world) {
   }
   if (timers.car <= 0) {
     timers.car = 2 + Math.random() * 4;
-    if (world.nearTraffic) noiseBurst({ dur: 1.2, vol: 0.05, freq: 500, q: 0.5, to: ambBus });
+    if (world.nearTraffic) noiseBurst({ dur: 1.2, vol: 0.02, freq: 500, q: 0.5, to: ambBus });
   }
 }
 

@@ -528,3 +528,14 @@ body.in-dialogue .lib-btn { opacity: 0; pointer-events: none; }
 .shout-btn { position: absolute; right: 16px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 144px); width: 56px; height: 56px; border-radius: 18px; border: none; background: var(--paper); box-shadow: var(--shadow); font-size: 1.6rem; transition: opacity 0.3s, transform 0.15s; }
 .shout-btn:active { transform: scale(0.9); }
 body.in-dialogue .shout-btn { opacity: 0; pointer-events: none; }
+
+/* ---------- Быстрая громкость ---------- */
+.vol-btn { position: absolute; right: 16px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 212px); width: 56px; height: 56px; border-radius: 18px; border: none; background: var(--paper); box-shadow: var(--shadow); font-size: 1.5rem; }
+.vol-panel { position: absolute; right: 84px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 120px); width: min(300px, calc(100vw - 110px)); background: var(--paper); border-radius: 18px; box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 60; animation: popIn .2s; }
+.vol-panel.hidden { display: none; }
+.vol-title { font-weight: 800; }
+.vol-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; font-size: .92rem; }
+.vol-row input { width: 100%; }
+.vol-note { font-size: .85rem; color: #6b6a64; }
+body.in-dialogue .vol-btn { opacity: 0; pointer-events: none; }
+.vol-panel .btn { white-space: normal; }
