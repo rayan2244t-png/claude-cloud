@@ -7,6 +7,7 @@ import { speak } from '../game/speech.js';
 import { SHOP } from '../data/shop.js';
 import { QUALITY } from '../world/render.js';
 import { setVolumes, sfx } from '../game/audio.js';
+import { OLLAMA_DEFAULTS, ollamaModels } from '../game/ai.js';
 import { COLLECTIBLES } from '../data/collectibles.js';
 import { friendLevel, hearts } from '../game/social.js';
 import { WARDROBE, COLORS, HAIR_COLORS, SKIN } from '../data/wardrobe.js';
@@ -313,10 +314,36 @@ export function createPhone(api) {
           toggle('🔊 Озвучка реплик', state.settings.voice, (v) => { state.settings.voice = v; save(); }),
           toggle('🇷🇺 Всегда показывать перевод', state.settings.showRu, (v) => { state.settings.showRu = v; save(); }),
           el('label', { class: 'set-row col' }, 'Скорость речи', rate),
-          el('div', { class: 'section-title' }, '🤖 ИИ-собеседники (Claude Haiku 5.5)'),
-          el('div', { class: 'muted small-note', html: 'Чтобы свободно болтать с персонажами, вставь свой API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Ключ хранится только в этом браузере.' }),
-          key,
-          el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
+          el('div', { class: 'section-title' }, '🤖 ИИ-собеседники'),
+          el('div', { class: 'chips' }, ...[['claude', '☁️ Claude Haiku 5.5'], ['ollama', '💻 Локальная (Ollama)']].map(([id, label]) =>
+            el('button', { class: `chip-s ${(state.settings.aiProvider || 'claude') === id ? 'sel' : ''}`, onclick: () => { state.settings.aiProvider = id; save(); APPS.settings.render(); } }, label))),
+          ...((state.settings.aiProvider || 'claude') === 'claude' ? [
+            el('div', { class: 'muted small-note', html: 'Лучшее качество. Вставь API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Ключ хранится только в этом браузере.' }),
+            key,
+            el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
+          ] : (() => {
+            const url = el('input', { class: 'text-in', value: state.settings.ollamaUrl || OLLAMA_DEFAULTS.url, placeholder: OLLAMA_DEFAULTS.url });
+            const model = el('input', { class: 'text-in', value: state.settings.ollamaModel || OLLAMA_DEFAULTS.model, placeholder: OLLAMA_DEFAULTS.model });
+            const status = el('div', { class: 'muted small-note' });
+            return [
+              el('div', { class: 'muted small-note', html: 'Бесплатно, без ключа и интернета — модель работает на твоём компьютере (нужно 8+ ГБ памяти; с телефона не работает).<br><b>Как включить:</b><br>1. Установи <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama</a>.<br>2. В терминале: <code>ollama pull qwen2.5:7b</code><br>3. Разреши доступ из браузера и запусти:<br><code>OLLAMA_ORIGINS=* ollama serve</code><br>(Windows: <code>setx OLLAMA_ORIGINS *</code> и перезапусти Ollama)' }),
+              el('label', { class: 'set-row col' }, 'Адрес Ollama', url),
+              el('label', { class: 'set-row col' }, 'Модель', model),
+              el('button', { class: 'btn primary wide', onclick: async () => {
+                state.settings.ollamaUrl = url.value.trim();
+                state.settings.ollamaModel = model.value.trim();
+                save();
+                status.textContent = 'Проверяю…';
+                try {
+                  const models = await ollamaModels(url.value.trim());
+                  status.textContent = models.length ? `✅ Связь есть! Модели: ${models.join(', ')}` : '⚠️ Ollama работает, но моделей нет. Выполни: ollama pull qwen2.5:7b';
+                } catch {
+                  status.textContent = '❌ Нет связи. Проверь, что Ollama запущена с OLLAMA_ORIGINS=*';
+                }
+              } }, '💾 Сохранить и проверить связь'),
+              status,
+            ];
+          })()),
           el('button', { class: 'btn wide', onclick: () => { api.resetTutorial(); toast('Обучение начнётся заново', { icon: '🎓' }); } }, '🎓 Пройти обучение заново'),
           el('div', { class: 'section-title' }, 'Сохранение'),
           el('div', { class: 'muted small-note' }, 'Перенести прогресс на другое устройство: скопируй код здесь и вставь его там.'),

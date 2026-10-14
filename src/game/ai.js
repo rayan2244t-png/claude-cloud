@@ -1,5 +1,7 @@
-// Свободный разговор с персонажами через Claude Haiku 5.5.
-// Ключ API хранится только в браузере игрока (Настройки в телефоне).
+// Свободный разговор с персонажами.
+// Два варианта: Claude Haiku 5.5 (нужен API-ключ) или локальная модель через Ollama
+// (работает на своём компьютере, без интернета и ключей — подходит там, где Claude недоступен).
+// Настройки — в телефоне героя.
 import Anthropic from '@anthropic-ai/sdk';
 import { state } from './state.js';
 import { levelInfo } from './progress.js';
@@ -22,8 +24,48 @@ FIX: <if the player's last message had a grammar, word or spelling mistake, brie
 BETTER: <the corrected or more natural American version of the player's last message; or none if it was already good>`;
 }
 
+export const provider = () => state.settings.aiProvider || 'claude';
+
+// Готов ли ИИ к работе (для Ollama проверка будет при первом сообщении)
 export function hasKey() {
-  return !!state.settings.apiKey?.trim();
+  return provider() === 'ollama' || !!state.settings.apiKey?.trim();
+}
+
+export const OLLAMA_DEFAULTS = { url: 'http://localhost:11434', model: 'qwen2.5:7b' };
+
+// Проверка связи с Ollama: возвращает список установленных моделей
+export async function ollamaModels(url = state.settings.ollamaUrl || OLLAMA_DEFAULTS.url) {
+  const r = await fetch(`${url.replace(/\/$/, '')}/api/tags`);
+  if (!r.ok) throw new Error(`Ollama ответила ${r.status}`);
+  const data = await r.json();
+  return (data.models || []).map((m) => m.name);
+}
+
+function createOllamaChat(npc) {
+  const url = (state.settings.ollamaUrl || OLLAMA_DEFAULTS.url).replace(/\/$/, '');
+  const model = state.settings.ollamaModel || OLLAMA_DEFAULTS.model;
+  const messages = [{ role: 'system', content: systemPrompt(npc) }];
+  async function send(userText) {
+    messages.push({ role: 'user', content: userText });
+    let data;
+    try {
+      const r = await fetch(`${url}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages, stream: false, options: { temperature: 0.7 } }),
+      });
+      if (!r.ok) throw new Error(r.status === 404 ? `Модель «${model}» не найдена. Скачай её: ollama pull ${model}` : `Ollama ответила ${r.status}`);
+      data = await r.json();
+    } catch (err) {
+      messages.pop();
+      if (err instanceof TypeError) throw new Error('Нет связи с Ollama. Запущена ли она? Разрешён ли доступ из браузера (OLLAMA_ORIGINS)? Подробности — в Настройках.');
+      throw err;
+    }
+    const text = data.message?.content || '';
+    messages.push({ role: 'assistant', content: text });
+    return parse(text);
+  }
+  return { send };
 }
 
 function parse(text) {
@@ -36,6 +78,10 @@ function parse(text) {
 }
 
 export function createChat(npc) {
+  return provider() === 'ollama' ? createOllamaChat(npc) : createClaudeChat(npc);
+}
+
+function createClaudeChat(npc) {
   const client = new Anthropic({ apiKey: state.settings.apiKey.trim(), dangerouslyAllowBrowser: true });
   const system = systemPrompt(npc); // не меняется в течение разговора
   const messages = [];

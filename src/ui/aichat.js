@@ -29,16 +29,38 @@ export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
 
   if (!hasKey()) {
     log.append(el('div', { class: 'tip-card' },
-      el('div', { class: 'tip-title' }, '🤖 Нужен API-ключ'),
-      el('div', { class: 'tip-text', html: 'Свободные разговоры работают через Claude Haiku 5.5. Получи ключ на <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> и вставь его в <b>Телефон → Настройки</b>. Сюжет, задания и смены работают и без ключа.' }),
+      el('div', { class: 'tip-title' }, '🤖 Подключи ИИ'),
+      el('div', { class: 'tip-text', html: 'Два варианта (выбор — в <b>Телефон → Настройки</b>):<br>1) <b>Claude Haiku 5.5</b> — лучшее качество, нужен API-ключ с <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.<br>2) <b>Локальная модель (Ollama)</b> — бесплатно, без ключа и интернета, работает на твоём компьютере. Подходит, если Claude недоступен в твоей стране.<br>Сюжет, задания и мини-игры работают и без ИИ.' }),
       el('button', { class: 'btn primary wide', onclick: () => { close(); openSettings(); } }, 'Открыть настройки')));
     return;
   }
 
   const chat = createChat(npc);
+  // Голосовой режим: говоришь → персонаж отвечает вслух → снова слушает
+  let voiceMode = false;
+  const voiceBtn = canListen() ? el('button', { class: 'btn voice-toggle' }, '🎙️ Голосом') : null;
   const row = el('div', { class: 'row chat-row' }, input, mic, send);
   root.append(row);
-  log.append(el('div', { class: 'sys-note' }, `Поболтай с ${npc.name} о чём угодно. Ошибки будут мягко исправлены. Начни с «Hi!» 🙂`));
+  if (voiceBtn) root.insertBefore(el('div', { class: 'row chat-row voice-row' }, voiceBtn, el('span', { class: 'muted small-note' }, 'Говори — персонаж ответит вслух, и снова будет слушать')), row);
+  voiceBtn?.addEventListener('click', () => {
+    voiceMode = !voiceMode;
+    voiceBtn.classList.toggle('rec', voiceMode);
+    voiceBtn.textContent = voiceMode ? '⏹ Остановить голосовой режим' : '🎙️ Голосом';
+    if (voiceMode) voiceTurn();
+  });
+  async function voiceTurn() {
+    if (!voiceMode || !root.isConnected) return;
+    try {
+      const alts = await listen();
+      if (!voiceMode) return;
+      await submit(alts[0], true);
+    } catch (err) {
+      log.append(el('div', { class: 'sys-note' }, err.message));
+      log.scrollTop = log.scrollHeight;
+      if (voiceMode) setTimeout(voiceTurn, 800);
+    }
+  }
+  log.append(el('div', { class: 'sys-note' }, `Поболтай с ${npc.name} о чём угодно — текстом или голосом. Ошибки будут мягко исправлены. Начни с «Hi!» 🙂`));
 
   const npcBubble = (r) => {
     const ru = el('div', { class: `bubble-ru ${state.settings.showRu ? 'show' : ''}` }, r.ru || '');
@@ -50,10 +72,10 @@ export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
         r.ru ? el('button', { class: 'icon-btn small ru-btn', onclick: () => ru.classList.toggle('show') }, 'RU') : null)));
     log.scrollTop = log.scrollHeight;
     onTalk?.(Math.min(4, r.reply.length * 0.05));
-    speak(r.reply, { pitch: npc.pitch, gender: npc.gender, who: npc.name });
+    return speak(r.reply, { pitch: npc.pitch, gender: npc.gender, who: npc.name, force: voiceMode });
   };
 
-  async function submit(text) {
+  async function submit(text, fromVoice = false) {
     text = text.trim();
     if (!text) return;
     input.value = '';
@@ -75,7 +97,8 @@ export function openAiChat(npc, { onTalk, onClose, openSettings, onReply }) {
         addXP(3);
         floatText('+3 XP');
       }
-      npcBubble(r);
+      const spoken = npcBubble(r);
+      if (fromVoice && voiceMode) { await spoken; setTimeout(voiceTurn, 300); }
     } catch (err) {
       typing.remove();
       log.append(el('div', { class: 'sys-note error' }, `⚠️ ${err.message}`));
