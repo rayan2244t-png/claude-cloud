@@ -507,3 +507,10 @@ body.in-dialogue .lib-btn { opacity: 0; pointer-events: none; }
 .app-grid { overflow-y: auto; flex: 1; align-content: start; padding-bottom: 40px; }
 .phone-wall { flex: none; }
 .voice-row { padding: 0 14px; margin: 0; } .btn.voice-toggle.rec { background: var(--red); color: #fff; animation: pulse 1.2s infinite; } code { background: var(--paper-2); padding: 1px 5px; border-radius: 5px; font-size: .85em; }
+
+/* ---------- Установка на рабочий стол ---------- */
+.intro-install { margin-top: 10px; font-size: 15px; }
+.install-icon { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 8px 24px rgba(0,0,0,.18); margin: 4px auto 6px; display: block; }
+.install-steps { text-align: left; margin: 6px 0 4px; padding-left: 22px; line-height: 1.5; }
+.install-steps li { margin: 6px 0; }
+.modal-back.top { z-index: 95; }

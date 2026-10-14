@@ -11,6 +11,7 @@ import { OLLAMA_DEFAULTS, ollamaModels } from '../game/ai.js';
 import { COLLECTIBLES } from '../data/collectibles.js';
 import { friendLevel, hearts } from '../game/social.js';
 import { WARDROBE, COLORS, HAIR_COLORS, SKIN } from '../data/wardrobe.js';
+import { installButton } from './install.js';
 
 const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
@@ -345,6 +346,7 @@ export function createPhone(api) {
             ];
           })()),
           el('button', { class: 'btn wide', onclick: () => { api.resetTutorial(); toast('Обучение начнётся заново', { icon: '🎓' }); } }, '🎓 Пройти обучение заново'),
+          installButton(),
           el('div', { class: 'section-title' }, 'Сохранение'),
           el('div', { class: 'muted small-note' }, 'Перенести прогресс на другое устройство: скопируй код здесь и вставь его там.'),
           el('button', { class: 'btn wide', onclick: async () => {

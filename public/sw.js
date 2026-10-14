@@ -1,8 +1,8 @@
 // Офлайн-режим: страница — «сначала сеть», файлы игры — «сначала кэш».
-const CACHE = 'big-apple-v1';
+const CACHE = 'big-apple-v2';
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg', './icons/icon-192.png', './icons/icon-512.png'])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

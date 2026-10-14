@@ -10,6 +10,7 @@ import { speak } from './game/speech.js';
 import { runDialogue } from './ui/dialogue.js';
 import { createHud } from './ui/hud.js';
 import { createPhone } from './ui/phone.js';
+import { installButton } from './ui/install.js';
 import { startShift } from './ui/barista.js';
 import { openAiChat } from './ui/aichat.js';
 import { startRide } from './ui/subway.js';
@@ -645,6 +646,7 @@ function intro() {
         ? 'Ты только что прилетел в Нью-Йорк и почти не знаешь английского. Найди жильё, работу и друзей — и заговори как настоящий американец.'
         : `С возвращением${state.name ? `, ${state.name}` : ''}! Бруклин ждёт.`),
       el('button', { class: 'btn primary big', onclick: start }, fresh ? 'Начать игру' : 'Продолжить'),
+      installButton('btn ghost intro-install'),
       el('div', { class: 'intro-help' }, '🖱️ Тап / клик — идти · WASD — ходить · E — говорить · P — телефон · 🔊 включи звук')));
   ui().append(screen);
   function start() {
