@@ -15,7 +15,14 @@ let base = null;
 
 export async function loadCharacterModel(url = new URL('models/human.glb', document.baseURI).href) {
   try {
-    base = await new GLTFLoader().loadAsync(url);
+    try {
+      base = await new GLTFLoader().loadAsync(url);
+    } catch {
+      // Хостинг без бинарных файлов: модель встроена в JS-модуль (base64)
+      const mod = await import(/* @vite-ignore */ new URL('models/human-glb.js', document.baseURI).href);
+      const bin = Uint8Array.from(atob(mod.default), (c) => c.charCodeAt(0));
+      base = await new GLTFLoader().parseAsync(bin.buffer, '');
+    }
     base.clips = splitClips(base.animations);
   } catch (err) {
     console.warn('Модель персонажей не загрузилась, использую простые фигурки', err);
