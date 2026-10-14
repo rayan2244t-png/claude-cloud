@@ -2,7 +2,9 @@
 import { createEngine } from './world/engine.js';
 import { NPCS, QUESTS, THREADS, CHAPTERS } from './data/index.js';
 import { state, save, setFlag, on, addMoney } from './game/state.js';
-import { addXP, clearMistake, dayStats } from './game/progress.js';
+import { addXP, clearMistake, dayStats, todayKey } from './game/progress.js';
+import { buildDailySteps } from './game/coach.js';
+import { startPlacement } from './ui/placement.js';
 import { addWord, dueWords } from './game/srs.js';
 import { speak } from './game/speech.js';
 import { runDialogue } from './ui/dialogue.js';
@@ -320,32 +322,32 @@ async function practiceMistakes(extraSteps = []) {
   return result;
 }
 
+// «Тренировка дня»: тренер подбирает ошибки, слабые темы, повторение и новые слова
 async function runDaily() {
-  const today = new Date().toISOString().slice(0, 10);
-  const words = dueWords(4);
-  const wordSteps = words.map((w) => ({
-    t: 'listen', en: w.en, q: 'Что значит это слово?', topic: 'listening',
-    opts: [w.ru, ...Object.values(state.vocab).filter((x) => x.en !== w.en).sort(() => Math.random() - 0.5).slice(0, 3).map((x) => x.ru)],
-    ok: 0,
-  })).filter((s) => s.opts.length >= 2);
-  let result;
-  if (state.mistakes.length) result = await practiceMistakes(wordSteps);
-  else if (wordSteps.length) {
-    setBusy(true);
-    result = await runDialogue({ speaker: { name: 'Daily', avatar: '🔥', color: '#f2a03c', role: 'Задание дня' }, steps: wordSteps, idPrefix: 'daily' });
-    setBusy(false);
-  } else {
+  const mistakeSteps = [...new Set(state.mistakes.map((m) => m.id))].map(stepById).filter(Boolean);
+  const steps = buildDailySteps(mistakeSteps);
+  if (steps.length < 3) {
     toast('Сначала пройди пару заданий в городе — будет что повторять!', { icon: '🗽' });
     return;
   }
-  if (!result) return;
-  state.daily = today;
+  setBusy(true);
+  const result = await runDialogue({
+    speaker: { name: 'Coach', avatar: '🔥', color: '#f2a03c', role: 'Тренировка дня — подобрана под тебя', gender: 'f', pitch: 1.05 },
+    steps,
+    idPrefix: 'daily',
+    onCorrect: (step, tries) => {
+      if (tries === 0 && step._id?.includes(':') && !step._id.startsWith('daily')) clearMistake(step._id);
+      if (step._learn) addWord(step._learn.en, step._learn.ru);
+    },
+  });
+  setBusy(false);
+  state.daily = todayKey();
   save();
   addMoney(10);
   addXP(30);
   floatText('+$10', 'money');
   confetti();
-  toast('Задание дня выполнено! +$10, +30 XP', { icon: '🔥' });
+  toast(`Тренировка дня выполнена! Ошибок: ${result.mistakes}. +$10, +30 XP · серия 🔥 ${state.stats?.streak || 1}`, { icon: '🔥', time: 5000 });
 }
 
 function buy(item) {
@@ -484,6 +486,7 @@ const phone = createPhone({
   buy,
   openLibrary: (tab) => openLibrary(tab),
   resetTutorial: () => tutorial.reset(),
+  startPlacement: () => startPlacement(),
   startShift: shift,
   onOpen: () => engine.setPaused(true),
   onClose: () => { if (!busy) engine.setPaused(false); },
@@ -495,7 +498,7 @@ const hud = createHud({
   getTodos: todos,
   getNpcStatus: npcStatus,
   getInteraction: interaction,
-  getClock: () => `${time.raining ? '🌧️' : time.phase.icon} ${time.clockText}`,
+  getClock: () => `${time.raining ? '🌧️' : time.phase.icon} ${time.clockText}${(state.stats?.streak || 0) > 1 ? ` · 🔥${state.stats.streak}` : ''}`,
   onPhone: () => (phone.isOpen ? phone.close() : phone.open()),
   onLibrary: () => { if (!busy) openLibrary('words'); },
   onAction: () => interaction()?.run(),
@@ -546,7 +549,9 @@ function intro() {
     screen.classList.add('out');
     setTimeout(() => screen.remove(), 600);
     if (fresh) setTimeout(() => toast('Подойди к таксисту Маркусу у жёлтого такси 🚕', { icon: '👉', time: 6000 }), 900);
-    setTimeout(() => { tutorial.hint('move'); tutorial.hint('talk'); }, 1800);
+    const afterTest = () => setTimeout(() => { tutorial.hint('move'); tutorial.hint('talk'); }, 800);
+    if (!state.placement) setTimeout(() => startPlacement({ onDone: afterTest }), 700);
+    else afterTest();
     checkNewMessages();
   }
 }

@@ -1,7 +1,7 @@
 // Телефон героя: сообщения, словарь, ошибки, задание дня, магазин, смена, настройки.
 import { el, ui, money, toast, shuffle, floatText } from './dom.js';
 import { state, save, resetSave, on, exportSave, importSave } from '../game/state.js';
-import { levelInfo, weakTopics, LEVELS, addXP } from '../game/progress.js';
+import { levelInfo, weakTopics, LEVELS, addXP, todayKey, dayStats } from '../game/progress.js';
 import { dueWords, grade, vocabStats } from '../game/srs.js';
 import { speak } from '../game/speech.js';
 import { SHOP } from '../data/shop.js';
@@ -10,6 +10,8 @@ import { setVolumes, sfx } from '../game/audio.js';
 import { COLLECTIBLES } from '../data/collectibles.js';
 
 const mdLite = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+
+const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
 
 export function createPhone(api) {
   const screen = el('div', { class: 'phone-screen' });
@@ -49,7 +51,7 @@ export function createPhone(api) {
     );
   }
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => todayKey();
 
   const APPS = {
     messages: {
@@ -141,7 +143,7 @@ export function createPhone(api) {
           el('div', { class: 'daily-card' },
             el('div', { class: 'daily-emoji' }, done ? '✅' : '🔥'),
             el('div', { class: 'daily-title' }, done ? 'Сегодня выполнено!' : 'Ежедневная тренировка'),
-            el('div', { class: 'muted' }, done ? 'Приходи завтра за новым заданием.' : 'Повтори слова и исправь ошибки. Награда: $10 и 30 XP.'),
+            el('div', { class: 'muted' }, done ? 'Приходи завтра за новым заданием.' : 'Тренер подберёт упражнения под тебя: твои ошибки, слабые темы, повторение и новые слова. Награда: $10 и 30 XP.'),
             done ? null : el('button', { class: 'btn primary wide', onclick: () => { close(); api.runDaily(); } }, 'Начать')));
       },
     },
@@ -186,14 +188,35 @@ export function createPhone(api) {
         const info = levelInfo();
         const s = vocabStats();
         const doneQ = Object.keys(state.done).length;
+        const today = dayStats();
+        const st = state.stats || { streak: 0, best: 0, days: {} };
+        const days = [];
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i);
+          const key = d.toLocaleDateString('sv-SE');
+          days.push({ key, label: d.toLocaleDateString('ru-RU', { weekday: 'short' }).slice(0, 2), ...(st.days[key] || { xp: 0, min: 0 }) });
+        }
+        const maxXp = Math.max(30, ...days.map((d) => d.xp));
+        const totals = Object.values(st.days).reduce((a, d) => ({ ok: a.ok + d.ok, bad: a.bad + d.bad, min: a.min + d.min }), { ok: 0, bad: 0, min: 0 });
+        const acc = totals.ok + totals.bad ? Math.round((totals.ok / (totals.ok + totals.bad)) * 100) : 0;
+        const chart = el('div', { class: 'xp-chart' }, ...days.map((d) => el('div', { class: 'xp-col', title: `${d.key}: ${d.xp} XP, ${Math.round(d.min)} мин` },
+          el('div', { class: 'xp-bar-v', style: { height: `${Math.max(3, (d.xp / maxXp) * 100)}%` } }),
+          el('small', {}, d.label))));
         page('Мой прогресс',
           el('div', { class: 'progress-hero' },
             el('div', { class: 'lvl-big' }, info.cur.id),
             el('div', {}, el('b', {}, info.cur.title), el('div', { class: 'muted' }, info.next ? `До ${info.next.id}: ${info.next.xp - state.xp} XP` : 'Максимальный уровень!'))),
-          el('div', { class: 'stat-row' }, stat(state.xp, 'XP'), stat(doneQ, 'заданий'), stat(s.total, 'слов')),
+          el('div', { class: 'streak-card' }, el('div', { class: 'streak-fire' }, '🔥'), el('div', {}, el('b', {}, `${st.streak || 1} ${plural(st.streak || 1, 'день', 'дня', 'дней')} подряд`), el('div', { class: 'muted' }, `Рекорд: ${Math.max(st.best || 1, st.streak || 1)} · Занимайся каждый день, чтобы не потерять серию!`))),
+          el('div', { class: 'stat-row' }, stat(Math.round(today.xp), 'XP сегодня'), stat(Math.round(today.min), 'мин сегодня'), stat(today.words, 'новых слов')),
+          el('div', { class: 'section-title' }, 'Опыт за 2 недели'),
+          chart,
+          el('div', { class: 'stat-row' }, stat(state.xp, 'всего XP'), stat(`${acc}%`, 'точность'), stat(Math.round(totals.min), 'минут всего')),
+          el('div', { class: 'stat-row' }, stat(doneQ, 'заданий'), stat(s.total, 'слов в словаре'), stat(Object.keys(state.rulesDone || {}).length, 'правил')),
+          el('div', { class: 'stat-row' }, stat(state.shadow?.count || 0, 'шэдовинг'), stat(Object.keys(state.apples || {}).length, 'яблок 🍎'), stat(state.shifts || 0, 'смен')),
+          el('button', { class: 'btn wide', onclick: () => { close(); api.startPlacement(); } }, state.placement && !state.placement.skipped ? `🎯 Пройти тест уровня ещё раз (был: ${state.placement.level})` : '🎯 Пройти тест уровня'),
           el('div', { class: 'section-title' }, 'Путь'),
           ...LEVELS.map((l, i) => el('div', { class: `path-row ${i <= info.index ? 'reached' : ''}` }, el('span', { class: 'path-dot' }), el('b', {}, l.id), ' ', l.title,
-            i === 0 ? el('span', { class: 'muted' }, ' · Глава 1: Бруклин') : i === 3 ? el('span', { class: 'muted' }, ' · Глава 2: Манхэттен (скоро)') : null)));
+            el('span', { class: 'muted' }, ` · ${['Глава 1: Бруклин', 'Глава 1–2', 'Глава 2: Манхэттен', 'Глава 3: Банк и врач', 'Глава 4: Кони-Айленд', 'Шэдовинг, ИИ, идиомы'][i]}`))));
       },
     },
     settings: {

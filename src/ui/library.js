@@ -5,7 +5,9 @@ import { addWord, grade } from '../game/srs.js';
 import { addXP } from '../game/progress.js';
 import { speak } from '../game/speech.js';
 import { sfx } from '../game/audio.js';
-import { openShadowing } from './shadow.js';
+import { openShadowing, compareWords } from './shadow.js';
+import { canListen, listen } from '../game/speech.js';
+import { SOUNDS } from '../data/learn/pronunciation.js';
 import { runDialogue } from './dialogue.js';
 import { WORD_TOPICS, ALL_WORDS, PHRASES, ALL_PHRASES, CONSTRUCTIONS, GRAMMAR } from '../data/learn/index.js';
 
@@ -46,7 +48,7 @@ export function openLibrary(tab = 'words', opts = {}) {
   };
 
   const TABS = [
-    ['words', '📖 Слова'], ['phrases', '💬 Фразы'], ['constr', '🧩 Конструкции'], ['grammar', '📘 Грамматика'], ['shadow', '🗣️ Шэдовинг'],
+    ['words', '📖 Слова'], ['phrases', '💬 Фразы'], ['constr', '🧩 Конструкции'], ['grammar', '📘 Грамматика'], ['shadow', '🗣️ Шэдовинг'], ['dictation', '✍️ Диктант'], ['pron', '👄 Произношение'],
   ];
   const tabBar = el('div', { class: 'lib-tabs' });
   const body = el('div', { class: 'lib-body' });
@@ -259,7 +261,139 @@ export function openLibrary(tab = 'words', opts = {}) {
     );
   }
 
-  const VIEWS = { words: wordsView, phrases: phrasesView, constr: constrView, grammar: grammarView, shadow: shadowView };
+  // ---------- Диктант ----------
+  let dLevel = 'A1';
+  function dictationView() {
+    const pool = (l) => [...ALL_PHRASES.filter((p) => p.level === l && !p.en.includes('…') && /^[A-Za-z]/.test(p.en)),
+      ...(CONSTRUCTIONS[l] || []).flatMap((c) => c.ex.map(([en, ru]) => ({ en, ru })))];
+    body.replaceChildren(
+      el('div', { class: 'shadow-intro' }, el('b', {}, '✍️ Диктант'), el('div', {}, 'Слушаешь фразу носителя и пишешь её. Тренирует понимание на слух и правописание — то, что не прокачать без практики.')),
+      el('div', { class: 'chips' }, ...['A1', 'A2', 'B1'].map((l) => el('button', { class: `chip-s ${l === dLevel ? 'sel' : ''}`, onclick: () => { dLevel = l; dictationView(); } }, `${l} (${pool(l).length})`))),
+      el('div', { class: 'muted small-note' }, `Лучший результат: ${state.dictBest?.[dLevel] ?? '—'}%`),
+      el('button', { class: 'btn primary wide', onclick: () => runDictation(shuffle(pool(dLevel)).slice(0, 10)) }, '▶️ Начать диктант (10 фраз)'),
+    );
+  }
+
+  function runDictation(items) {
+    let i = 0, total = 0;
+    const one = () => {
+      if (i >= items.length) {
+        const avg = Math.round(total / items.length);
+        state.dictBest ||= {};
+        state.dictBest[dLevel] = Math.max(state.dictBest[dLevel] || 0, avg);
+        save();
+        addXP(Math.round(avg / 10) + 5);
+        sfx('levelup');
+        body.replaceChildren(el('div', { class: 'daily-card' }, el('div', { class: 'daily-emoji' }, avg >= 80 ? '🏆' : '✍️'), el('div', { class: 'daily-title' }, `Точность: ${avg}%`),
+          el('button', { class: 'btn primary wide', onclick: dictationView }, 'Готово')));
+        return;
+      }
+      const it = items[i];
+      const play = (r) => say(it.en, r);
+      setTimeout(() => play(), 300);
+      const input = el('input', { class: 'text-in', placeholder: 'Напиши, что услышал…', autocomplete: 'off', spellcheck: 'false' });
+      const result = el('div', { class: 'sh-result' });
+      const checkBtn = el('button', { class: 'btn primary' }, 'Проверить');
+      const check = () => {
+        if (checkBtn.dataset.done) { i++; one(); return; }
+        const { words, hit, score } = compareWords(it.en, input.value);
+        total += score;
+        sfx(score >= 80 ? 'correct' : 'wrong');
+        result.replaceChildren(
+          el('div', { class: 'sh-score' }, `${score >= 90 ? '🔥' : score >= 60 ? '👍' : '💪'} ${score}%`),
+          el('div', { class: 'sh-words' }, ...words.map((w, k) => el('span', { class: hit.has(k) ? 'ok' : 'miss' }, w))),
+          el('div', {}, el('b', {}, it.en), el('div', { class: 'muted' }, it.ru || '')));
+        checkBtn.textContent = i < items.length - 1 ? 'Дальше ›' : 'Итог ›';
+        checkBtn.dataset.done = '1';
+      };
+      checkBtn.addEventListener('click', check);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') check(); });
+      body.replaceChildren(
+        el('div', { class: 'learn-step muted' }, `Фраза ${i + 1} из ${items.length}`),
+        el('div', { class: 'row center' }, el('button', { class: 'btn listen', onclick: () => play() }, '🔊 Слушать'), el('button', { class: 'btn listen ghost', onclick: () => play(0.55) }, '🐢 Медленно')),
+        input, el('div', { class: 'row' }, el('div', { class: 'grow' }), checkBtn), result);
+      setTimeout(() => input.focus({ preventScroll: true }), 100);
+    };
+    one();
+  }
+
+  // ---------- Произношение ----------
+  function pronView(soundId) {
+    if (soundId) return soundView(SOUNDS.find((s) => s.id === soundId));
+    body.replaceChildren(
+      el('div', { class: 'shadow-intro' }, el('b', {}, '👄 Американское произношение'), el('div', {}, 'Звуки, которые труднее всего даются русскоговорящим. Для каждого: как произносить, тренажёр «услышь разницу» и «скажи сам».')),
+      ...SOUNDS.map((s) => el('button', { class: `rule-card ${state.pron?.[s.id] ? 'done' : ''}`, onclick: () => soundView(s) },
+        el('span', { class: 'rule-mark' }, s.icon), el('div', { class: 'grow' }, el('b', {}, s.title), el('div', { class: 'muted' }, s.pairs.slice(0, 3).map((p) => p.join(' / ')).join(' · '))),
+        el('span', { class: 'rule-mark' }, state.pron?.[s.id] ? '✅' : '›'))),
+    );
+  }
+
+  function soundView(s) {
+    body.replaceChildren(
+      el('button', { class: 'btn ghost small', onclick: () => pronView() }, '‹ Все звуки'),
+      el('div', { class: 'rule' },
+        el('div', { class: 'rule-top' }, el('h3', {}, `${s.icon} ${s.title}`)),
+        el('div', { class: 'rule-text', html: richText(s.how) }),
+        el('div', { class: 'section-title' }, 'Минимальные пары — нажми и слушай разницу'),
+        ...s.pairs.map(([a, b]) => el('div', { class: 'pair-row' },
+          el('button', { class: 'pair-btn', onclick: () => say(a, 0.8) }, '🔊 ', a),
+          el('span', { class: 'muted' }, 'vs'),
+          el('button', { class: 'pair-btn', onclick: () => say(b, 0.8) }, '🔊 ', b),
+          canListen() ? el('button', { class: 'icon-btn small', title: 'Скажи первое слово', onclick: (e) => sayCheck(a, e.currentTarget) }, '🎙️') : null)),
+        el('button', { class: 'btn primary wide', onclick: () => earGame(s) }, '🎧 Тренажёр: услышь разницу (8 раундов)'),
+        el('div', { class: 'section-title' }, 'Скажи сам — шэдовинг'),
+        el('button', { class: 'btn wide', onclick: () => openShadowing(s.say.map((en) => ({ en, ru: '' })), { title: s.title }) }, `🗣️ Фразы со звуком (${s.say.length})`)),
+    );
+  }
+
+  async function sayCheck(word, btn) {
+    btn.textContent = '…';
+    try {
+      const alts = await listen();
+      const ok = alts.some((a) => a.toLowerCase().split(/\s+/).includes(word.toLowerCase()));
+      btn.textContent = ok ? '✅' : '❌';
+      sfx(ok ? 'correct' : 'wrong');
+      if (!ok) btn.title = `Услышал: ${alts[0]}`;
+    } catch { btn.textContent = '🎙️'; }
+  }
+
+  function earGame(s) {
+    let round = 0, right = 0;
+    const next = () => {
+      if (round >= 8) {
+        state.pron ||= {};
+        if (right >= 6) state.pron[s.id] = true;
+        save();
+        addXP(right);
+        sfx(right >= 6 ? 'levelup' : 'soft');
+        body.replaceChildren(el('div', { class: 'daily-card' }, el('div', { class: 'daily-emoji' }, right >= 6 ? '👂✨' : '👂'), el('div', { class: 'daily-title' }, `${right} из 8`),
+          el('div', { class: 'muted' }, right >= 6 ? 'Отличный слух! Звук отмечен как пройденный.' : 'Послушай пары ещё раз медленно и попробуй снова.'),
+          el('button', { class: 'btn primary wide', onclick: () => soundView(s) }, 'Готово')));
+        return;
+      }
+      const pair = s.pairs[Math.floor(Math.random() * s.pairs.length)];
+      const target = pair[Math.random() < 0.5 ? 0 : 1];
+      setTimeout(() => say(target, 0.85), 250);
+      body.replaceChildren(
+        el('div', { class: 'learn-step muted' }, `Раунд ${round + 1} из 8 · что прозвучало?`),
+        el('div', { class: 'row center' }, el('button', { class: 'btn listen', onclick: () => say(target, 0.85) }, '🔊 Ещё раз')),
+        el('div', { class: 'options grid' }, ...shuffle(pair).map((w) => {
+          const b = el('button', { class: 'option big-word' }, w);
+          b.addEventListener('click', () => {
+            const ok = w === target;
+            if (ok) right++;
+            sfx(ok ? 'correct' : 'wrong');
+            b.classList.add(ok ? 'right' : 'wrong');
+            round++;
+            setTimeout(next, ok ? 600 : 1200);
+          });
+          return b;
+        })));
+    };
+    next();
+  }
+
+  const VIEWS = { words: wordsView, phrases: phrasesView, constr: constrView, grammar: grammarView, shadow: shadowView, dictation: dictationView, pron: pronView };
   show(tab, opts.rule);
   return { close };
 }
