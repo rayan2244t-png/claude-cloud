@@ -1,237 +1,265 @@
-// Персонажи в духе Untitled Goose Game: безликие «игрушечные» фигурки, как жители
-// из британских детских мультфильмов — большой нос, уши, мягкие формы, плоские цвета.
-// Эмоции передаются позой: кивки головой, жесты руками, походка, взмах рукой.
+// Персонажи в стиле Untitled Goose Game — как садовник из игры:
+// безликая голова-«яйцо» с большим носом и ушами, плоская кепка, широкие плечи,
+// руки-трубки с крупными ладонями-рукавицами, толстые ноги и большие ботинки.
+// Цвета плоские и матовые, тени мягкие. Эмоции — позой: кивки, жесты, походка вперевалку.
 import * as THREE from 'three';
-import { mesh, mat } from './kit.js';
+import { shaderize } from './kit.js';
 
-const capsule = (r, len, color, seg = 10) => mesh(new THREE.CapsuleGeometry(r, len, 4, seg), color);
+// Матовый «плоский» материал: свет почти не даёт перепадов, как в Goose Game
+const MATS = new Map();
+function flat(color) {
+  if (!MATS.has(color)) {
+    MATS.set(color, shaderize(new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0 })));
+  }
+  return MATS.get(color);
+}
+const part = (geo, color) => {
+  const m = new THREE.Mesh(geo, flat(color));
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+};
+const shade = (hex, l) => '#' + new THREE.Color(hex).offsetHSL(0, 0, l).getHexString();
 
-// Плавная фигура туловища (вращаем профиль вокруг оси)
-function torsoGeometry() {
-  const pts = [
-    [0.0, 0.0], [0.33, 0.0], [0.36, 0.08], [0.34, 0.28], [0.29, 0.5], [0.31, 0.66], [0.3, 0.74], [0.18, 0.82], [0.1, 0.84], [0.0, 0.84],
-  ].map(([x, y]) => new THREE.Vector2(x, y));
-  const g = new THREE.LatheGeometry(pts, 18);
-  g.scale(1, 1, 0.78); // чуть сплющено спереди-назад
+// Плавное туловище: профиль, повёрнутый вокруг оси (узкая талия → широкие покатые плечи)
+function lathe(points, segs = 20, depth = 0.72) {
+  const g = new THREE.LatheGeometry(points.map(([x, y]) => new THREE.Vector2(x, y)), segs);
+  g.scale(1, 1, depth);
+  g.computeVertexNormals();
   return g;
 }
-const TORSO = torsoGeometry();
-const HIPS = (() => {
-  const pts = [[0, 0], [0.3, 0], [0.34, 0.06], [0.35, 0.2], [0.33, 0.22], [0, 0.22]].map(([x, y]) => new THREE.Vector2(x, y));
-  const g = new THREE.LatheGeometry(pts, 18);
-  g.scale(1, 1, 0.8);
+const TORSO = lathe([[0, 0], [0.29, 0], [0.31, 0.12], [0.33, 0.35], [0.37, 0.56], [0.36, 0.66], [0.27, 0.74], [0.12, 0.78], [0, 0.78]]);
+const TORSO_F = lathe([[0, 0], [0.27, 0], [0.26, 0.16], [0.3, 0.38], [0.33, 0.56], [0.32, 0.66], [0.24, 0.74], [0.11, 0.77], [0, 0.77]]);
+// Комбинезон/фартук: передняя часть поверх рубашки (как у садовника)
+const BIB = (() => {
+  const g = new THREE.CylinderGeometry(0.34, 0.31, 0.5, 20, 1, true, -1.05, 2.1);
+  g.scale(1.03, 1, 0.76);
+  return g;
+})();
+const HEAD = (() => {
+  // Голова-яйцо: чуть шире внизу, как у жителей деревни
+  const g = new THREE.SphereGeometry(0.27, 28, 20);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    const k = 1 + (y < 0 ? -y * 0.35 : -y * 0.15);
+    p.setX(i, p.getX(i) * k);
+    p.setZ(i, p.getZ(i) * k * 0.95);
+    p.setY(i, y * 1.12);
+  }
+  g.computeVertexNormals();
+  return g;
+})();
+const NOSE = (() => {
+  // Большой округлый нос «картошкой», смотрит вперёд и чуть вниз
+  const g = new THREE.CapsuleGeometry(0.075, 0.09, 6, 12);
+  g.rotateX(Math.PI / 2 - 0.35);
+  return g;
+})();
+const EAR = (() => {
+  const g = new THREE.SphereGeometry(0.075, 14, 10);
+  g.scale(0.45, 1.15, 0.85);
+  return g;
+})();
+const LIMB = (r, len) => new THREE.CapsuleGeometry(r, len, 6, 14);
+const BOOT = (() => {
+  const g = new THREE.CapsuleGeometry(0.115, 0.2, 6, 12);
+  g.rotateX(Math.PI / 2);
+  g.scale(1, 0.85, 1);
+  return g;
+})();
+const MITT = (() => {
+  const g = new THREE.SphereGeometry(0.1, 16, 12);
+  g.scale(0.9, 1.15, 0.75);
   return g;
 })();
 
-const DARK = '#2a2420';
-// Чуть темнее/светлее основного цвета (нос, подошвы)
-const shade = (hex, d) => '#' + new THREE.Color(hex).offsetHSL(0, 0, d).getHexString();
-
 export function makeCharacter(look = {}) {
   const {
-    skin = '#e8b48f', shirt = '#6c8fbf', pants = '#3d4a5c', shoes = '#3a302a',
-    hair = '#3a2a20', hat = 'none', hatColor = '#c94f3d', apron, glasses, mustache, backpack, headphones, scale = 1,
+    skin = '#c98f63', shirt = '#9fbcdb', pants = '#5d6b7d', shoes = '#4a3a30',
+    hair = '#4a3428', hat = 'none', hatColor = '#7a4a33', apron, glasses, mustache, backpack, headphones, scale = 1,
     gender = 'm', sleeves = 'long', jacket,
   } = look;
-  const hairStyle = look.hairStyle || (hat === 'bun' ? 'bun' : gender === 'f' ? 'long' : 'short');
+  const f = gender === 'f';
+  const hairStyle = look.hairStyle || (hat === 'bun' ? 'bun' : f ? 'long' : 'short');
+  const gloves = look.gloves || shade(skin, -0.04);
 
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
 
-  // ---------- Ноги ----------
-  const legs = [-0.14, 0.14].map((x) => {
+  // ---------- Ноги: толстые «колонны» и крупные ботинки ----------
+  const legs = [-0.15, 0.15].map((x) => {
     const pivot = new THREE.Group();
-    pivot.position.set(x, 0.8, 0);
-    const thigh = capsule(0.115, 0.32, pants);
-    thigh.position.y = -0.2;
-    const shin = capsule(0.1, 0.3, pants);
-    shin.position.y = -0.52;
-    const shoe = mesh(new THREE.CapsuleGeometry(0.1, 0.16, 3, 8), shoes);
-    shoe.rotation.x = Math.PI / 2;
-    shoe.scale.set(1.05, 1, 0.75);
-    shoe.position.set(0, -0.74, 0.06);
-    const sole = mesh(new THREE.BoxGeometry(0.2, 0.03, 0.34), '#f2efe8');
-    sole.position.set(0, -0.8, 0.06);
-    pivot.add(thigh, shin, shoe, sole);
+    pivot.position.set(x, 0.78, 0);
+    const leg = part(LIMB(0.13, 0.5), pants);
+    leg.position.y = -0.36;
+    const boot = part(BOOT, shoes);
+    boot.position.set(0, -0.68, 0.07);
+    pivot.add(leg, boot);
     body.add(pivot);
     return pivot;
   });
 
   // ---------- Туловище ----------
-  const hips = mesh(HIPS, pants);
-  hips.position.y = 0.74;
-  body.add(hips);
-  const torso = mesh(TORSO, shirt);
-  torso.position.y = 0.86;
-  torso.scale.set(gender === 'f' ? 0.92 : 1, 1, 1);
+  const torso = part(f ? TORSO_F : TORSO, jacket || shirt);
+  torso.position.y = 0.66;
   body.add(torso);
-  // Ремень и воротник
-  const belt = mesh(new THREE.TorusGeometry(0.33, 0.025, 4, 20), DARK);
-  belt.rotation.x = Math.PI / 2;
-  belt.scale.set(1, 0.8, 1);
-  belt.position.y = 0.9;
-  body.add(belt);
-  const collar = mesh(new THREE.TorusGeometry(0.12, 0.035, 5, 14), jacket || shirt);
-  collar.rotation.x = Math.PI / 2;
-  collar.position.y = 1.68;
-  body.add(collar);
-  if (jacket) {
-    const j = mesh(new THREE.CylinderGeometry(0.33, 0.37, 0.78, 16, 1, true, 0.5, Math.PI * 2 - 1.0), jacket);
-    j.material = mat(jacket, { side: THREE.DoubleSide });
-    j.position.y = 1.28;
-    j.scale.set(1.05, 1, 0.82);
-    body.add(j);
-  }
+  // Низ (брюки/юбка) — плавный переход к ногам
+  const hips = part(lathe([[0, 0], [0.3, 0], [0.31, 0.1], [0.3, 0.2], [0, 0.2]], 18, 0.74), f && look.skirt ? look.skirt : pants);
+  hips.position.y = 0.6;
+  body.add(hips);
   if (apron) {
-    const a = mesh(new THREE.CylinderGeometry(0.33, 0.37, 0.7, 14, 1, true, -0.85, 1.7), apron);
-    a.material = mat(apron, { side: THREE.DoubleSide });
-    a.position.y = 1.12;
-    a.scale.set(1.04, 1, 0.84);
+    const a = part(BIB, apron);
+    a.material = flat(apron).clone();
+    a.material.side = THREE.DoubleSide;
+    a.position.y = 0.95;
     body.add(a);
   }
+  if (jacket) {
+    // Рубашка видна в вырезе куртки
+    const v = part(new THREE.CylinderGeometry(0.12, 0.2, 0.32, 12, 1, true, -0.6, 1.2), shirt);
+    v.material = flat(shirt).clone();
+    v.material.side = THREE.DoubleSide;
+    v.scale.z = 1.6;
+    v.position.set(0, 1.25, 0.06);
+    body.add(v);
+  }
+  // Воротничок рубашки — два уголка, как у садовника
+  [-1, 1].forEach((s) => {
+    const c = part(new THREE.ConeGeometry(0.07, 0.13, 3), jacket ? shirt : shade(shirt, 0.08));
+    c.rotation.set(Math.PI - 0.5, 0, s * 0.5);
+    c.position.set(s * 0.07, 1.39, 0.15);
+    body.add(c);
+  });
   if (backpack) {
-    const b = mesh(new THREE.CapsuleGeometry(0.18, 0.22, 3, 8), backpack);
-    b.scale.set(1.2, 1, 0.65);
-    b.position.set(0, 1.28, -0.31);
-    const strap = mesh(new THREE.TorusGeometry(0.2, 0.02, 4, 12, Math.PI), DARK);
-    strap.position.set(0, 1.48, -0.1);
-    strap.rotation.y = Math.PI / 2;
-    body.add(b, strap);
+    const b = part(LIMB(0.18, 0.18), backpack);
+    b.scale.set(1.15, 1, 0.6);
+    b.position.set(0, 1.08, -0.27);
+    body.add(b);
   }
 
-  // ---------- Руки ----------
+  // ---------- Руки: трубки и ладони-рукавицы ----------
   const arms = [-1, 1].map((side) => {
     const pivot = new THREE.Group();
-    pivot.position.set(side * 0.36, 1.58, 0);
-    const upper = capsule(0.085, 0.26, jacket || shirt);
-    upper.position.y = -0.16;
-    const lower = capsule(0.075, 0.24, sleeves === 'short' && !jacket ? skin : jacket || shirt);
-    lower.position.y = -0.44;
-    const hand = mesh(new THREE.IcosahedronGeometry(0.085, 2), skin);
-    hand.position.y = -0.63;
-    hand.scale.set(1, 1.1, 0.8);
-    pivot.add(upper, lower, hand);
-    pivot.rotation.z = side * 0.1;
+    pivot.position.set(side * (f ? 0.33 : 0.37), 1.33, 0);
+    const sleeve = part(LIMB(0.085, 0.42), jacket || shirt);
+    sleeve.position.y = -0.27;
+    pivot.add(sleeve);
+    if (sleeves === 'short' && !jacket) {
+      sleeve.scale.y = 0.45;
+      sleeve.position.y = -0.12;
+      const fore = part(LIMB(0.07, 0.24), skin);
+      fore.position.y = -0.38;
+      pivot.add(fore);
+    }
+    const hand = part(MITT, look.gloves ? gloves : skin);
+    hand.position.y = -0.6;
+    pivot.add(hand);
+    pivot.rotation.z = side * 0.08;
     body.add(pivot);
     return pivot;
   });
 
   // ---------- Голова ----------
   const head = new THREE.Group();
-  head.position.y = 1.86;
+  head.position.y = 1.6;
   body.add(head);
-  const neck = mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.16, 10), skin);
+  const neck = part(new THREE.CylinderGeometry(0.085, 0.1, 0.14, 12), skin);
   neck.position.y = -0.2;
-  const skull = mesh(new THREE.SphereGeometry(0.29, 28, 20), skin);
-  skull.scale.set(1, 1.08, 0.98);
+  const skull = part(HEAD, skin);
+  skull.position.y = 0.07;
   head.add(neck, skull);
-  // уши
   [-1, 1].forEach((s) => {
-    const ear = mesh(new THREE.SphereGeometry(0.055, 10, 8), skin);
-    ear.scale.set(0.6, 1, 0.8);
-    ear.position.set(s * 0.255, -0.01, 0);
+    const ear = part(EAR, shade(skin, -0.03));
+    ear.position.set(s * 0.255, 0.04, -0.01);
+    ear.rotation.y = s * 0.25;
     head.add(ear);
   });
-  // нос — главная деталь лица (глаз и рта нет, как у жителей деревни в Goose Game)
-  const nose = mesh(new THREE.CapsuleGeometry(0.06, 0.05, 4, 10), shade(skin, -0.06));
-  nose.rotation.x = Math.PI / 2 - 0.25;
-  nose.scale.set(gender === 'f' ? 0.8 : 1, 1, 1);
-  nose.position.set(0, -0.02, 0.27);
+  const nose = part(NOSE, shade(skin, -0.05));
+  nose.scale.setScalar(f ? 0.78 : 1);
+  nose.position.set(0, 0.02, 0.27);
   head.add(nose);
   if (mustache) {
-    const m = mesh(new THREE.CapsuleGeometry(0.025, 0.12, 3, 6), hair);
+    const m = part(LIMB(0.03, 0.12), hair);
     m.rotation.z = Math.PI / 2;
-    m.position.set(0, -0.1, 0.27);
+    m.position.set(0, -0.08, 0.27);
     head.add(m);
   }
   if (glasses) {
     const gm = '#2e3238';
-    [-0.09, 0.09].forEach((x) => {
-      const g = mesh(new THREE.TorusGeometry(0.058, 0.011, 6, 16), gm);
-      g.position.set(x, 0.05, 0.27);
+    [-0.1, 0.1].forEach((x) => {
+      const g = part(new THREE.TorusGeometry(0.06, 0.012, 6, 18), gm);
+      g.position.set(x, 0.1, 0.25);
       head.add(g);
     });
-    const bridge = mesh(new THREE.BoxGeometry(0.06, 0.012, 0.012), gm);
-    bridge.position.set(0, 0.06, 0.28);
-    head.add(bridge);
   }
 
-  // ---------- Волосы и головные уборы ----------
-  const hairCap = mesh(new THREE.SphereGeometry(0.272, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), hair);
-  hairCap.rotation.x = -0.32;
-  hairCap.position.set(0, 0.02, -0.025);
-  if (hairStyle !== 'bald') head.add(hairCap);
+  // ---------- Волосы: «пятна» по бокам и сзади, как бакенбарды садовника ----------
+  const H = (geo, x, y, z, sx = 1, sy = 1, sz = 1) => {
+    const m = part(geo, hair);
+    m.position.set(x, y, z);
+    m.scale.set(sx, sy, sz);
+    head.add(m);
+    return m;
+  };
+  if (hairStyle !== 'bald') {
+    // Затылок
+    H(new THREE.SphereGeometry(0.275, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), 0, 0.1, -0.03, 1.01, 1.08, 1).rotation.x = -0.55;
+    // Бакенбарды
+    [-1, 1].forEach((s) => H(new THREE.SphereGeometry(0.07, 12, 10), s * 0.22, 0.02, 0.07, 0.5, 1.4, 0.9));
+  }
   if (hairStyle === 'long') {
-    const back = mesh(new THREE.CapsuleGeometry(0.2, 0.28, 4, 12), hair);
-    back.scale.set(1.25, 1, 0.6);
-    back.position.set(0, -0.14, -0.13);
-    head.add(back);
-    [-1, 1].forEach((s) => {
-      const side = mesh(new THREE.CapsuleGeometry(0.07, 0.22, 3, 8), hair);
-      side.position.set(s * 0.22, -0.1, 0.02);
-      head.add(side);
-    });
+    H(LIMB(0.2, 0.26), 0, -0.12, -0.12, 1.25, 1, 0.6);
+    [-1, 1].forEach((s) => H(LIMB(0.07, 0.24), s * 0.22, -0.08, 0.03));
   } else if (hairStyle === 'ponytail') {
-    const tail = mesh(new THREE.CapsuleGeometry(0.07, 0.24, 3, 8), hair);
-    tail.position.set(0, -0.05, -0.3);
-    tail.rotation.x = 0.5;
-    head.add(tail);
+    H(LIMB(0.07, 0.24), 0, -0.02, -0.3).rotation.x = 0.5;
   } else if (hairStyle === 'bun') {
-    const bun = mesh(new THREE.SphereGeometry(0.11, 14, 10), hair);
-    bun.position.set(0, 0.24, -0.12);
-    head.add(bun);
+    H(new THREE.SphereGeometry(0.11, 14, 10), 0, 0.33, -0.12);
   } else if (hairStyle === 'curly') {
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      const c = mesh(new THREE.IcosahedronGeometry(0.09, 1), hair);
-      c.position.set(Math.cos(a) * 0.22, 0.12 + Math.sin(i * 1.7) * 0.05, Math.sin(a) * 0.2 - 0.04);
-      head.add(c);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      H(new THREE.SphereGeometry(0.09, 10, 8), Math.cos(a) * 0.23, 0.2 + Math.sin(i * 1.7) * 0.04, Math.sin(a) * 0.21 - 0.04);
     }
-    const top = mesh(new THREE.SphereGeometry(0.2, 12, 10), hair);
-    top.position.set(0, 0.2, -0.03);
-    head.add(top);
   } else if (hairStyle === 'spiky') {
-    for (let i = 0; i < 7; i++) {
-      const sp = mesh(new THREE.ConeGeometry(0.06, 0.16, 5), hair);
-      sp.position.set((i - 3) * 0.06, 0.26, 0.04 - Math.abs(i - 3) * 0.02);
-      sp.rotation.x = -0.3;
-      head.add(sp);
-    }
+    H(new THREE.SphereGeometry(0.2, 14, 10), 0, 0.24, 0.0, 1.2, 0.6, 1.1);
   }
 
-  if (hat === 'cap') {
-    const c = mesh(new THREE.SphereGeometry(0.28, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hatColor);
-    c.position.y = 0.05;
-    const brim = mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.025, 16, 1, false, -Math.PI / 2, Math.PI), hatColor);
-    brim.position.set(0, 0.07, 0.19);
-    brim.rotation.x = 0.12;
-    const btn = mesh(new THREE.SphereGeometry(0.025, 8, 6), hatColor);
-    btn.position.y = 0.33;
-    head.add(c, brim, btn);
+  // ---------- Головные уборы ----------
+  if (hat === 'cap' || hat === 'flatcap') {
+    // Плоская кепка-«блин» с маленьким козырьком (как у садовника)
+    const crown = part(new THREE.CylinderGeometry(0.3, 0.27, 0.11, 24), hatColor);
+    crown.scale.z = 1.05;
+    crown.position.set(0, 0.33, -0.01);
+    crown.rotation.x = -0.12;
+    const top = part(new THREE.SphereGeometry(0.3, 24, 10, 0, Math.PI * 2, 0, Math.PI * 0.22), hatColor);
+    top.position.set(0, 0.24, -0.01);
+    top.rotation.x = -0.12;
+    const brim = part(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 18, 1, false, -Math.PI / 2, Math.PI), shade(hatColor, -0.04));
+    brim.position.set(0, 0.29, 0.17);
+    brim.rotation.x = 0.1;
+    head.add(crown, top, brim);
   } else if (hat === 'paper') {
-    const p = mesh(new THREE.BoxGeometry(0.52, 0.15, 0.25), '#f6f3ec');
-    p.position.y = 0.26;
+    const p = part(new THREE.BoxGeometry(0.5, 0.14, 0.24), '#f6f3ec');
+    p.position.y = 0.4;
     head.add(p);
   } else if (hat === 'beanie') {
-    const b = mesh(new THREE.SphereGeometry(0.285, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hatColor);
-    b.position.y = 0.04;
-    b.scale.y = 1.15;
-    const rim = mesh(new THREE.TorusGeometry(0.27, 0.035, 6, 20), hatColor);
+    const b = part(new THREE.SphereGeometry(0.29, 22, 12, 0, Math.PI * 2, 0, Math.PI / 2), hatColor);
+    b.position.y = 0.14;
+    b.scale.y = 1.05;
+    const rim = part(new THREE.TorusGeometry(0.28, 0.04, 8, 24), shade(hatColor, -0.05));
     rim.rotation.x = Math.PI / 2;
-    rim.position.y = 0.06;
-    const pom = mesh(new THREE.IcosahedronGeometry(0.075, 1), '#f6f3ec');
-    pom.position.y = 0.37;
-    head.add(b, rim, pom);
+    rim.position.y = 0.15;
+    head.add(b, rim);
   }
   if (headphones) {
-    const band = mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 18, Math.PI), '#2e3238');
-    band.position.y = 0.02;
+    const band = part(new THREE.TorusGeometry(0.29, 0.025, 6, 20, Math.PI), '#2e3238');
+    band.position.y = 0.1;
     head.add(band);
-    [-0.27, 0.27].forEach((x) => {
-      const cup = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.07, 14), '#e07a5f');
+    [-0.28, 0.28].forEach((x) => {
+      const cup = part(new THREE.CylinderGeometry(0.085, 0.085, 0.07, 14), '#e07a5f');
       cup.rotation.z = Math.PI / 2;
-      cup.position.set(x, 0, 0);
+      cup.position.set(x, 0.06, 0);
       head.add(cup);
     });
   }
@@ -249,57 +277,58 @@ export function makeCharacter(look = {}) {
     root,
     head,
     update(dt, speed = 0) {
-      phase += dt * (speed > 0.1 ? 9 : 2);
+      phase += dt * (speed > 0.1 ? 8.5 : 2);
       const walk = Math.min(speed / 4, 1);
       const s = Math.sin(phase);
 
       if (dancing) {
         const d = phase * 1.6;
-        body.position.y = Math.abs(Math.sin(d)) * 0.25;
+        body.position.y = Math.abs(Math.sin(d)) * 0.2;
         body.rotation.y = Math.sin(d * 0.5) * 0.9;
         arms[0].rotation.z = -2.2 + Math.sin(d) * 0.6;
         arms[1].rotation.z = 2.2 - Math.sin(d) * 0.6;
-        legs[0].rotation.x = Math.sin(d) * 0.5;
-        legs[1].rotation.x = -Math.sin(d) * 0.5;
+        legs[0].rotation.x = Math.sin(d) * 0.45;
+        legs[1].rotation.x = -Math.sin(d) * 0.45;
         head.rotation.x = Math.sin(d * 2) * 0.12;
         phase += dt * 3;
         return;
       }
       body.rotation.y *= 0.8;
-      if (arms[0].rotation.z < -0.2) arms[0].rotation.z += (-0.1 - arms[0].rotation.z) * 0.2;
+      if (arms[0].rotation.z < -0.2) arms[0].rotation.z += (-0.08 - arms[0].rotation.z) * 0.2;
 
-      legs[0].rotation.x = s * 0.6 * walk;
-      legs[1].rotation.x = -s * 0.6 * walk;
-      arms[0].rotation.x = -s * 0.5 * walk;
-      body.position.y = Math.abs(Math.cos(phase)) * 0.06 * walk + Math.sin(phase) * 0.008 * (1 - walk);
-      body.rotation.z = Math.sin(phase) * 0.035 * walk + Math.sin(phase * 0.23) * 0.015 * (1 - walk);
+      // Походка вперевалку: короткий шаг, покачивание корпуса
+      legs[0].rotation.x = s * 0.55 * walk;
+      legs[1].rotation.x = -s * 0.55 * walk;
+      arms[0].rotation.x = -s * 0.45 * walk;
+      body.position.y = Math.abs(Math.cos(phase)) * 0.05 * walk + Math.sin(phase) * 0.006 * (1 - walk);
+      body.rotation.z = Math.sin(phase) * 0.06 * walk + Math.sin(phase * 0.23) * 0.012 * (1 - walk);
+      body.rotation.x = 0.06 * walk;
       torso.scale.y = 1 + Math.sin(phase * 0.7) * 0.012 * (1 - walk);
 
-      // Иногда оглядывается по сторонам
+      // Иногда оглядывается
       lookTimer -= dt;
       if (lookTimer < 0) { lookTimer = 3 + Math.random() * 5; lookTarget = walk > 0.2 ? 0 : (Math.random() - 0.5) * 1.1; }
       head.rotation.y += (lookTarget - head.rotation.y) * Math.min(1, dt * 3);
 
       if (talkTimer > 0) {
-        talkTimer -= dt;
         // Говорит: кивает, покачивает головой и жестикулирует
+        talkTimer -= dt;
         head.rotation.x = Math.sin(talkTimer * 9) * 0.09;
         head.rotation.z = Math.sin(talkTimer * 3.3) * 0.06;
-        body.rotation.z = Math.sin(talkTimer * 2.2) * 0.02;
-        arms[1].rotation.x = -0.55 + Math.sin(talkTimer * 6) * 0.3;
+        arms[1].rotation.x = -0.6 + Math.sin(talkTimer * 6) * 0.3;
         arms[1].rotation.z = 0.25 + Math.sin(talkTimer * 4.5) * 0.12;
         arms[0].rotation.x = -0.2 + Math.sin(talkTimer * 4) * 0.15;
       } else {
         head.rotation.x *= 0.9;
         head.rotation.z *= 0.9;
-        arms[1].rotation.x += (s * 0.5 * walk - arms[1].rotation.x) * 0.3;
+        arms[1].rotation.x += (s * 0.45 * walk - arms[1].rotation.x) * 0.3;
       }
       if (wave > 0) {
         wave -= dt;
         arms[1].rotation.z = 2.6 + Math.sin(wave * 18) * 0.3;
         head.rotation.z = -0.12;
       } else {
-        arms[1].rotation.z += (0.1 - arms[1].rotation.z) * 0.2;
+        arms[1].rotation.z += (0.08 - arms[1].rotation.z) * 0.2;
       }
     },
     talk(seconds = 1.5) { talkTimer = seconds; },
