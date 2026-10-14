@@ -394,7 +394,8 @@ export function openLibrary(tab = 'words', opts = {}) {
     next();
   }
 
-  const courseTab = () => courseView(body, { busy: (b) => onBusy(b), explain: (r) => ruleContentLite(r) });
+  // Во время урока учебник уходит в сторону, чтобы задания были видны, и возвращается с результатом
+  const courseTab = () => courseView(body, { busy: (b) => { back.classList.toggle('lesson-on', b); }, explain: (r) => ruleContentLite(r) });
   const VIEWS = { course: courseTab, words: wordsView, phrases: phrasesView, constr: constrView, grammar: grammarView, shadow: shadowView, dictation: dictationView, pron: pronView };
   show(tab, opts.rule);
   return { close };

@@ -632,7 +632,7 @@ const hud = createHud({
   getInteraction: interaction,
   getClock: () => `${time.snowing ? '❄️' : time.raining ? '🌧️' : time.phase.icon} ${time.clockText}${(state.stats?.streak || 0) > 1 ? ` · 🔥${state.stats.streak}` : ''}`,
   onPhone: () => (phone.isOpen ? phone.close() : phone.open()),
-  onLibrary: () => { if (!busy) openLibrary('words'); },
+  onLibrary: () => { if (!busy) openLibrary('course'); },
   onAction: () => interaction()?.run(),
   onShout: () => shout(),
 });
@@ -694,7 +694,7 @@ on('levelup', (lvl) => whenFree(() => {
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && !busy && !e.target.closest?.('input')) phone.isOpen ? phone.close() : phone.open();
-  if (e.code === 'KeyL' && !busy && !phone.isOpen && !e.target.closest?.('input')) openLibrary('words');
+  if (e.code === 'KeyL' && !busy && !phone.isOpen && !e.target.closest?.('input')) openLibrary('course');
   if (e.code === 'Escape' && phone.isOpen) phone.close();
   if (e.code === 'KeyH' && !e.target.closest?.('input')) shout();
 });
