@@ -1,0 +1,15 @@
+{
+  "name": "Big Apple — американский английский",
+  "short_name": "Big Apple",
+  "description": "3D-игра для изучения американского английского в Нью-Йорке",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#d8e8e4",
+  "theme_color": "#d8e8e4",
+  "lang": "ru",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

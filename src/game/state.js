@@ -54,6 +54,20 @@ export function save() {
   emit('change');
 }
 
+// Экспорт / импорт сохранения (перенести прогресс на другое устройство)
+export function exportSave() {
+  const data = { ...state, settings: { ...state.settings, apiKey: '' } };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+export function importSave(code) {
+  const data = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+  if (typeof data !== 'object' || data.xp === undefined) throw new Error('Неверный код сохранения');
+  const key = state.settings.apiKey;
+  localStorage.setItem(KEY, JSON.stringify({ ...data, settings: { ...data.settings, apiKey: key } }));
+  location.reload();
+}
+
 export function resetSave() {
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
   location.reload();

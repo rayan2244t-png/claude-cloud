@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#d8e8e4"/>
+  <circle cx="256" cy="290" r="150" fill="#e07a5f"/>
+  <circle cx="200" cy="240" r="38" fill="#f2a98f" opacity=".7"/>
+  <path d="M256 140 C256 110 270 90 290 80" stroke="#6b4a36" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <path d="M286 110 C330 70 380 90 392 104 C350 140 310 136 286 110Z" fill="#7db374"/>
+  <text x="256" y="330" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="96" fill="#fffaf0">NY</text>
+</svg>

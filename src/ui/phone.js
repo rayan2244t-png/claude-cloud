@@ -1,6 +1,6 @@
 // Телефон героя: сообщения, словарь, ошибки, задание дня, магазин, смена, настройки.
 import { el, ui, money, toast, shuffle, floatText } from './dom.js';
-import { state, save, resetSave, on } from '../game/state.js';
+import { state, save, resetSave, on, exportSave, importSave } from '../game/state.js';
 import { levelInfo, weakTopics, LEVELS, addXP } from '../game/progress.js';
 import { dueWords, grade, vocabStats } from '../game/srs.js';
 import { speak } from '../game/speech.js';
@@ -225,6 +225,16 @@ export function createPhone(api) {
           el('button', { class: 'btn primary wide', onclick: () => { state.settings.apiKey = key.value.trim(); save(); toast(key.value.trim() ? 'Ключ сохранён' : 'Ключ удалён', { icon: '🔑' }); } }, 'Сохранить ключ'),
           el('button', { class: 'btn wide', onclick: () => { api.resetTutorial(); toast('Обучение начнётся заново', { icon: '🎓' }); } }, '🎓 Пройти обучение заново'),
           el('div', { class: 'section-title' }, 'Сохранение'),
+          el('div', { class: 'muted small-note' }, 'Перенести прогресс на другое устройство: скопируй код здесь и вставь его там.'),
+          el('button', { class: 'btn wide', onclick: async () => {
+            const code = exportSave();
+            try { await navigator.clipboard.writeText(code); toast('Код сохранения скопирован 📋', { icon: '💾' }); } catch { prompt('Скопируй код сохранения:', code); }
+          } }, '💾 Скопировать код сохранения'),
+          el('button', { class: 'btn wide', onclick: () => {
+            const code = prompt('Вставь код сохранения с другого устройства:');
+            if (!code) return;
+            try { importSave(code); } catch (err) { toast(err.message || 'Неверный код', { icon: '⚠️' }); }
+          } }, '📥 Загрузить сохранение'),
           el('button', { class: 'btn danger wide', onclick: () => { if (confirm('Удалить весь прогресс и начать заново?')) resetSave(); } }, 'Начать игру заново'));
       },
     },

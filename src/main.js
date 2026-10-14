@@ -2,7 +2,7 @@
 import { createEngine } from './world/engine.js';
 import { NPCS, QUESTS, THREADS, CHAPTERS } from './data/index.js';
 import { state, save, setFlag, on, addMoney } from './game/state.js';
-import { addXP, clearMistake } from './game/progress.js';
+import { addXP, clearMistake, dayStats } from './game/progress.js';
 import { addWord, dueWords } from './game/srs.js';
 import { speak } from './game/speech.js';
 import { runDialogue } from './ui/dialogue.js';
@@ -551,6 +551,39 @@ function intro() {
   }
 }
 intro();
+
+// ---------- Офлайн-режим и установка как приложение ----------
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+
+// ---------- Минуты занятий и автоподбор качества графики ----------
+let fpsFrames = 0, fpsTime = 0, fpsChecked = !!state.settings.gfxChecked;
+engine.onFrame((dt) => {
+  if (!document.hidden) dayStats().min += dt / 60;
+  if (!fpsChecked) {
+    fpsFrames++;
+    fpsTime += dt;
+    if (fpsTime > 10) {
+      fpsChecked = true;
+      const fps = fpsFrames / fpsTime;
+      const order = ['high', 'medium', 'low'];
+      const i = order.indexOf(state.settings.gfx);
+      if (fps < 24 && i < 2) {
+        const next = order[i + 1];
+        whenFree(() => modal(el('div', { class: 'complete' },
+          el('div', { class: 'daily-emoji' }, '🐢'),
+          el('div', { class: 'daily-title' }, 'Игра идёт медленно'),
+          el('div', {}, `Сейчас около ${Math.round(fps)} кадров в секунду. Включить графику «${next === 'medium' ? 'Среднее' : 'Низкое'}»? Будет плавнее.`),
+          el('button', { class: 'btn primary wide', onclick: () => { state.settings.gfx = next; state.settings.gfxChecked = true; save(); location.reload(); } }, 'Да, сделать плавнее'),
+          el('button', { class: 'btn ghost wide', onclick: () => { state.settings.gfxChecked = true; save(); document.querySelector('.modal-back')?.remove(); } }, 'Оставить как есть'))));
+      } else {
+        state.settings.gfxChecked = true;
+        save();
+      }
+    }
+  }
+});
 
 // Для отладки из консоли браузера
 window.bigApple = { state, engine, time, ride };
