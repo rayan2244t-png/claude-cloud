@@ -28,7 +28,7 @@ function variants(text) {
   const out = [t];
   const name = state.name;
   if (name && t.includes(name)) {
-    out.push(clipKey(t.replace(new RegExp(`,?\\s*${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), '')));
+    out.push(clipKey(t.split(name).join('{name}')));
   }
   return out;
 }

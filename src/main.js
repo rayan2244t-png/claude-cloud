@@ -7,7 +7,7 @@ import { addXP, clearMistake, dayStats, todayKey } from './game/progress.js';
 import { buildDailySteps } from './game/coach.js';
 import { startPlacement } from './ui/placement.js';
 import { addWord, dueWords } from './game/srs.js';
-import { speak, prefetchSpeech } from './game/speech.js';
+import { speak, prefetchSpeech, speechInfo } from './game/speech.js';
 import { runDialogue } from './ui/dialogue.js';
 import { createHud } from './ui/hud.js';
 import { createPhone } from './ui/phone.js';
@@ -777,4 +777,4 @@ engine.onFrame((dt) => {
 });
 
 // Для отладки из консоли браузера
-window.bigApple = { state, engine, time, ride, neural, voiceApi: { synth, speak, prefetchSpeech } };
+window.bigApple = { state, engine, time, ride, neural, voiceApi: { synth, speak, prefetchSpeech, speechInfo } };

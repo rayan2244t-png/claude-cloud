@@ -190,6 +190,9 @@ export function prefetchSpeech(lines, { gender, who, rate } = {}, { fresh = fals
   }
 }
 
+// Чем прозвучала последняя фраза (для отладки): clip | neural | browser
+export const speechInfo = { last: null };
+
 // pitch — для голосов браузера (немного разные голоса персонажам)
 // onProgress(0…1) — сколько текста уже прозвучало (подсветка слов)
 export function speak(text, { pitch = 1, rate, force = false, volume = 1, gender, who, onProgress } = {}) {
@@ -202,6 +205,7 @@ export function speak(text, { pitch = 1, rate, force = false, volume = 1, gender
   // 1) Записанная живым голосом фраза  2) живой синтез в браузере  3) голос браузера
   const clip = findClip(clean, { gender, who });
   if (clip) {
+    speechInfo.last = 'clip';
     return speakClip(clip, opts, my).catch((err) => {
       console.warn('Запись не проигралась:', err);
       return my === token ? fallback() : undefined;
@@ -209,6 +213,7 @@ export function speak(text, { pitch = 1, rate, force = false, volume = 1, gender
   }
   return fallback();
   function fallback() {
+    speechInfo.last = neuralEnabled() && neuralReady() ? 'neural' : 'browser';
     if (neuralEnabled() && neuralReady()) {
       return speakNeural(clean, opts, my).catch(() => (my === token ? speakBrowser(clean, opts) : undefined));
     }

@@ -15,4 +15,6 @@ export function voiceFor(gender, who, narrator = NARRATOR) {
 }
 
 // Ключ фразы в записанной озвучке
-export const clipKey = (text) => String(text).replace(/[*_]/g, '').replace(/\{name\},?\s*/g, '').replace(/\s+([,!?.])/g, '$1').replace(/\s+/g, ' ').trim();
+// Имя игрока ({name}) в записи пропускаем вместе с запятой: «Nice to meet you, {name}!» → «Nice to meet you!»
+export const clipKey = (text) => String(text).replace(/[*_]/g, '')
+  .replace(/,?\s*\{name\}\s*,?/g, ' ').replace(/\s+([,!?.])/g, '$1').replace(/\s+/g, ' ').trim();
