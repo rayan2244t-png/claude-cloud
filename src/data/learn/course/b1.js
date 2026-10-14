@@ -307,7 +307,7 @@ When I got there, the train **had left**. — поезд ушёл ещё до м
       { t: 'build', q: `Составь: «Поезд уже ушёл» (когда я пришёл)`, topic: 'past_perfect', answer: `The train had already left`, extra: ['has', 'leaved', 'yet'], hints: [{ extra: 'has', text: `Рассказ о прошлом — had.` }, { extra: 'leaved', text: `leave → left → left.` }] },
       { t: 'build', q: `Составь: «Я никогда раньше не пробовал хот-дог» (до той поездки)`, topic: 'past_perfect', answer: `I had never tried a hot dog before`, extra: ['ever', 'have', 'try'], hints: [{ extra: 'ever', text: `«Никогда» — never.` }, { extra: 'try', text: `После had — 3-я форма: tried.` }] },
       { t: 'build', q: `Составь: «Сэм уже лёг спать, когда я позвонил»`, topic: 'past_perfect', answer: `Sam had already gone to bed when I called`, extra: ['went', 'has', 'go'], hints: [{ extra: 'went', text: `После had — 3-я форма: gone.` }, { extra: 'has', text: `Всё в прошлом — had.` }] },
-      { t: 'build', q: `Составь: «Ты когда-нибудь был в Нью-Йорке до этой поездки?»`, topic: 'past_perfect', answer: `Had you ever been to New York before this trip?`, extra: ['Have', 'was', 'in'], hints: [{ extra: 'Have', text: `Опыт до момента в прошлом — Had you ever been…?` }, { extra: 'in', text: `«Бывать где-то» — been to.` }] },
+      { t: 'build', q: `Составь: «Ты когда-нибудь был в Нью-Йорке до этой поездки?»`, topic: 'past_perfect', answer: `Had you ever been to New York before this trip?`, extra: ['Have', 'was', 'in'], hints: [{ extra: 'have', text: `Опыт до момента в прошлом — Had you ever been…?` }, { extra: 'in', text: `«Бывать где-то» — been to.` }] },
       { t: 'type', q: `Напиши по-английски: «Когда мы приехали, фильм уже начался»`, topic: 'past_perfect', example: `When we arrived, the movie had already started.`, answers: ['When we arrived the movie had already started', 'When we got there the movie had already started', 'When we arrived the movie had already begun', 'When we got there the movie had already begun', 'The movie had already started when we arrived', 'The movie had already started when we got there', 'When we arrived the film had already started', 'When we got there the film had already started'], hints: [{ missing: 'had', text: `Фильм начался ещё до нашего приезда — had started.` }, { extra: 'has', text: `Всё в прошлом — had, а не has.` }, { extra: 'begin', text: `begin → began → begun.` }] },
       { t: 'type', q: `Напиши по-английски: «Я не узнал его, потому что он сильно изменился»`, topic: 'past_perfect', example: `I didn't recognize him because he had changed a lot.`, answers: ['I did not recognize him because he had changed *', `I didn't recognize him because he had changed *`, `I did not recognize him because he'd changed *`, `I didn't recognize him because he'd changed *`], hints: [{ missing: 'had', text: `Изменился раньше, чем я его увидел, — had changed.` }, { extra: 'has', text: `Рассказ о прошлом — had changed.` }] },
       { t: 'type', q: `Напиши по-английски: «К тому времени, как я проснулся, Дев уже ушёл на работу»`, topic: 'past_perfect', example: `By the time I woke up, Dev had already left for work.`, answers: ['By the time I woke up Dev had already left for work', 'By the time I woke up Dev had already gone to work', 'By the time I got up Dev had already left for work', 'By the time I got up Dev had already gone to work', 'By the time I woke up Dev had left for work', 'By the time I woke up Dev had gone to work', 'By the time I got up Dev had left for work', 'By the time I got up Dev had gone to work'], hints: [{ missing: 'had', text: `Ушёл раньше, чем я проснулся, — had left.` }, { extra: 'went', text: `После had — gone (3-я форма).` }, { extra: 'wake', text: `«Проснулся» — woke up.` }] },
@@ -349,7 +349,7 @@ When I got there, the train **had left**. — поезд ушёл ещё до м
       { t: 'build', q: `Составь: «Я потихоньку привыкаю к Нью-Йорку»`, topic: 'used_to', answer: `I'm slowly getting used to New York`, extra: ['use', 'get', 'with'], hints: [{ extra: 'with', text: `Привыкать к — get used to, без with.` }, { extra: 'get', text: `Процесс сейчас — I'm getting used to.` }] },
       { t: 'type', q: `Напиши по-английски: «Раньше я жил в маленьком городе»`, topic: 'used_to', example: `I used to live in a small town.`, answers: ['I used to live in a small town', 'I used to live in a small city', 'I used to live in a little town'], hints: [{ missing: 'used', text: `«Раньше (а теперь нет)» — used to.` }, { extra: 'use', text: `В утверждении — used to.` }, { extra: 'lived', text: `После used to — начальная форма: live.` }] },
       { t: 'type', q: `Напиши по-английски: «Ты раньше играл в хоккей?»`, topic: 'used_to', example: `Did you use to play hockey?`, answers: ['Did you use to play hockey'], hints: [{ extra: 'used', text: `После did — use (без -d): Did you use to…?` }, { missing: 'did', text: `Вопрос: Did you use to…?` }] },
-      { t: 'type', q: `Напиши по-английски: «Раньше Тони продавал пиццу, а теперь продаёт хот-доги»`, topic: 'used_to', example: `Tony used to sell pizza, but now he sells hot dogs.`, answers: ['Tony used to sell pizza but now he sells hot dogs', 'Tony used to sell pizza and now he sells hot dogs', 'Tony used to sell pizza now he sells hot dogs'], hints: [{ extra: 'use', text: `В утверждении — used to.` }, { extra: 'sold', text: `После used to — начальная форма: sell.` }, { extra: 'sell', text: `Сейчас: he sells (с -s).` }] },
+      { t: 'type', q: `Напиши по-английски: «Раньше Тони продавал пиццу, а теперь продаёт хот-доги»`, topic: 'used_to', example: `Tony used to sell pizza, but now he sells hot dogs.`, answers: ['Tony used to sell pizza but now he sells hot dogs', 'Tony used to sell pizza and now he sells hot dogs', 'Tony used to sell pizza now he sells hot dogs'], hints: [{ extra: 'use', text: `В утверждении — used to.` }, { extra: 'sold', text: `После used to — начальная форма: sell.` }] },
       { t: 'type', q: `Напиши по-английски: «Я не привык рано вставать»`, topic: 'used_to', example: `I'm not used to getting up early.`, answers: ['I am not used to getting up early', 'I am not used to waking up early'], hints: [{ extra: 'get', text: `После be used to — -ing: getting up.` }, { extra: 'use', text: `«Привык» — be used to.` }, { missing: 'am', text: `Нужно am: I'm not used to…` }] },
     ],
   },
@@ -415,7 +415,7 @@ Don't call at 8 — Maria **will be swimming**.
       ] },
       { t: 'build', q: `Составь: «Завтра в полдень я буду лететь домой»`, topic: 'future_continuous', answer: `At noon tomorrow I will be flying home`, extra: ['fly', 'am', 'flew'], hints: [{ extra: 'fly', text: `Процесс в момент будущего — will be flying.` }, { extra: 'am', text: `Не am, а will be.` }] },
       { t: 'build', q: `Составь: «Что ты будешь делать в это время завтра?»`, topic: 'future_continuous', answer: `What will you be doing this time tomorrow?`, extra: ['are', 'do', 'did'], hints: [{ extra: 'do', text: `Процесс — will you be doing.` }, { extra: 'are', text: `Будущее: What will you be doing…?` }] },
-      { t: 'build', q: `Составь: «В воскресенье я не буду работать»`, topic: 'future_continuous', answer: `I won't be working on Sunday`, extra: ['work', 'am', "don't"], hints: [{ extra: "don't", text: `Отрицание в будущем — won't be.` }, { extra: 'work', text: `После be — -ing: working.` }] },
+      { t: 'build', q: `Составь: «В воскресенье я не буду работать»`, topic: 'future_continuous', answer: `I won't be working on Sunday`, extra: ['work', 'am', "don't"], hints: [{ extra: 'do', text: `Отрицание в будущем — won't be.` }, { extra: 'work', text: `После be — -ing: working.` }] },
       { t: 'build', q: `Составь: «Маркус будет ждать тебя у входа»`, topic: 'future_continuous', answer: `Marcus will be waiting for you at the entrance`, extra: ['waits', 'is', 'on'], hints: [{ extra: 'waits', text: `Процесс в будущем — will be waiting.` }, { extra: 'on', text: `«У входа» — at the entrance.` }] },
       { t: 'type', q: `Напиши по-английски: «В девять я буду смотреть игру»`, topic: 'future_continuous', example: `At nine, I'll be watching the game.`, answers: ['At nine I will be watching the game', 'At 9 I will be watching the game', 'I will be watching the game at nine', 'I will be watching the game at 9'], hints: [{ extra: 'watch', text: `Процесс в момент — will be watching.` }, { missing: 'be', text: `Формула: will be + -ing.` }] },
       { t: 'type', q: `Напиши по-английски: «Ты будешь пользоваться ноутбуком завтра?» (вежливо)`, topic: 'future_continuous', example: `Will you be using your laptop tomorrow?`, answers: ['Will you be using your laptop tomorrow', 'Will you be using the laptop tomorrow', 'Are you going to be using your laptop tomorrow', 'Are you going to be using the laptop tomorrow'], hints: [{ extra: 'use', text: `Вежливый вопрос о планах — Will you be using…?` }, { missing: 'be', text: `Will you be + -ing.` }] },
@@ -526,13 +526,13 @@ If it **rains tomorrow**, I'**ll stay** home. — один конкретный 
         { en: `I don't go unless you will go.`, why: `Наоборот: I won't go… unless you go.` },
       ] },
       { t: 'build', q: `Составь: «Если будет солнечно, мы пойдём на пляж»`, topic: 'first_conditional', answer: `If it's sunny we'll go to the beach`, extra: ['will', 'would', 'went'], hints: [{ extra: 'will', text: `После if — настоящее: if it's sunny.` }, { extra: 'would', text: `Реальный план — we'll, не would.` }] },
-      { t: 'build', q: `Составь: «Я напишу тебе, когда доберусь домой»`, topic: 'first_conditional', answer: `I'll text you when I get home`, extra: ['will', 'got', 'to'], hints: [{ extra: 'will', text: `После when — настоящее: when I get home.` }, { extra: 'to', text: `get home — без to.` }] },
+      { t: 'build', q: `Составь: «Я напишу тебе, когда доберусь домой»`, topic: 'first_conditional', answer: `I'll text you when I get home`, extra: ['would', 'got', 'to'], hints: [{ extra: 'got', text: `После when — настоящее: when I get home.` }, { extra: 'would', text: `Обещание — I'll text.` }, { extra: 'to', text: `get home — без to.` }] },
       { t: 'build', q: `Составь: «Что ты будешь делать, если банк закрыт?»`, topic: 'first_conditional', answer: `What will you do if the bank is closed?`, extra: ['would', 'does', 'closing'], hints: [{ extra: 'would', text: `Реальная ситуация — will.` }, { extra: 'closing', text: `«Закрыт» — is closed.` }] },
       { t: 'build', q: `Составь: «Если увидишь Тони, передай ему от меня привет»`, topic: 'first_conditional', answer: `If you see Tony tell him I said hi`, extra: ['will', 'saw', 'says'], hints: [{ extra: 'will', text: `После if — настоящее: if you see.` }, { extra: 'saw', text: `Будущее условие — if you see.` }] },
       { t: 'type', q: `Напиши по-английски: «Если пойдёт дождь, я поеду на метро»`, topic: 'first_conditional', example: `If it rains, I'll take the subway.`, answers: ['If it rains I will take the subway', 'If it rains I will take the train', 'If it rains I will go by subway', 'If it rains I will ride the subway', 'I will take the subway if it rains'], hints: [{ extra: 'rain', text: `После if — настоящее: if it rains, без will.` }, { extra: 'would', text: `Реальное будущее — I'll take.` }, { extra: 'metro', text: `В Нью-Йорке метро — the subway.` }] },
       { t: 'type', q: `Напиши по-английски: «Я помогу тебе, если ты поможешь мне»`, topic: 'first_conditional', example: `I'll help you if you help me.`, answers: ['I will help you if you help me', 'If you help me I will help you'], hints: [{ extra: 'would', text: `Реальное обещание — I'll help.` }, { missing: 'will', text: `В главной части — will: I'll help you.` }] },
       { t: 'type', q: `Напиши по-английски: «Если позвонит миссис Родригес, скажи ей, что меня нет дома»`, topic: 'first_conditional', example: `If Mrs. Rodriguez calls, tell her I'm not home.`, answers: ['If * calls tell her I am not home', 'If * calls tell her I am not at home', 'If * calls tell her that I am not home', 'If * calls tell her that I am not at home', 'If * calls tell her I am out'], hints: [{ extra: 'will', text: `После if — настоящее: if she calls.` }, { extra: 'call', text: `Mrs. Rodriguez = she → calls.` }, { extra: 'say', text: `Сказать кому-то — tell her.` }] },
-      { t: 'type', q: `Напиши по-английски: «Если я получу эту работу, я сниму квартиру в Бруклине»`, topic: 'first_conditional', example: `If I get this job, I'll rent an apartment in Brooklyn.`, answers: ['If I get this job I will rent an apartment in Brooklyn', 'If I get the job I will rent an apartment in Brooklyn', 'If I get this job I will get an apartment in Brooklyn', 'If I get the job I will get an apartment in Brooklyn', 'I will rent an apartment in Brooklyn if I get this job', 'I will rent an apartment in Brooklyn if I get the job'], hints: [{ extra: 'will', text: `После if — настоящее: if I get this job.` }, { extra: 'flat', text: `По-американски квартира — apartment.` }] },
+      { t: 'type', q: `Напиши по-английски: «Если я получу эту работу, я сниму квартиру в Бруклине»`, topic: 'first_conditional', example: `If I get this job, I'll rent an apartment in Brooklyn.`, answers: ['If I get this job I will rent an apartment in Brooklyn', 'If I get the job I will rent an apartment in Brooklyn', 'If I get this job I will get an apartment in Brooklyn', 'If I get the job I will get an apartment in Brooklyn', 'I will rent an apartment in Brooklyn if I get this job', 'I will rent an apartment in Brooklyn if I get the job'], hints: [{ extra: 'would', text: `Реальный план — I'll rent, не would.` }, { extra: 'flat', text: `По-американски квартира — apartment.` }] },
     ],
   },
 
@@ -640,10 +640,10 @@ I **wish** the neighbors **would stop** making noise. — Хоть бы сосе
         { en: `I wish the neighbors stop making noise.`, why: `Хочешь, чтобы кто-то изменил поведение, — wish + would.` },
         { en: `I wish the neighbors would stop to make noise.`, why: `stop to make — «остановиться, чтобы пошуметь». Перестать — stop making.` },
       ] },
-      { t: 'build', q: `Составь: «Жаль, что я не живу ближе к работе»`, topic: 'wish', answer: `I wish I lived closer to work`, extra: ['live', "don't", 'will'], hints: [{ extra: "don't", text: `По-английски без отрицания: I wish I lived closer.` }, { extra: 'live', text: `После wish — прошедшая форма: lived.` }] },
+      { t: 'build', q: `Составь: «Жаль, что я не живу ближе к работе»`, topic: 'wish', answer: `I wish I lived closer to work`, extra: ['live', "don't", 'will'], hints: [{ extra: 'do', text: `По-английски без отрицания: I wish I lived closer.` }, { extra: 'live', text: `После wish — прошедшая форма: lived.` }] },
       { t: 'build', q: `Составь: «Жаль, что я не сказал ей правду»`, topic: 'wish', answer: `I wish I had told her the truth`, extra: ['said', 'tell', 'have'], hints: [{ extra: 'said', text: `Сказать кому-то — tell her: had told.` }, { extra: 'have', text: `О прошлом — had + V3.` }] },
       { t: 'build', q: `Составь: «Если бы только сейчас было лето!»`, topic: 'wish', answer: `If only it were summer now`, extra: ['is', 'will', 'be'], hints: [{ extra: 'is', text: `После if only — сдвиг назад: it were.` }, { extra: 'will', text: `will после if only не ставим.` }] },
-      { t: 'build', q: `Составь: «Жаль, что ты не можешь остаться»`, topic: 'wish', answer: `I wish you could stay`, extra: ['can', "can't", 'will'], hints: [{ extra: "can't", text: `Без отрицания: I wish you could stay.` }, { extra: 'can', text: `Сдвиг назад: can → could.` }] },
+      { t: 'build', q: `Составь: «Жаль, что ты не можешь остаться»`, topic: 'wish', answer: `I wish you could stay`, extra: ['can', "can't", 'will'], hints: [{ extra: 'can', text: `Сдвиг назад: can → could, и без отрицания: I wish you could stay.` }] },
       { t: 'type', q: `Напиши по-английски: «Жаль, что я не говорю по-английски лучше»`, topic: 'wish', example: `I wish I spoke English better.`, answers: ['I wish I spoke English better', 'I wish I could speak English better', 'I wish my English was better', 'I wish my English were better', 'If only I spoke English better', 'If only I could speak English better'], hints: [{ extra: 'speak', text: `После I wish — прошедшая форма: I wish I spoke… (или I wish I could speak…).` }, { extra: 'not', text: `Без отрицания: I wish I spoke English better.` }] },
       { t: 'type', q: `Напиши по-английски: «Жаль, что я не купил тот билет»`, topic: 'wish', example: `I wish I had bought that ticket.`, answers: ['I wish I had bought that ticket', 'I wish I had bought the ticket', `I wish I'd bought that ticket`, `I wish I'd bought the ticket`, 'If only I had bought that ticket', 'If only I had bought the ticket'], hints: [{ missing: 'had', text: `О прошлом — had bought.` }, { extra: 'buy', text: `После had — 3-я форма: bought.` }, { extra: 'not', text: `Без отрицания: I wish I had bought it.` }] },
       { t: 'type', q: `Напиши по-английски: «Хотел бы я, чтобы Сэм был здесь»`, topic: 'wish', example: `I wish Sam were here.`, answers: ['I wish Sam were here', 'I wish Sam was here', 'If only Sam were here', 'If only Sam was here'], hints: [{ extra: 'is', text: `После wish — сдвиг назад: were (или was).` }, { extra: 'would', text: `Здесь просто: I wish Sam were here.` }] },
@@ -796,7 +796,7 @@ I **decided to move** to New York. I can't **afford to live** in Manhattan.
       { t: 'build', q: `Составь: «Дев постоянно опаздывает на работу»`, topic: 'gerund_infinitive', answer: `Dev keeps being late for work`, extra: ['to', 'be', 'on'], hints: [{ extra: 'to', text: `После keep — -ing: keeps being.` }, { extra: 'be', text: `После keep — being.` }] },
       { t: 'build', q: `Составь: «Спасибо, что помог мне с переездом»`, topic: 'gerund_infinitive', answer: `Thanks for helping me with the move`, extra: ['to', 'help', 'that'], hints: [{ extra: 'help', text: `После предлога for — -ing: helping.` }, { extra: 'that', text: `Thanks for + -ing, без that.` }] },
       { t: 'type', q: `Напиши по-английски: «Вы не против закрыть окно?»`, topic: 'gerund_infinitive', example: `Would you mind closing the window?`, answers: ['Would you mind closing the window', 'Do you mind closing the window', 'Would you mind shutting the window'], hints: [{ extra: 'to', text: `После mind — -ing: mind closing.` }, { extra: 'close', text: `После mind — closing.` }] },
-      { t: 'type', q: `Напиши по-английски: «Я помню, как впервые увидел Таймс-сквер»`, topic: 'gerund_infinitive', example: `I remember seeing Times Square for the first time.`, answers: ['I remember seeing Times Square for the first time', 'I remember the first time I saw Times Square'], hints: [{ extra: 'to', text: `Помнить то, что было, — remember + -ing: remember seeing.` }, { extra: 'saw', text: `После remember — seeing.` }] },
+      { t: 'type', q: `Напиши по-английски: «Я помню, как впервые увидел Таймс-сквер»`, topic: 'gerund_infinitive', example: `I remember seeing Times Square for the first time.`, answers: ['I remember seeing Times Square for the first time', 'I remember the first time I saw Times Square', 'I remember when I saw Times Square for the first time', 'I remember when I first saw Times Square', 'I remember first seeing Times Square'], hints: [{ extra: 'to', text: `Помнить то, что было, — remember + -ing: remember seeing.` }] },
       { t: 'type', q: `Напиши по-английски: «Не забудь позвонить доктору Ортис»`, topic: 'gerund_infinitive', example: `Don't forget to call Dr. Ortiz.`, answers: ['Do not forget to call *', 'Remember to call *'], hints: [{ extra: 'calling', text: `Не забыть сделать — forget to call.` }, { missing: 'to', text: `forget to + глагол.` }] },
       { t: 'type', q: `Напиши по-английски: «Я хочу научиться водить машину»`, topic: 'gerund_infinitive', example: `I want to learn to drive.`, answers: ['I want to learn to drive', 'I want to learn how to drive', 'I want to learn to drive a car', 'I want to learn how to drive a car'], hints: [{ extra: 'driving', text: `После learn — to: learn to drive.` }, { missing: 'to', text: `want to, learn to.` }] },
     ],
@@ -878,6 +878,352 @@ I **decided to move** to New York. I can't **afford to live** in Manhattan.
       { t: 'type', q: `Напиши по-английски: «У меня украли телефон!»`, topic: 'passive', example: `My phone was stolen!`, answers: ['My phone was stolen', 'My phone got stolen', 'My phone has been stolen', 'Someone stole my phone', 'Somebody stole my phone'], hints: [{ extra: 'stole', text: `Пассив: was stolen.` }, { extra: 'steal', text: `steal → stole → stolen.` }] },
       { t: 'type', q: `Напиши по-английски: «Английский изучают во всём мире»`, topic: 'passive', example: `English is studied all over the world.`, answers: ['English is studied all over the world', 'English is learned all over the world', 'English is studied around the world', 'English is learned around the world', 'English is studied everywhere in the world', 'English is learned everywhere in the world'], hints: [{ extra: 'studies', text: `Английский сам не учит — is studied.` }, { missing: 'is', text: `Пассив: is + 3-я форма.` }] },
       { t: 'type', q: `Напиши по-английски: «Квартиру уберут завтра»`, topic: 'passive', example: `The apartment will be cleaned tomorrow.`, answers: ['The apartment will be cleaned tomorrow', 'The apartment is going to be cleaned tomorrow', 'The apartment is being cleaned tomorrow'], hints: [{ missing: 'be', text: `Будущее в пассиве: will be cleaned.` }, { extra: 'clean', text: `После be — 3-я форма: cleaned.` }] },
+    ],
+  },
+
+  // ===================== 16. Question tags =====================
+  {
+    id: 'question_tags',
+    level: 'B1',
+    title: `Хвостики: isn't it? didn't you?`,
+    goal: `Сможешь переспросить и поддержать разговор: «…, да? правда?»`,
+    newRule: {
+      id: 'question_tags', level: 'B1', title: `Разделительные вопросы: It's cold, isn't it?`, topics: [],
+      short: `«…, да?» по-английски — хвостик из вспомогательного глагола: You're new here, aren't you?`,
+      text: `Русское «…, да?», «…, правда?», «не так ли?» по-английски — **хвостик** (question tag) в конце фразы.
+
+**Правило «плюс-минус»:**
+Утверждение **+** → хвостик **−**: It's cold, **isn't it**?
+Отрицание **−** → хвостик **+**: Tony didn't call, **did he**?
+
+**Хвостик повторяет вспомогательный глагол** из предложения:
+be: You'**re** new here, **aren't you**? It **was** fun, **wasn't it**?
+Present Simple → do / does: You **like** pizza, **don't you**? Jess **works** here, **doesn't she**?
+Past Simple → did: You **saw** it, **didn't you**?
+have (Present Perfect): You'**ve been** to Coney Island, **haven't you**?
+can / will: We **can** walk, **can't we**? You'**ll** come, **won't you**?
+
+**В хвостике — местоимение:** Jess is nice, isn't **she**? (не isn't Jess)
+
+**Особые случаи:** I'm right, **aren't I**? · Let's go, **shall we**? (в Америке чаще просто Let's go, OK?)
+
+**Главная ловушка для русских:** ставить **isn't it?** везде, как «да?». You like coffee, isn't it? — ошибка → **don't you**?
+**Проще всего по-американски:** универсальное **…, right?** — You're from Russia, **right**?
+
+**Интонация:** вниз ↘ — ждёшь согласия; вверх ↗ — правда сомневаешься.`,
+      formula: `+ предложение, − хвостик? · − предложение, + хвостик?`,
+      examples: [
+        [`It's cold today, isn't it?`, `Сегодня холодно, да?`],
+        [`You're new here, aren't you?`, `Ты здесь новенький, да?`],
+        [`Tony didn't call, did he?`, `Тони не звонил, да?`],
+        [`You've been to Coney Island, haven't you?`, `Ты ведь был на Кони-Айленде?`],
+        [`We can take a cab, can't we?`, `Мы же можем взять такси?`],
+      ],
+      mistakes: [
+        [`You like pizza, isn't it?`, `You like pizza, don't you? — like → do`],
+        [`She didn't come, didn't she?`, `She didn't come, did she? — после отрицания хвостик положительный`],
+        [`Jess is nice, isn't Jess?`, `Jess is nice, isn't she? — в хвостике местоимение`],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'choice', q: `«Ты из России, да?»`, topic: 'question_tags', opts: [
+        { en: `You're from Russia, aren't you?`, ok: true },
+        { en: `You're from Russia, isn't it?`, why: `Подлежащее you, глагол are — хвостик aren't you.` },
+        { en: `You're from Russia, don't you?`, why: `В предложении are, а не do — хвостик aren't you.` },
+      ] },
+      { t: 'choice', q: `«Тебе нравится Нью-Йорк, правда?»`, topic: 'question_tags', opts: [
+        { en: `You like New York, don't you?`, ok: true },
+        { en: `You like New York, isn't it?`, why: `like — Present Simple, хвостик с do: don't you.` },
+        { en: `You like New York, doesn't you?`, why: `С you — do: don't you.` },
+      ] },
+      { t: 'choice', q: `«Маркус вчера не звонил, да?»`, topic: 'question_tags', opts: [
+        { en: `Marcus didn't call yesterday, did he?`, ok: true },
+        { en: `Marcus didn't call yesterday, didn't he?`, why: `После отрицания хвостик положительный: did he.` },
+        { en: `Marcus didn't call yesterday, does he?`, why: `Прошлое — did, не does.` },
+      ] },
+      { t: 'choice', q: `«Мы же можем дойти пешком, да?»`, topic: 'question_tags', opts: [
+        { en: `We can walk there, can't we?`, ok: true },
+        { en: `We can walk there, don't we?`, why: `В предложении can — хвостик тоже с can: can't we.` },
+        { en: `We can walk there, can't us?`, why: `В хвостике — форма «кто»: we, а не us.` },
+      ] },
+      { t: 'tip', title: `Ленивый вариант: right?`, text: `Не успеваешь сообразить хвостик? Американцы постоянно говорят просто **right?**\n*You're new here, **right**? Jess works on Sundays, **right**?*\n\nНо узнавать настоящие хвостики важно — Миссис Родригес обожает: *You paid the rent, **didn't you**?*` },
+      { t: 'build', q: `Составь: «Сегодня холодно, да?»`, topic: 'question_tags', answer: `It's cold today, isn't it?`, extra: ['is', "doesn't", "wasn't"], hints: [{ extra: 'does', text: `В предложении is — хвостик isn't it.` }, { extra: "wasn't", text: `Сейчас (it's) — хвостик isn't it.` }] },
+      { t: 'build', q: `Составь: «Ты здесь новенький, да?»`, topic: 'question_tags', answer: `You're new here, aren't you?`, extra: ["isn't", 'are', "don't"], hints: [{ extra: 'is', text: `С you — are: aren't you.` }, { extra: 'do', text: `В предложении are — хвостик aren't you.` }] },
+      { t: 'build', q: `Составь: «Джесс не работает по воскресеньям, да?»`, topic: 'question_tags', answer: `Jess doesn't work on Sundays, does she?`, extra: ['is', 'it', 'do'], hints: [{ extra: 'it', text: `Джесс — she: does she.` }, { extra: 'is', text: `Present Simple — хвостик с does.` }] },
+      { t: 'build', q: `Составь: «Ты ведь был на Кони-Айленде?»`, topic: 'question_tags', answer: `You've been to Coney Island, haven't you?`, extra: ["didn't", "aren't", 'was'], hints: [{ extra: "didn't", text: `В предложении have (you've been) — хвостик haven't you.` }, { extra: 'are', text: `Хвостик повторяет have: haven't you.` }] },
+      { t: 'type', q: `Напиши по-английски: «Тони продаёт лучшие хот-доги, правда?» (с хвостиком)`, topic: 'question_tags', example: `Tony sells the best hot dogs, doesn't he?`, answers: [`Tony sells the best hot dogs doesn't he`], hints: [{ extra: 'is', text: `sells — Present Simple, хвостик с does: doesn't he.` }, { extra: 'right', text: `Попробуй настоящий хвостик: doesn't he?` }, { missing: 'he', text: `Тони — he: doesn't he.` }] },
+      { t: 'type', q: `Напиши по-английски: «Ты не голоден, да?» (с хвостиком)`, topic: 'question_tags', example: `You're not hungry, are you?`, answers: ['You are not hungry are you'], hints: [{ extra: 'do', text: `В предложении are — хвостик тоже с are.` }, { single: true, text: `После отрицания хвостик положительный: You're not hungry, are you?` }] },
+      { t: 'type', q: `Напиши по-английски: «Вчера было весело, да?» (с хвостиком)`, topic: 'question_tags', example: `It was fun yesterday, wasn't it?`, answers: [`It was fun yesterday wasn't it`, `Yesterday was fun wasn't it`], hints: [{ extra: 'is', text: `Прошлое: was → хвостик wasn't it.` }, { extra: "didn't", text: `В предложении was — хвостик wasn't it.` }] },
+      { t: 'type', q: `Напиши по-английски: «Ты видел новую квартиру Дева, да?» (с хвостиком)`, topic: 'question_tags', example: `You've seen Dev's new apartment, haven't you?`, answers: [`You have seen Dev's new apartment haven't you`, `You've seen Dev's new apartment haven't you`, `You saw Dev's new apartment didn't you`], hints: [{ extra: 'do', text: `You've seen → haven't you; You saw → didn't you.` }, { extra: 'is', text: `Хвостик повторяет have: haven't you.` }] },
+    ],
+  },
+
+  // ===================== 17. Indirect questions =====================
+  {
+    id: 'indirect_questions',
+    level: 'B1',
+    title: `Вежливые вопросы: Do you know where…?`,
+    goal: `Сможешь вежливо спросить дорогу и уточнить что угодно у незнакомца`,
+    newRule: {
+      id: 'indirect_questions', level: 'B1', title: `Косвенные вопросы: Do you know where the station is?`, topics: [],
+      short: `После Do you know / Could you tell me — прямой порядок слов и без do: where the station is.`,
+      text: `Спросить незнакомца в лоб «Where is the station?» — нормально, но вежливее начать с **Excuse me, do you know…?** или **Could you tell me…?**
+
+**Главное:** после такого начала вторая часть — **как утверждение**: сначала **кто**, потом **глагол**. Никаких do / does / did!
+Where **is the station**? → Could you tell me where **the station is**?
+What time **does the bank open**? → Do you know what time **the bank opens**? (does исчезает, а -s переходит к глаголу)
+Where **did he go**? → Do you know where **he went**?
+
+**Вопрос «да / нет» → if (или whether):**
+**Is** Dr. Ortiz in today? → Do you know **if** Dr. Ortiz **is** in today?
+
+**Другие начала:** Can you tell me…? · I wonder… (интересно…) · I don't know… · I'm not sure… · Any idea…?
+После I wonder / I don't know вопросительного знака нет: I wonder how much this costs.
+
+**Ловушка для русских:** «Вы не знаете, **где находится** станция?» — по-русски порядок не меняется, и хочется сказать where **is the station**. Нет: where **the station is**.`,
+      formula: `Do you know / Could you tell me + where / what / if + кто + глагол`,
+      examples: [
+        [`Could you tell me where the nearest subway station is?`, `Не подскажете, где ближайшая станция метро?`],
+        [`Do you know what time the bank opens?`, `Вы не знаете, во сколько открывается банк?`],
+        [`Do you know if Tony is working today?`, `Не знаешь, Тони сегодня работает?`],
+        [`I wonder how much this apartment costs.`, `Интересно, сколько стоит эта квартира.`],
+        [`Can you tell me how I get to Coney Island?`, `Не подскажете, как добраться до Кони-Айленда?`],
+      ],
+      mistakes: [
+        [`Do you know where is the station?`, `Do you know where the station is?`],
+        [`Can you tell me what time does it open?`, `Can you tell me what time it opens?`],
+        [`Do you know is she home?`, `Do you know if she's home?`],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'choice', q: `«Не подскажете, где ближайшая станция метро?»`, topic: 'indirect_questions', opts: [
+        { en: `Could you tell me where the nearest subway station is?`, ok: true },
+        { en: `Could you tell me where is the nearest subway station?`, why: `После Could you tell me — прямой порядок: where the station is.` },
+        { en: `Could you tell me where does the nearest subway station?`, why: `does здесь не нужен, а глагол is потерян: where … is.` },
+      ] },
+      { t: 'choice', q: `«Вы не знаете, во сколько открывается банк?»`, topic: 'indirect_questions', opts: [
+        { en: `Do you know what time the bank opens?`, ok: true },
+        { en: `Do you know what time does the bank open?`, why: `Во второй части без does: what time the bank opens.` },
+        { en: `Do you know what time the bank open?`, why: `the bank = it → opens (с -s).` },
+      ] },
+      { t: 'choice', q: `«Не знаешь, Прия сегодня работает?»`, topic: 'indirect_questions', opts: [
+        { en: `Do you know if Priya is working today?`, ok: true },
+        { en: `Do you know is Priya working today?`, why: `Вопрос «да / нет» внутри — через if: if Priya is working.` },
+        { en: `Do you know if is Priya working today?`, why: `После if — прямой порядок: if Priya is.` },
+      ] },
+      { t: 'choice', q: `«Интересно, сколько стоит эта квартира»`, topic: 'indirect_questions', opts: [
+        { en: `I wonder how much this apartment costs.`, ok: true },
+        { en: `I wonder how much does this apartment cost?`, why: `После I wonder — как утверждение, без does и без вопросительного знака.` },
+        { en: `I wonder how much costs this apartment.`, why: `Сначала кто (this apartment), потом глагол (costs).` },
+      ] },
+      { t: 'build', q: `Составь: «Вы не знаете, где живёт Дев?»`, topic: 'indirect_questions', answer: `Do you know where Dev lives?`, extra: ['does', 'live', 'is'], hints: [{ extra: 'does', text: `Во второй части без does: where Dev lives.` }, { extra: 'live', text: `Dev = he → lives.` }] },
+      { t: 'build', q: `Составь: «Не подскажете, сколько стоит билет?»`, topic: 'indirect_questions', answer: `Could you tell me how much the ticket costs?`, extra: ['does', 'cost', 'is'], hints: [{ extra: 'does', text: `Без does: how much the ticket costs.` }, { extra: 'cost', text: `the ticket = it → costs.` }] },
+      { t: 'build', q: `Составь: «Я не знаю, когда приедет Маркус»`, topic: 'indirect_questions', answer: `I don't know when Marcus is coming`, extra: ['does', 'if', 'comes'], hints: [{ extra: 'does', text: `Во второй части — как утверждение: when Marcus is coming.` }, { extra: 'if', text: `Есть слово «когда» — when, а не if.` }] },
+      { t: 'build', q: `Составь: «Ты не знаешь, бассейн открыт?»`, topic: 'indirect_questions', answer: `Do you know if the pool is open?`, extra: ['does', 'opens', 'that'], hints: [{ extra: 'that', text: `Вопрос «да / нет» — if.` }, { extra: 'opens', text: `«Открыт» — is open.` }] },
+      { t: 'type', q: `Напиши по-английски: «Вы не знаете, где здесь туалет?»`, topic: 'indirect_questions', example: `Do you know where the restroom is?`, answers: ['Do you know where the * is', 'Could you tell me where the * is', 'Can you tell me where the * is', 'Do you know where the * is around here', 'Do you know where the * is here', 'Excuse me do you know where the * is', 'Excuse me could you tell me where the * is', 'Excuse me can you tell me where the * is', 'Excuse me do you know where the * is around here', 'Excuse me do you know where the * is here'], hints: [{ extra: 'does', text: `Без does: where the restroom is.` }, { single: true, text: `Порядок: Do you know where + the restroom + is?` }] },
+      { t: 'type', q: `Напиши по-английски: «Не подскажете, во сколько закрывается аптека?»`, topic: 'indirect_questions', example: `Could you tell me what time the pharmacy closes?`, answers: ['Could you tell me what time the * closes', 'Can you tell me what time the * closes', 'Do you know what time the * closes', 'Could you tell me when the * closes', 'Can you tell me when the * closes', 'Do you know when the * closes', 'Excuse me could you tell me what time the * closes', 'Excuse me can you tell me what time the * closes', 'Excuse me do you know what time the * closes', 'Excuse me could you tell me when the * closes', 'Excuse me can you tell me when the * closes', 'Excuse me do you know when the * closes'], hints: [{ extra: 'does', text: `Без does: what time the pharmacy closes.` }, { extra: 'close', text: `the pharmacy = it → closes.` }] },
+      { t: 'type', q: `Напиши по-английски: «Ты не знаешь, Сэм дома?»`, topic: 'indirect_questions', example: `Do you know if Sam is home?`, answers: ['Do you know if Sam is home', 'Do you know if Sam is at home', 'Do you know whether Sam is home', 'Do you know whether Sam is at home', 'Excuse me do you know if Sam is home', 'Excuse me do you know if Sam is at home', 'Excuse me do you know whether Sam is home', 'Excuse me do you know whether Sam is at home'], hints: [{ missing: 'if', text: `Вопрос «да / нет» внутри — через if.` }, { single: true, text: `Do you know if + Sam + is home?` }] },
+      { t: 'type', q: `Напиши по-английски: «Я не помню, куда положил ключи»`, topic: 'indirect_questions', example: `I don't remember where I put my keys.`, answers: ['I do not remember where I put *', 'I do not remember where I left *', 'I can not remember where I put *', 'I can not remember where I left *'], hints: [{ extra: 'did', text: `Без did: where I put my keys.` }] },
+    ],
+  },
+
+  // ===================== 18. Reported speech =====================
+  {
+    id: 'reported',
+    level: 'B1',
+    title: `Косвенная речь: She said that…`,
+    goal: `Сможешь пересказать, что тебе сказали и о чём спросили`,
+    rule: 'reported',
+    steps: [
+      { t: 'choice', q: `«Джесс сказала, что опоздает»`, topic: 'reported', opts: [
+        { en: `Jess said she would be late.`, ok: true },
+        { en: `Jess said me she would be late.`, why: `say — без «кому». С кому — told me.` },
+        { en: `Jess told that she would be late.`, why: `После tell нужно «кому»: told me (или просто said).` },
+      ] },
+      { t: 'choice', q: `«Он спросил, где я работаю»`, topic: 'reported', opts: [
+        { en: `He asked where I worked.`, ok: true },
+        { en: `He asked where did I work.`, why: `В косвенном вопросе — прямой порядок, без did: where I worked.` },
+        { en: `He asked where do I work.`, why: `Без do и с прямым порядком: where I worked.` },
+      ] },
+      { t: 'choice', q: `«Миссис Родригес сказала мне, что починит душ»`, topic: 'reported', opts: [
+        { en: `Mrs. Rodriguez told me she would fix the shower.`, ok: true },
+        { en: `Mrs. Rodriguez said me she would fix the shower.`, why: `С «мне» — told me, а не said me.` },
+        { en: `Mrs. Rodriguez told she would fix the shower.`, why: `После tell нужно «кому»: told me.` },
+      ] },
+      { t: 'choice', q: `«Маркус спросил, голоден ли я»`, topic: 'reported', opts: [
+        { en: `Marcus asked if I was hungry.`, ok: true },
+        { en: `Marcus asked was I hungry.`, why: `Вопрос «да / нет» в пересказе — через if: asked if I was.` },
+        { en: `Marcus asked that I was hungry.`, why: `После asked — if (ли), не that.` },
+      ] },
+      { t: 'build', q: `Составь: «Она сказала, что устала»`, topic: 'reported', answer: `She said that she was tired`, extra: ['told', 'me', 'were'], hints: [{ extra: 'told', text: `Без «кому» — said.` }, { extra: 'me', text: `said me — так нельзя. Said that…` }] },
+      { t: 'build', q: `Составь: «Тони сказал мне, что может помочь»`, topic: 'reported', answer: `Tony told me he could help`, extra: ['said', 'to', 'helps'], hints: [{ extra: 'said', text: `С «мне» — told me.` }, { extra: 'helps', text: `После could — начальная форма: help.` }] },
+      { t: 'build', q: `Составь: «Доктор Ортис спросила, курю ли я»`, topic: 'reported', answer: `Dr. Ortiz asked if I smoked`, extra: ['do', 'did', 'that'], hints: [{ extra: 'do', text: `В пересказе вопроса — без do: if I smoked.` }, { extra: 'that', text: `«Ли» — if.` }] },
+      { t: 'build', q: `Составь: «Сэм спросил, когда я вернусь домой»`, topic: 'reported', answer: `Sam asked when I would come home`, extra: ['did', 'do', 'said'], hints: [{ extra: 'did', text: `Прямой порядок, без did: when I would come.` }, { extra: 'said', text: `Вопрос — asked.` }] },
+      { t: 'type', q: `Напиши по-английски: «Дев сказал, что потерял ключи»`, topic: 'reported', example: `Dev said he had lost his keys.`, answers: ['Dev said he had lost his keys', 'Dev said that he had lost his keys', 'Dev said he lost his keys', 'Dev said that he lost his keys'], hints: [{ extra: 'told', text: `Без «кому» — said.` }, { extra: 'my', text: `Ключи Дева — his keys.` }] },
+      { t: 'type', q: `Напиши по-английски: «Прия спросила, есть ли у меня счёт в банке»`, topic: 'reported', example: `Priya asked if I had a bank account.`, answers: ['Priya asked if I had a bank account', 'Priya asked whether I had a bank account', 'Priya asked me if I had a bank account', 'Priya asked me whether I had a bank account'], hints: [{ extra: 'do', text: `Без do: asked if I had.` }, { missing: 'if', text: `«Есть ли» — if.` }, { extra: 'have', text: `Сдвиг времени: have → had.` }] },
+      { t: 'type', q: `Напиши по-английски: «Маркус сказал мне, что знает короткую дорогу»`, topic: 'reported', example: `Marcus told me he knew a shortcut.`, answers: ['Marcus told me he knew a shortcut', 'Marcus told me that he knew a shortcut', 'Marcus told me he knew a short cut', 'Marcus told me he knows a shortcut', 'Marcus told me that he knows a shortcut'], hints: [{ extra: 'said', text: `С «мне» — told me.` }, { missing: 'me', text: `После tell — кому: told me.` }] },
+      { t: 'type', q: `Напиши по-английски: «Мария спросила, умею ли я плавать»`, topic: 'reported', example: `Maria asked if I could swim.`, answers: ['Maria asked if I could swim', 'Maria asked me if I could swim', 'Maria asked whether I could swim', 'Maria asked me whether I could swim'], hints: [{ extra: 'can', text: `Сдвиг времени: can → could.` }, { missing: 'if', text: `«Умею ли» — if.` }] },
+    ],
+  },
+
+  // ===================== 19. so / such =====================
+  {
+    id: 'so_such',
+    level: 'B1',
+    title: `so / such: так / такой`,
+    goal: `Сможешь эмоционально сказать «так здорово!» и «такой классный день!»`,
+    newRule: {
+      id: 'so_such', level: 'B1', title: `so / such: It's so cold! It's such a nice day!`, topics: [],
+      short: `so + прилагательное (so cold), such + a + прилагательное + существительное (such a nice day).`,
+      text: `Русские «так» и «такой» по-английски — **so** и **such**. Выбор зависит от того, **есть ли существительное**.
+
+**so + прилагательное / наречие** (без существительного):
+The subway is **so crowded**! You speak **so fast**. Jess is **so nice**.
+
+**such + a / an + (прилагательное) + существительное** (один предмет):
+It's **such a nice day**! She's **such a good barista**. What a mess — **such a mess**!
+
+**such + существительное во множественном или неисчисляемое** — без a:
+They're **such nice people**. It's **such good coffee**.
+
+**so many / so much + существительное:**
+**so many** people / tourists (считаемые) · **so much** traffic / work / noise (не считаемые)
+
+**Результат: so / such … that:**
+It was **so cold that** we stayed home.
+It was **such a cold day that** we stayed home.
+
+**Ловушки для русских:**
+It's **so nice day** ✗ → It's **such a nice day** ✓
+They're **such a nice people** ✗ → **such nice people** ✓ (people — множественное)
+
+**По-американски:** so — одно из самых частых слов в разговоре: I'm **so** tired! That's **so** cool! This pizza is **so** good!`,
+      formula: `so + прил. · such a + прил. + сущ. · so many / so much + сущ.`,
+      examples: [
+        [`Jess is so nice!`, `Джесс такая милая!`],
+        [`It's such a beautiful day!`, `Такой прекрасный день!`],
+        [`There are so many people on the subway!`, `В метро столько людей!`],
+        [`It was such a long day that I fell asleep on the train.`, `День был такой длинный, что я уснул в поезде.`],
+        [`Why is New York so expensive?`, `Почему Нью-Йорк такой дорогой?`],
+      ],
+      mistakes: [
+        [`It's so nice day.`, `It's such a nice day.`],
+        [`They are such a nice people.`, `They are such nice people. — people во множественном, без a`],
+        [`There is so much people.`, `There are so many people. — people считаемые`],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'choice', q: `«Сегодня такой хороший день!»`, topic: 'so_such', opts: [
+        { en: `It's such a nice day!`, ok: true },
+        { en: `It's so nice day!`, why: `Есть существительное (day) — нужно such a.` },
+        { en: `It's such nice day!`, why: `Один день — нужен a: such a nice day.` },
+      ] },
+      { t: 'choice', q: `«Метро сегодня такое переполненное!»`, topic: 'so_such', opts: [
+        { en: `The subway is so crowded today!`, ok: true },
+        { en: `The subway is such crowded today!`, why: `Только прилагательное без существительного — so.` },
+        { en: `The subway is such a crowded today!`, why: `После such a нужно существительное. Здесь — so crowded.` },
+      ] },
+      { t: 'choice', q: `«Здесь так много туристов!»`, topic: 'so_such', opts: [
+        { en: `There are so many tourists here!`, ok: true },
+        { en: `There are so much tourists here!`, why: `Туристов можно посчитать — many.` },
+        { en: `There are such many tourists here!`, why: `С many и much — только so: so many.` },
+      ] },
+      { t: 'choice', q: `«Они такие приятные люди»`, topic: 'so_such', opts: [
+        { en: `They're such nice people.`, ok: true },
+        { en: `They're such a nice people.`, why: `people — множественное, a не нужен.` },
+        { en: `They're so nice people.`, why: `Есть существительное (people) — such.` },
+      ] },
+      { t: 'build', q: `Составь: «Джесс такая добрая»`, topic: 'so_such', answer: `Jess is so kind`, extra: ['such', 'a', 'kindly'], hints: [{ extra: 'such', text: `Без существительного — so.` }, { extra: 'kindly', text: `После is — прилагательное: kind.` }] },
+      { t: 'build', q: `Составь: «Это был такой длинный день»`, topic: 'so_such', answer: `It was such a long day`, extra: ['so', 'many', 'much'], hints: [{ extra: 'so', text: `Есть существительное (day) — such a.` }, { missing: 'a', text: `Один день — such a.` }] },
+      { t: 'build', q: `Составь: «Было так холодно, что мы остались дома»`, topic: 'so_such', answer: `It was so cold that we stayed home`, extra: ['such', 'a', 'stay'], hints: [{ extra: 'such', text: `cold — прилагательное без существительного: so cold.` }, { extra: 'stay', text: `Прошлое — stayed.` }] },
+      { t: 'build', q: `Составь: «В Нью-Йорке столько пробок!»`, topic: 'so_such', answer: `There is so much traffic in New York!`, extra: ['many', 'such', 'are'], hints: [{ extra: 'many', text: `traffic не считается — much.` }, { extra: 'are', text: `traffic — единственное: there is.` }] },
+      { t: 'type', q: `Напиши по-английски: «Ты так быстро говоришь!»`, topic: 'so_such', example: `You speak so fast!`, answers: ['You speak so fast', 'You talk so fast', 'You are speaking so fast', 'You are talking so fast', 'You speak so quickly', 'You talk so quickly'], hints: [{ extra: 'such', text: `Без существительного — so.` }, { extra: 'very', text: `«Так» с эмоцией — so fast.` }] },
+      { t: 'type', q: `Напиши по-английски: «Это такая отличная идея!»`, topic: 'so_such', example: `That's such a great idea!`, answers: ['That is such a great idea', 'It is such a great idea', 'This is such a great idea', 'That is such a good idea', 'It is such a good idea'], hints: [{ extra: 'so', text: `Есть существительное (idea) — such a.` }, { missing: 'a', text: `Одна идея — such a great idea.` }] },
+      { t: 'type', q: `Напиши по-английски: «У меня так много работы»`, topic: 'so_such', example: `I have so much work.`, answers: ['I have so much work', 'I have so much work to do', 'I have got so much work', 'I have got so much work to do'], hints: [{ extra: 'many', text: `work не считается — much.` }, { extra: 'such', text: `С much — so: so much work.` }] },
+      { t: 'type', q: `Напиши по-английски: «Это был такой вкусный хот-дог, что я заказал ещё один»`, topic: 'so_such', example: `It was such a good hot dog that I ordered another one.`, answers: ['It was such a * hot dog that I ordered another one', 'It was such a * hot dog that I ordered another', 'It was such a * hot dog that I got another one', 'It was such a * hot dog that I bought another one', 'It was such a * hot dog I ordered another one', 'The hot dog was so * that I ordered another one', 'The hot dog was so * that I got another one', 'The hot dog was so * I ordered another one'], hints: [{ extra: 'so', text: `Есть существительное (hot dog) — such a: such a good hot dog.` }, { missing: 'that', text: `Результат — such … that.` }] },
+    ],
+  },
+
+  // ===================== 20. Linking words =====================
+  {
+    id: 'linking_words',
+    level: 'B1',
+    title: `Связки: although, however, despite, because of`,
+    goal: `Сможешь связно рассказывать: «хотя…», «однако…», «несмотря на…», «из-за…»`,
+    newRule: {
+      id: 'linking_words', level: 'B1', title: `although / however / despite / because of / so that`, topics: [],
+      short: `although + предложение, despite + существительное, because + предложение, because of + существительное.`,
+      text: `Связки делают речь взрослой. Главное — что идёт **после** связки: целое предложение (кто + глагол) или просто существительное.
+
+**Хотя / несмотря на:**
+**although / even though** + предложение: **Although it was cold**, Maria swam in the ocean.
+**despite / in spite of** + существительное или -ing: **Despite the rain**, we went out. **Despite being tired**, Dev went to the party.
+⚠️ despite — **без of**; in spite **of** — с of.
+
+**Однако:**
+**however** — в начале нового предложения, с запятой: The apartment is small. **However**, it's cheap.
+**but** — внутри одного предложения: The apartment is small, **but** it's cheap.
+
+**Из-за / потому что:**
+**because** + предложение: I was late **because there was** a lot of traffic.
+**because of** + существительное: I was late **because of the traffic**.
+
+**Чтобы:**
+**to** + глагол: I'm saving money **to visit** Sam.
+**so that** + предложение (часто с can / could / would): I left early **so that I wouldn't** miss the train. В разговоре — просто **so**: so I could…
+
+**Ловушки для русских:**
+«Хотя…, **но**…» — по-английски только одно: **Although** it was cold, ~~but~~ we swam.
+«Несмотря на то, что он устал» — **не** despite he was tired, а **although** he was tired (или despite **being** tired).
+«Из-за дождя» — because **of** the rain, не because the rain.`,
+      formula: `although + кто + глагол · despite + сущ. / -ing · because of + сущ. · so that + кто + глагол`,
+      examples: [
+        [`Although the rent is high, I love my apartment.`, `Хотя аренда высокая, я люблю свою квартиру.`],
+        [`Despite the traffic, Marcus got us there on time.`, `Несмотря на пробки, Маркус довёз нас вовремя.`],
+        [`The flight was canceled because of the storm.`, `Рейс отменили из-за шторма.`],
+        [`I'm saving money so that I can visit Sam.`, `Я коплю деньги, чтобы съездить к Сэму.`],
+        [`The bagels are great. However, the line is always long.`, `Бейглы отличные. Однако очередь всегда длинная.`],
+      ],
+      mistakes: [
+        [`Despite it was raining, we went out.`, `Although it was raining, we went out. / Despite the rain, we went out.`],
+        [`I was late because the traffic.`, `I was late because of the traffic.`],
+        [`Although it was cold, but we swam.`, `Although it was cold, we swam. — без but`],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'choice', q: `«Хотя было холодно, Мария плавала в океане»`, topic: 'linking_words', opts: [
+        { en: `Although it was cold, Maria swam in the ocean.`, ok: true },
+        { en: `Although it was cold, but Maria swam in the ocean.`, why: `«Хотя…, но» — по-английски только одно слово: although без but.` },
+        { en: `Despite it was cold, Maria swam in the ocean.`, why: `После despite — существительное, не предложение. С предложением — although.` },
+      ] },
+      { t: 'choice', q: `«Поезд опоздал из-за снега»`, topic: 'linking_words', opts: [
+        { en: `The train was late because of the snow.`, ok: true },
+        { en: `The train was late because the snow.`, why: `Перед существительным — because of.` },
+        { en: `The train was late because of it snowed.`, why: `После because of — существительное. С предложением — because it snowed.` },
+      ] },
+      { t: 'choice', q: `«Несмотря на пробки, Маркус приехал вовремя»`, topic: 'linking_words', opts: [
+        { en: `Despite the traffic, Marcus arrived on time.`, ok: true },
+        { en: `Despite of the traffic, Marcus arrived on time.`, why: `despite — без of (in spite of — с of).` },
+        { en: `Although the traffic, Marcus arrived on time.`, why: `После although — целое предложение. С существительным — despite.` },
+      ] },
+      { t: 'choice', q: `«Квартира маленькая. Однако она дешёвая.»`, topic: 'linking_words', opts: [
+        { en: `The apartment is small. However, it's cheap.`, ok: true },
+        { en: `The apartment is small. Despite, it's cheap.`, why: `despite не стоит один — нужно существительное. «Однако» — however.` },
+        { en: `The apartment is small. Because of, it's cheap.`, why: `because of — «из-за». «Однако» — however.` },
+      ] },
+      { t: 'tip', title: `«Чтобы»: to или so that?`, text: `Если «чтобы» + просто действие — **to**: *I came to New York **to work**.*\nЕсли после «чтобы» своё подлежащее или отрицание — **so that**: *I left early **so that I wouldn't** be late. I'm saving **so that Sam can** visit.*\n\nНикогда не говори **for to** — это русская калька «для того, чтобы».` },
+      { t: 'build', q: `Составь: «Я ушёл рано, чтобы не опоздать на поезд»`, topic: 'linking_words', answer: `I left early so that I wouldn't miss the train`, extra: ['for', "don't", 'to'], hints: [{ extra: 'for', text: `«Чтобы» с предложением — so that.` }, { extra: 'do', text: `После so that в прошлом — wouldn't.` }] },
+      { t: 'build', q: `Составь: «Мы остались дома из-за дождя»`, topic: 'linking_words', answer: `We stayed home because of the rain`, extra: ['despite', 'it', 'rained'], hints: [{ extra: 'despite', text: `despite — «несмотря на». «Из-за» — because of.` }, { extra: 'rained', text: `После because of — существительное: the rain.` }] },
+      { t: 'build', q: `Составь: «Дев пошёл на вечеринку, хотя устал»`, topic: 'linking_words', answer: `Dev went to the party although he was tired`, extra: ['but', 'despite', 'tiring'], hints: [{ extra: 'despite', text: `После despite нельзя целое предложение. Здесь — although.` }, { extra: 'but', text: `«Хотя» — although.` }] },
+      { t: 'build', q: `Составь: «Мы пошли на пляж, несмотря на дождь»`, topic: 'linking_words', answer: `We went to the beach despite the rain`, extra: ['of', 'although', 'it'], hints: [{ extra: 'of', text: `despite — без of.` }, { extra: 'although', text: `Перед существительным — despite.` }] },
+      { t: 'type', q: `Напиши по-английски: «Я опоздал из-за пробок»`, topic: 'linking_words', example: `I was late because of the traffic.`, answers: ['I was late because of the traffic', 'I was late because of traffic', 'I was late because of the traffic jams', 'I was late because of traffic jams', 'I was late because of a traffic jam', 'I was late because there was a lot of traffic'], hints: [{ missing: 'of', text: `Перед существительным — because of.` }, { extra: 'despite', text: `despite — «несмотря на». «Из-за» — because of.` }] },
+      { t: 'type', q: `Напиши по-английски: «Хотя было поздно, кофейня Джесс ещё работала»`, topic: 'linking_words', example: `Although it was late, Jess's coffee shop was still open.`, answers: ['Although it was late * was still open', 'Even though it was late * was still open', '* was still open although it was late', '* was still open even though it was late'], hints: [{ extra: 'but', text: `«Хотя…» — although, без but.` }, { extra: 'despite', text: `С предложением (it was late) — although.` }] },
+      { t: 'type', q: `Напиши по-английски: «Я коплю деньги, чтобы съездить к Сэму»`, topic: 'linking_words', example: `I'm saving money so that I can visit Sam.`, answers: ['I am saving money so that I can * Sam', 'I am saving money so I can * Sam', 'I am saving money to * Sam', 'I am saving up so that I can * Sam', 'I am saving up so I can * Sam', 'I am saving up to * Sam'], hints: [{ extra: 'for', text: `«Чтобы» — to или so that, без for.` }] },
+      { t: 'type', q: `Напиши по-английски: «Еда была отличной. Однако обслуживание было медленным.»`, topic: 'linking_words', example: `The food was great. However, the service was slow.`, answers: ['The food was * However the service was slow', 'The food was * but the service was slow'], hints: [{ extra: 'despite', text: `«Однако» — however.` }, { extra: 'although', text: `«Однако» в начале предложения — however.` }] },
     ],
   },
 ];

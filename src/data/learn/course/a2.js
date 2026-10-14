@@ -46,7 +46,6 @@ export default [
       { t: 'build', q: 'Составь: «Опять идёт дождь»', topic: 'present_continuous', answer: "It's raining again", extra: ['rain', 'rains', 'is'], hints: [
         { extra: 'rains', text: 'Дождь идёт сейчас — raining. Rains — «бывает вообще».' },
         { extra: 'rain', text: 'Нужна форма с -ing: raining.' },
-        { extra: 'is', text: 'It\'s уже содержит is.' },
       ] },
       { t: 'build', q: 'Составь вопрос: «Ты идёшь с нами?»', topic: 'present_continuous', answer: 'Are you coming with us?', extra: ['Do', 'come', 'we'], hints: [
         { extra: 'do', text: 'Вопрос в Present Continuous — через are: Are you coming?' },
@@ -203,7 +202,6 @@ export default [
       ] },
       { t: 'type', q: 'Напиши по-английски: «Вчера я очень устал»', topic: 'was_were', example: 'I was really tired yesterday.', answers: ['I was really tired yesterday', 'I was very tired yesterday', 'I was so tired yesterday', 'I was tired yesterday', 'yesterday I was really tired', 'yesterday I was very tired', 'yesterday I was so tired', 'yesterday I was tired'], hints: [
         { missing: 'was', text: '«Устал» по-английски — состояние: I was tired.' },
-        { extra: 'tired', text: 'Tired — прилагательное, нужен was: I was tired.' },
       ] },
       { t: 'type', q: 'Напиши по-английски: «Где ты был?»', topic: 'was_were', example: 'Where were you?', answers: ['where were you'], hints: [
         { extra: 'was', text: 'С you — were: Where were you?' },
@@ -467,7 +465,7 @@ She speaks English **well**. (не She speaks well English)
       ] },
       { t: 'type', q: 'Напиши по-английски: «Бруклин не такой шумный, как Манхэттен»', topic: 'comparatives', example: "Brooklyn isn't as noisy as Manhattan.", answers: ['Brooklyn is not as noisy as Manhattan', 'Brooklyn is not as loud as Manhattan', 'Brooklyn is not so noisy as Manhattan', 'Brooklyn is quieter than Manhattan', 'Brooklyn is less noisy than Manhattan'], hints: [
         { extra: 'like', text: 'Конструкция as … as: not as noisy as.' },
-        { extra: 'than', text: 'В конструкции as … as than не нужен.' },
+        { extra: 'than', text: 'Либо not as noisy as, либо quieter than — не смешивай.' },
       ] },
     ],
   },
@@ -997,7 +995,7 @@ I'll call you **when I get** home. (не when I will get)`,
         { en: 'The plane landing at noon.', why: 'Расписание — lands (или is landing).' },
         { en: 'The plane lands in noon.', why: 'Время — at noon.' },
       ] },
-      { t: 'type', q: 'Напиши по-английски: «Что ты делаешь сегодня вечером?» (о планах)', topic: 'present_for_future', example: 'What are you doing tonight?', answers: ['what are you doing tonight', 'what are you doing this evening', 'what are you up to tonight', 'what are you going to do tonight'], hints: [
+      { t: 'type', q: 'Напиши по-английски: «Что ты делаешь сегодня вечером?» (о планах)', topic: 'present_for_future', example: 'What are you doing tonight?', answers: ['what are you doing tonight', 'what are you doing this evening', 'what are you up to tonight', 'what are you going to do tonight', 'what are you going to do this evening', 'what are your plans for tonight'], hints: [
         { missing: 'are', text: 'О планах: What are you doing tonight?' },
         { extra: 'do', text: 'What do you do? — «Кем работаешь?». О планах — What are you doing?' },
       ] },
@@ -1189,6 +1187,585 @@ I came here **to study**. (не for study, не for to study)
       { t: 'type', q: '— Why are you learning English? Ответь: «Чтобы найти работу получше»', topic: 'infinitive_purpose', example: 'To find a better job.', answers: ['to find a better job', 'to get a better job', 'I am learning English to find a better job', 'I am learning English to get a better job', 'so I can find a better job', 'so I can get a better job'], hints: [
         { extra: 'for', text: 'Цель — To + глагол: To find…' },
         { extra: 'good', text: '«Получше» — better.' },
+      ] },
+    ],
+  },
+
+  // ===================== 15. should / have to =====================
+  {
+    id: 'modals',
+    level: 'A2',
+    title: 'should / have to / don\'t have to',
+    goal: 'Сможешь дать совет и сказать, что нужно, а что не обязательно',
+    rule: 'modals',
+    steps: [
+      { t: 'tip', title: 'С to или без?', text: 'После **should, must, can** — глагол **без to**: You **should try** it. После **have** — **с to**: I **have to go**. А **don\'t have to** — это «не обязательно», а не «нельзя».' },
+      { t: 'choice', q: '«Тебе стоит увидеть Бруклинский мост»', topic: 'modals', opts: [
+        { en: 'You should see the Brooklyn Bridge.', ok: true },
+        { en: 'You should to see the Brooklyn Bridge.', why: 'После should — без to.' },
+        { en: 'You have see the Brooklyn Bridge.', why: 'Совет — should.' },
+      ] },
+      { t: 'choice', q: '«Мне надо работать завтра»', topic: 'modals', opts: [
+        { en: 'I have to work tomorrow.', ok: true },
+        { en: 'I must to work tomorrow.', why: 'После must — без to. И в США чаще говорят have to.' },
+        { en: 'I have working tomorrow.', why: '«Надо» — have to + глагол: have to work.' },
+      ] },
+      { t: 'choice', q: '«Платить сейчас не обязательно»', topic: 'modals', opts: [
+        { en: "You don't have to pay now.", ok: true },
+        { en: "You mustn't pay now.", why: 'Mustn\'t = «нельзя». «Не обязательно» — don\'t have to.' },
+        { en: "You haven't to pay now.", why: 'По-американски: don\'t have to.' },
+      ] },
+      { t: 'choice', q: '«Ей нужно платить за квартиру»', topic: 'modals', opts: [
+        { en: 'She has to pay rent.', ok: true },
+        { en: 'She have to pay rent.', why: 'С she — has to.' },
+        { en: 'She has pay rent.', why: 'Нужно to: has to pay.' },
+      ] },
+      { t: 'choice', q: 'Доктор Ортис: «Вам не стоит есть так много сахара»', topic: 'modals', opts: [
+        { en: "You shouldn't eat so much sugar.", ok: true },
+        { en: "You don't should eat so much sugar.", why: 'Отрицание — shouldn\'t.' },
+        { en: "You shouldn't eat so many sugar.", why: 'Sugar — неисчисляемое: much.' },
+      ] },
+      { t: 'build', q: 'Составь: «Тебе стоит попробовать пиццу у Сала»', topic: 'modals', answer: "You should try the pizza at Sal's", extra: ['to', 'tried', 'trying'], hints: [
+        { extra: 'to', text: 'После should — без to.' },
+        { extra: 'tried', text: 'После should — начальная форма: try.' },
+        { extra: 'trying', text: 'После should — начальная форма: try.' },
+      ] },
+      { t: 'build', q: 'Составь: «Мне пора идти»', topic: 'modals', answer: 'I have to go now', extra: ['has', 'going', 'am'], hints: [
+        { extra: 'has', text: 'С I — have to.' },
+        { extra: 'going', text: 'После to — начальная форма: go.' },
+        { extra: 'am', text: 'Am не нужен: I have to go.' },
+      ] },
+      { t: 'build', q: 'Составь: «Нам не обязательно спешить»', topic: 'modals', answer: "We don't have to hurry", extra: ["mustn't", 'hurrying', "haven't"], hints: [
+        { extra: "mustn't", text: 'Mustn\'t = «нельзя». «Не обязательно» — don\'t have to.' },
+        { extra: 'hurrying', text: 'После to — начальная форма: hurry.' },
+        { extra: "haven't", text: 'По-американски: don\'t have to.' },
+      ] },
+      { t: 'choice', q: 'Разговорно: «Мне пора!»', topic: 'modals', opts: [
+        { en: 'I gotta go!', ok: true },
+        { en: 'I gotta to go!', why: 'Gotta уже включает to.' },
+        { en: 'I got go!', why: 'Gotta = have got to: I gotta go.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Тебе стоит отдохнуть»', topic: 'modals', example: 'You should rest.', answers: ['you should rest', 'you should get some rest', 'you should relax', 'you should take a break', 'you should have a rest'], hints: [
+        { extra: 'to', text: 'После should — без to.' },
+        { missing: 'should', text: 'Совет — should.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Мне нужно позвонить маме»', topic: 'modals', example: 'I have to call my mom.', answers: ['I have to call my mom', 'I need to call my mom', 'I have to call mom', 'I need to call mom', 'I have got to call my mom', 'I gotta call my mom'], hints: [
+        { missing: 'to', text: 'Have to + глагол: have to call.' },
+        { extra: 'mum', text: 'По-американски — mom.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Тебе не обязательно приходить»', topic: 'modals', example: "You don't have to come.", answers: ['you do not have to come', 'you do not need to come'], hints: [
+        { extra: "mustn't", text: 'Mustn\'t = «нельзя». «Не обязательно» — don\'t have to.' },
+        { extra: "haven't", text: 'По-американски: don\'t have to.' },
+      ] },
+      { t: 'type', q: 'Как скажут в США: «Здесь нельзя курить»', topic: 'modals', example: "You can't smoke here.", answers: ['you can not smoke here', 'you must not smoke here', "you mustn't smoke here", 'you are not allowed to smoke here', 'no smoking here'], hints: [
+        { extra: 'do', text: '«Нельзя» — can\'t (или mustn\'t), а don\'t have to — «не обязательно».' },
+        { extra: 'should', text: 'Should not — «не стоит». «Нельзя» — can\'t.' },
+      ] },
+    ],
+  },
+
+  // ===================== 16. Вежливые просьбы =====================
+  {
+    id: 'polite_requests',
+    level: 'A2',
+    title: 'Вежливые просьбы: Could you…? Would you mind…?',
+    goal: 'Сможешь вежливо попросить о помощи и спросить разрешения',
+    newRule: {
+      id: 'polite_requests', level: 'A2', title: 'Вежливые просьбы: Could you…? Would you mind…? May I…?', topics: [],
+      short: 'Попросить кого-то: Can you…? / Could you…? (вежливее). Спросить разрешения: Can I…? / May I…? После Would you mind — глагол с -ing.',
+      text: `В Америке прямой приказ («Give me…») звучит грубо. Просьбу оформляют **вопросом**:
+
+**Попросить человека что-то сделать:**
+**Can you** help me? — нормально, по-дружески.
+**Could you** help me, please? — вежливее (в магазине, с незнакомыми).
+**Would you** hold the door, please? — тоже вежливо.
+**Would you mind** + **-ing**? — очень вежливо: **Would you mind waiting** a minute?
+
+**Спросить разрешения для себя:**
+**Can I** sit here? — обычно.
+**Could I** ask a question? — вежливее.
+**May I** come in? — официально (у врача, в банке).
+
+**Ответы:** Sure! / Of course! / No problem!
+На **Would you mind…?** «без проблем» = **No, not at all!** (вопрос ведь «Вы не против?»). Ответ «Yes» здесь значит «да, я против»!
+
+**Ловушки для русских:**
+— после could / can / may / would глагол **без to**: Could you **help** me? (не to help)
+— после would you mind — **-ing**: Would you mind **opening** the window?
+— русское «Дайте…» звучит нормально, а английское «Give me…» — грубо. Говори **Can I get…?** / **Could I have…?**
+— не забывай **please**: Could you help me, **please**?`,
+      formula: 'Could you + глагол…? · Can / May I + глагол…? · Would you mind + -ing?',
+      examples: [
+        ['Could you help me with my bags, please?', 'Не могли бы вы помочь мне с сумками?'],
+        ['Can I sit here?', 'Можно здесь сесть?'],
+        ['May I see your ID, please?', 'Можно ваше удостоверение?'],
+        ['Would you mind waiting a minute?', 'Вы не против подождать минутку?'],
+        ['Could you say that again, please?', 'Не могли бы вы повторить?'],
+      ],
+      mistakes: [
+        ['Could you to help me?', 'Could you help me? (после could — без to)'],
+        ['Would you mind to wait?', 'Would you mind waiting? (после mind — -ing)'],
+        ['Give me a coffee.', 'Can I get a coffee, please? (прямой приказ звучит грубо)'],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'tip', title: 'Would you mind…? — «нет» значит «да»', text: '**Would you mind** opening the window? — дословно «Вы **против** того, чтобы открыть окно?». Если согласен помочь, отвечай **No, not at all!** или **Sure, no problem.** А «Yes» значит «да, я против».' },
+      { t: 'choice', q: '«Не могли бы вы мне помочь?»', topic: 'polite_requests', opts: [
+        { en: 'Could you help me, please?', ok: true },
+        { en: 'Could you to help me, please?', why: 'После could — без to.' },
+        { en: 'You could help me?', why: 'В вопросе could стоит первым: Could you…?' },
+      ] },
+      { t: 'choice', q: 'В кафе у Джесс вежливо попроси кофе', topic: 'polite_requests', opts: [
+        { en: 'Can I get a coffee, please?', ok: true },
+        { en: 'Give me coffee.', why: 'Звучит как приказ. Вежливо: Can I get…, please?' },
+        { en: 'I want coffee.', why: 'Слишком прямо. Лучше: Can I get… / I\'d like…' },
+      ] },
+      { t: 'choice', q: '«Вы не против подождать минутку?»', topic: 'polite_requests', opts: [
+        { en: 'Would you mind waiting a minute?', ok: true },
+        { en: 'Would you mind to wait a minute?', why: 'После mind — -ing: waiting.' },
+        { en: 'Would you mind wait a minute?', why: 'После mind — -ing: waiting.' },
+      ] },
+      { t: 'choice', q: 'В кабинете доктора Ортиса: «Можно войти?»', topic: 'polite_requests', opts: [
+        { en: 'May I come in?', ok: true },
+        { en: 'May I to come in?', why: 'После may — без to.' },
+        { en: 'May I coming in?', why: 'После may — начальная форма: come.' },
+      ] },
+      { t: 'choice', q: 'Маркус: «Would you mind if I open the window?» Ты не против. Ответь:', topic: 'polite_requests', opts: [
+        { en: 'No, not at all.', ok: true },
+        { en: 'Yes, I mind.', why: 'Это значит «да, я против»!' },
+        { en: 'Yes, I would mind.', why: 'Это «да, я был бы против». Согласие — No, not at all.' },
+      ] },
+      { t: 'build', q: 'Составь: «Не могли бы вы говорить помедленнее?»', topic: 'polite_requests', answer: 'Could you speak more slowly?', extra: ['to', 'speaking', 'slow'], hints: [
+        { extra: 'to', text: 'После could — без to.' },
+        { extra: 'speaking', text: 'После could — начальная форма: speak.' },
+        { extra: 'slow', text: 'Как говорить? — slowly.' },
+      ] },
+      { t: 'build', q: 'Составь: «Можно мне сесть рядом с тобой?»', topic: 'polite_requests', answer: 'Can I sit next to you?', extra: ['me', 'sitting', 'at'], hints: [
+        { extra: 'me', text: 'Разрешение для себя — Can I…?' },
+        { extra: 'sitting', text: 'После can — начальная форма: sit.' },
+        { extra: 'at', text: '«Рядом с» — next to.' },
+      ] },
+      { t: 'build', q: 'Составь: «Вы не против открыть окно?»', topic: 'polite_requests', answer: 'Would you mind opening the window?', extra: ['to', 'open', 'opened'], hints: [
+        { extra: 'to', text: 'После mind — -ing, без to.' },
+        { extra: 'open', text: 'После mind — opening.' },
+        { extra: 'opened', text: 'После mind — opening.' },
+      ] },
+      { t: 'choice', q: 'Прия в банке просит удостоверение. Как она скажет?', topic: 'polite_requests', opts: [
+        { en: 'May I see your ID, please?', ok: true },
+        { en: 'Show me ID.', why: 'Грубо и без your: May I see your ID, please?' },
+        { en: 'May I to see your ID?', why: 'После may — без to.' },
+      ] },
+      { t: 'type', q: 'Напиши вежливо: «Не могли бы вы мне помочь?»', topic: 'polite_requests', example: 'Could you help me, please?', answers: ['could you help me', 'could you help me please', 'could you please help me', 'can you help me', 'can you help me please', 'can you please help me', 'would you help me', 'would you help me please', 'would you please help me', 'could you give me a hand', 'can you give me a hand'], hints: [
+        { extra: 'to', text: 'После could — без to.' },
+        { extra: 'helping', text: 'После could — начальная форма: help.' },
+      ] },
+      { t: 'type', q: 'В ресторане: «Можно нам счёт?»', topic: 'polite_requests', example: 'Can we get the check, please?', answers: ['can we get the check', 'can we get the check please', 'could we get the check', 'could we get the check please', 'can we have the check', 'can we have the check please', 'could we have the check please', 'can I get the check', 'can I get the check please', 'could I get the check please', 'could I have the check please', 'may we have the check please'], hints: [
+        { extra: 'bill', text: 'В США счёт в ресторане — the check.' },
+        { extra: 'give', text: 'Give me… звучит грубо. Вежливо: Can we get the check?' },
+      ] },
+      { t: 'type', q: 'Напиши: «Вы не против подождать?»', topic: 'polite_requests', example: 'Would you mind waiting?', answers: ['would you mind waiting', 'would you mind waiting a minute', 'would you mind waiting a moment', 'would you mind waiting a second', 'do you mind waiting'], hints: [
+        { extra: 'wait', text: 'После mind — -ing: waiting.' },
+        { extra: 'to', text: 'После mind — -ing, без to.' },
+      ] },
+      { t: 'type', q: 'Напиши: «Можно задать вопрос?»', topic: 'polite_requests', example: 'Could I ask a question?', answers: ['could I ask a question', 'can I ask a question', 'may I ask a question', 'could I ask you a question', 'can I ask you a question', 'may I ask you a question'], hints: [
+        { extra: 'to', text: 'После could / can / may — без to.' },
+        { extra: 'give', text: '«Задать вопрос» — ask a question.' },
+      ] },
+    ],
+  },
+
+  // ===================== 17. Предлоги движения =====================
+  {
+    id: 'prep_movement',
+    level: 'A2',
+    title: 'Куда? into, out of, across, through, along',
+    goal: 'Сможешь объяснить дорогу: через парк, вдоль реки, вверх по лестнице',
+    newRule: {
+      id: 'prep_movement', level: 'A2', title: 'Предлоги движения: into, out of, across, through…', topics: [],
+      short: 'into — внутрь, out of — наружу, across — через (на другую сторону), through — сквозь, along — вдоль, up / down — вверх / вниз.',
+      text: `Предлоги места (in, on, at) отвечают на вопрос «где?». На вопрос **«куда? каким путём?»** — свои предлоги:
+
+**to** — к, в (цель): Go **to** the station.
+**into** — внутрь: She walked **into** the coffee shop.
+**out of** — из, наружу: He ran **out of** the building.
+**across** — через, на другую сторону (по поверхности): Walk **across** the street / the bridge.
+**through** — сквозь, через что-то со всех сторон: Go **through** the park / the tunnel / the door.
+**along** — вдоль: Walk **along** the river.
+**past** — мимо: Go **past** the bank.
+**up / down** — вверх / вниз: Go **up** the stairs. Walk **down** the street (= по улице).
+**around** — по, вокруг: Let's walk **around** Brooklyn.
+**over / under** — над / под: The bridge goes **over** the river.
+
+**Ловушки для русских:**
+— «через» — это и **across** (улица, мост), и **through** (парк, туннель).
+— «в» при движении — **into**: Come **into** the room. (Но коротко: Come **in**!)
+— машина и такси: get **in** / get **out of**. Автобус, метро, поезд: get **on** / get **off**.
+— **home** без to: I'm going **home**. (не to home)
+— «мимо» — **past**, не passed (passed — это глагол «прошёл»).`,
+      formula: 'go into / out of / across / through / along / up / down + место',
+      examples: [
+        ['Walk across the Brooklyn Bridge.', 'Пройди по Бруклинскому мосту на другую сторону.'],
+        ['Go through the park and turn left.', 'Пройди через парк и поверни налево.'],
+        ['She walked into the coffee shop.', 'Она вошла в кофейню.'],
+        ['Get out of the cab here.', 'Выходи из такси здесь.'],
+        ["Let's walk along the river.", 'Давай погуляем вдоль реки.'],
+      ],
+      mistakes: [
+        ['Walk through the street.', 'Walk across the street. (через улицу — across)'],
+        ["I'm going to home.", "I'm going home. (home — без to)"],
+        ['Get off the taxi.', 'Get out of the taxi. (машина и такси — get in / get out of)'],
+      ],
+      quiz: [],
+    },
+    steps: [
+      { t: 'tip', title: '«Через» = across или through?', text: '**across** — по поверхности на другую сторону: across the street, across the bridge. **through** — сквозь что-то, что окружает со всех сторон: through the park, through the tunnel, through the door.' },
+      { t: 'choice', q: '«Перейди через улицу»', topic: 'prep_movement', opts: [
+        { en: 'Walk across the street.', ok: true },
+        { en: 'Walk through the street.', why: 'Улицу переходят — across.' },
+        { en: 'Walk over the street.', why: 'Over — «над». Через улицу — across.' },
+      ] },
+      { t: 'choice', q: '«Иди через парк»', topic: 'prep_movement', opts: [
+        { en: 'Go through the park.', ok: true },
+        { en: 'Go along the park.', why: 'Along — «вдоль». Через парк — through.' },
+        { en: 'Go throw the park.', why: 'Throw — «бросать». Через — through.' },
+      ] },
+      { t: 'choice', q: '«Она вошла в кофейню»', topic: 'prep_movement', opts: [
+        { en: 'She walked into the coffee shop.', ok: true },
+        { en: 'She walked to inside the coffee shop.', why: 'Внутрь — одно слово: into.' },
+        { en: 'She walked at the coffee shop.', why: 'At — «где». Движение внутрь — into.' },
+      ] },
+      { t: 'choice', q: 'Маркус: «Выходи из такси здесь»', topic: 'prep_movement', opts: [
+        { en: 'Get out of the cab here.', ok: true },
+        { en: 'Get off the cab here.', why: 'Из машины и такси — get out of. Get off — из автобуса, поезда.' },
+        { en: 'Go out from the cab here.', why: 'Естественно: get out of the cab.' },
+      ] },
+      { t: 'choice', q: '«Я иду домой»', topic: 'prep_movement', opts: [
+        { en: "I'm going home.", ok: true },
+        { en: "I'm going to home.", why: 'Home — без to.' },
+        { en: "I'm going at home.", why: 'Home при движении — без предлога.' },
+      ] },
+      { t: 'build', q: 'Составь: «Иди вдоль реки»', topic: 'prep_movement', answer: 'Walk along the river', extra: ['across', 'through', 'on'], hints: [
+        { extra: 'across', text: 'Across — на другую сторону. Вдоль — along.' },
+        { extra: 'through', text: 'Through — сквозь. Вдоль — along.' },
+        { extra: 'on', text: 'Вдоль — along.' },
+      ] },
+      { t: 'build', q: 'Составь: «Поднимись по лестнице на второй этаж»', topic: 'prep_movement', answer: 'Go up the stairs to the second floor', extra: ['on', 'down', 'upstairs'], hints: [
+        { extra: 'down', text: 'Down — вниз. Вверх — up.' },
+        { extra: 'on', text: 'Куда — to the second floor.' },
+        { extra: 'upstairs', text: 'Upstairs — «наверх» без stairs. Здесь — up the stairs.' },
+      ] },
+      { t: 'build', q: 'Составь: «Садись в метро на Таймс-сквер»', topic: 'prep_movement', answer: 'Get on the subway at Times Square', extra: ['in', 'into', 'off'], hints: [
+        { extra: 'in', text: 'Метро, автобус, поезд — get on.' },
+        { extra: 'into', text: 'Метро, автобус, поезд — get on.' },
+        { extra: 'off', text: 'Get off — выходить. Садиться — get on.' },
+      ] },
+      { t: 'choice', q: 'Объясни дорогу: «Иди по улице, мимо банка»', topic: 'prep_movement', opts: [
+        { en: 'Walk down the street and go past the bank.', ok: true },
+        { en: 'Walk down the street and go passed the bank.', why: 'Passed — глагол «прошёл». Мимо — past.' },
+        { en: 'Walk down the street and go near the bank.', why: 'Near — «рядом». Мимо — past.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Перейди через мост»', topic: 'prep_movement', example: 'Walk across the bridge.', answers: ['walk across the bridge', 'go across the bridge', 'cross the bridge', 'walk over the bridge', 'go over the bridge'], hints: [
+        { extra: 'through', text: 'По мосту на другую сторону — across.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Выйди из машины!»', topic: 'prep_movement', example: 'Get out of the car!', answers: ['get out of the car', 'please get out of the car', 'get out of the car please'], hints: [
+        { missing: 'of', text: 'Из машины — out of.' },
+        { extra: 'off', text: 'Get off — из автобуса или поезда. Из машины — get out of.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Мы проехали через туннель»', topic: 'prep_movement', example: 'We drove through the tunnel.', answers: ['we drove through the tunnel', 'we went through the tunnel', 'we passed through the tunnel'], hints: [
+        { extra: 'across', text: 'Сквозь туннель — through.' },
+        { extra: 'drive', text: 'Прошлое: drive → drove.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Он спустился по лестнице»', topic: 'prep_movement', example: 'He went down the stairs.', answers: ['he went down the stairs', 'he walked down the stairs', 'he came down the stairs', 'he went downstairs', 'he walked downstairs', 'he came downstairs'], hints: [
+        { extra: 'up', text: 'Up — вверх. Вниз — down.' },
+        { extra: 'go', text: 'Прошлое: went.' },
+      ] },
+    ],
+  },
+
+  // ===================== 18. Фразовые глаголы =====================
+  {
+    id: 'phrasal',
+    level: 'A2',
+    title: 'Фразовые глаголы: get up, pick up, hang out',
+    goal: 'Сможешь говорить как американцы: pick up, hang out, find out',
+    rule: 'phrasal',
+    steps: [
+      { t: 'tip', title: 'Местоимение — в середину', text: 'С существительным частица может стоять где угодно: **pick up** Sam / **pick** Sam **up**. А с местоимением (me, him, it) — только в середине: **pick me up**, **try it on**, **turn it off**.' },
+      { t: 'choice', q: '«Можешь забрать меня в 8?»', topic: 'phrasal', opts: [
+        { en: 'Can you pick me up at 8?', ok: true },
+        { en: 'Can you pick up me at 8?', why: 'Местоимение — в середину: pick me up.' },
+        { en: 'Can you take up me at 8?', why: '«Забрать» — pick me up.' },
+      ] },
+      { t: 'choice', q: '«Давай потусим в выходные»', topic: 'phrasal', opts: [
+        { en: "Let's hang out this weekend.", ok: true },
+        { en: "Let's hang on this weekend.", why: 'Hang on = «подожди».' },
+        { en: "Let's hang up this weekend.", why: 'Hang up — «повесить трубку».' },
+      ] },
+      { t: 'choice', q: '«Подожди, я иду!»', topic: 'phrasal', opts: [
+        { en: "Hold on, I'm coming!", ok: true },
+        { en: "Hold off, I'm coming!", why: 'Hold off — «отложить». Подожди — hold on.' },
+        { en: "Hold, I'm coming!", why: 'Нужна частица: hold on.' },
+      ] },
+      { t: 'choice', q: 'В магазине: «Можно это примерить?»', topic: 'phrasal', opts: [
+        { en: 'Can I try it on?', ok: true },
+        { en: 'Can I try on it?', why: 'Местоимение — в середину: try it on.' },
+        { en: 'Can I try it?', why: 'Try it — «попробовать». Примерить — try it on.' },
+      ] },
+      { t: 'choice', q: '«Выключи свет»', topic: 'phrasal', opts: [
+        { en: 'Turn off the lights.', ok: true },
+        { en: 'Turn on the lights.', why: 'Turn on — включить.' },
+        { en: 'Close the light.', why: 'Свет выключают — turn off.' },
+      ] },
+      { t: 'build', q: 'Составь: «Я обычно встаю в семь»', topic: 'phrasal', answer: 'I usually get up at seven', extra: ['stand', 'in', 'gets'], hints: [
+        { extra: 'stand', text: 'Stand up — встать на ноги (со стула). Утром встаём — get up.' },
+        { extra: 'in', text: 'Время по часам — at.' },
+        { extra: 'gets', text: 'С I — get.' },
+      ] },
+      { t: 'build', q: 'Составь: «Мне нужно выяснить, где он живёт»', topic: 'phrasal', answer: 'I need to find out where he lives', extra: ['does', 'live', 'search'], hints: [
+        { extra: 'does', text: 'Это не вопрос, а часть фразы — порядок прямой: where he lives.' },
+        { extra: 'live', text: 'He — lives.' },
+        { extra: 'search', text: '«Выяснить» — find out.' },
+      ] },
+      { t: 'build', q: 'Составь: «Я ищу свой телефон»', topic: 'phrasal', answer: "I'm looking for my phone", extra: ['search', 'at', 'find'], hints: [
+        { extra: 'at', text: 'Look at — «смотреть на». Искать — look for.' },
+        { extra: 'search', text: '«Искать» — look for.' },
+        { extra: 'find', text: 'Find — «найти». Искать — look for.' },
+      ] },
+      { t: 'choice', q: '«Он бросил курить»', topic: 'phrasal', opts: [
+        { en: 'He gave up smoking.', ok: true },
+        { en: 'He gave up to smoke.', why: 'После give up — -ing: smoking.' },
+        { en: 'He gave out smoking.', why: 'Бросить — give up.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Можешь меня забрать?»', topic: 'phrasal', example: 'Can you pick me up?', answers: ['can you pick me up', 'could you pick me up', 'can you pick me up please', 'could you pick me up please'], hints: [
+        { missing: 'pick', text: '«Забрать» на машине — pick up.' },
+        { missing: 'me', text: 'Местоимение — в середину: pick me up.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Давай потусим!»', topic: 'phrasal', example: "Let's hang out!", answers: ['let us hang out', 'let us hang out sometime', 'want to hang out', 'do you want to hang out'], hints: [
+        { extra: 'on', text: 'Hang on — «подожди». Потусить — hang out.' },
+        { missing: 'out', text: 'Тусоваться — hang out.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Успокойся!»', topic: 'phrasal', example: 'Calm down!', answers: ['calm down', 'relax', 'chill', 'chill out', 'take it easy'], hints: [
+        { single: true, text: 'Попробуй фразовый глагол из двух слов: calm …' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Я проснулся в шесть»', topic: 'phrasal', example: 'I woke up at six.', answers: ['I woke up at six', 'I woke up at 6', "I woke up at six o'clock", "I woke up at 6 o'clock", 'I got up at six', 'I got up at 6'], hints: [
+        { extra: 'waked', text: 'Wake — неправильный глагол: woke up.' },
+        { extra: 'wake', text: 'Прошлое: woke up.' },
+        { missing: 'up', text: 'Просыпаться — wake up.' },
+      ] },
+    ],
+  },
+
+  // ===================== 19. gonna / wanna / gotta =====================
+  {
+    id: 'contractions',
+    level: 'A2',
+    title: 'Разговорные сокращения: gonna, wanna, gotta',
+    goal: 'Сможешь понимать быструю американскую речь и говорить неформально',
+    rule: 'contractions',
+    steps: [
+      { t: 'tip', title: 'to уже внутри', text: '**gonna** = going to, **wanna** = want to, **gotta** = got to. Слово **to** уже спрятано внутри, поэтому «wanna to go» — ошибка. И помни: с друзьями — нормально, в резюме и письмах на работу — полные формы.' },
+      { t: 'choice', q: 'Что значит «Gimme a sec»?', topic: 'contractions', opts: [
+        { en: 'Дай мне секунду', ok: true },
+        { en: 'Дай сигарету', why: 'Sec = second — секунда.' },
+        { en: 'Я сейчас приду', why: 'Gimme = give me: «дай мне секунду».' },
+      ] },
+      { t: 'choice', q: 'Разговорно: «Хочешь перекусить?»', topic: 'contractions', opts: [
+        { en: 'Wanna grab a bite?', ok: true },
+        { en: 'Wanna to grab a bite?', why: 'Wanna уже включает to.' },
+        { en: 'Wanna grabbing a bite?', why: 'После wanna — начальная форма: grab.' },
+      ] },
+      { t: 'choice', q: 'Неформально: «Мне надо идти»', topic: 'contractions', opts: [
+        { en: 'I gotta go.', ok: true },
+        { en: 'I gotta to go.', why: 'Gotta уже включает to.' },
+        { en: "I'm gotta go.", why: 'Gotta = have got to, am не нужен.' },
+      ] },
+      { t: 'choice', q: 'Очень разговорно: «Не знаю»', topic: 'contractions', opts: [
+        { en: 'I dunno.', ok: true },
+        { en: 'I donna.', why: 'Правильно: dunno = don\'t know.' },
+        { en: "I don't knowing.", why: 'Просто: I don\'t know / I dunno.' },
+      ] },
+      { t: 'choice', q: 'Где лучше НЕ писать gonna?', topic: 'contractions', opts: [
+        { en: 'В резюме и письме работодателю', ok: true },
+        { en: 'В сообщении Сэму', why: 'С друзьями gonna — нормально.' },
+        { en: 'В разговоре с Девом', why: 'В устной речи gonna звучит естественно.' },
+      ] },
+      { t: 'build', q: 'Составь разговорно: «Я тебе позвоню» (с gonna)', topic: 'contractions', answer: "I'm gonna call you", extra: ['to', 'calling', 'will'], hints: [
+        { extra: 'calling', text: 'После gonna — начальная форма: call.' },
+        { extra: 'will', text: 'С gonna will не нужен.' },
+      ] },
+      { t: 'build', q: 'Составь разговорно: «Хочешь потусить?»', topic: 'contractions', answer: 'Wanna hang out?', extra: ['to', 'hanging', 'outside'], hints: [
+        { extra: 'hanging', text: 'После wanna — начальная форма: hang.' },
+        { extra: 'outside', text: 'Тусоваться — hang out.' },
+      ] },
+      { t: 'build', q: 'Составь разговорно: «Мне надо работать»', topic: 'contractions', answer: 'I gotta work', extra: ['to', 'working', 'am'], hints: [
+        { extra: 'to', text: 'Gotta уже включает to.' },
+        { extra: 'working', text: 'После gotta — начальная форма: work.' },
+        { extra: 'am', text: 'Am не нужен: I gotta work.' },
+      ] },
+      { t: 'choice', q: 'Тони кричит: «Whaddaya want?» Что это значит?', topic: 'contractions', opts: [
+        { en: 'Что ты хочешь?', ok: true },
+        { en: 'Куда ты идёшь?', why: 'Whaddaya = What do you: «What do you want?»' },
+        { en: 'Чего ты ждёшь?', why: 'Want — «хотеть». Whaddaya want = What do you want?' },
+      ] },
+      { t: 'type', q: 'Напиши полностью, без сокращений: «I wanna go»', topic: 'contractions', example: 'I want to go.', answers: ['I want to go'], hints: [
+        { missing: 'want', text: 'Wanna = want to.' },
+      ] },
+      { t: 'type', q: 'Напиши полностью, без сокращений: «I gotta go»', topic: 'contractions', example: 'I have to go.', answers: ['I have to go', 'I have got to go', 'I got to go'], hints: [
+        { missing: 'to', text: 'Gotta = got to / have to.' },
+      ] },
+      { t: 'type', q: 'Спроси Дева разговорно: «Хочешь кофе?» (с wanna)', topic: 'contractions', example: 'Wanna grab a coffee?', answers: ['wanna grab a coffee', 'wanna get a coffee', 'wanna grab some coffee', 'wanna get some coffee', 'do you wanna grab a coffee', 'do you wanna get a coffee', 'want a coffee', 'want some coffee', 'do you want a coffee', 'do you want some coffee'], hints: [
+        { missing: 'want', text: 'Используй wanna (= want to): Wanna grab a coffee?' },
+      ] },
+      { t: 'type', q: 'Напиши полностью: «I dunno, it\'s kinda late»', topic: 'contractions', example: "I don't know, it's kind of late.", answers: ['I do not know it is kind of late', 'I do not know it is sort of late', 'I do not know it is a little late', 'I do not know it is a bit late'], hints: [
+        { missing: 'kind', text: 'Kinda = kind of.' },
+        { missing: 'know', text: 'Dunno = don\'t know.' },
+      ] },
+    ],
+  },
+
+  // ===================== 20. Переспросить и уточнить =====================
+  {
+    id: 'object_questions',
+    level: 'A2',
+    title: 'Как переспросить и уточнить',
+    goal: 'Сможешь переспросить, попросить повторить и узнать значение слова',
+    rule: 'object_questions',
+    steps: [
+      { t: 'tip', title: 'Переспрашивать — нормально', text: 'Американцы привыкли к акцентам. Не делай вид, что понял: скажи **Sorry, could you say that again?** или **What does … mean?** Только не «What means…?» — нужен **does**.' },
+      { t: 'choice', q: '«Что значит „no worries“?»', topic: 'object_questions', opts: [
+        { en: 'What does "no worries" mean?', ok: true },
+        { en: 'What means "no worries"?', why: 'Нужен does: What does … mean?' },
+        { en: 'What is mean "no worries"?', why: 'Правильно: What does … mean?' },
+      ] },
+      { t: 'choice', q: 'Маркус говорит быстро. Попроси: «Не могли бы вы говорить медленнее?»', topic: 'object_questions', opts: [
+        { en: 'Could you speak a little slower, please?', ok: true },
+        { en: 'Speak slower!', why: 'Звучит как приказ. Вежливо: Could you…, please?' },
+        { en: 'Could you speak more slow, please?', why: 'Или slower, или more slowly.' },
+      ] },
+      { t: 'choice', q: 'Ты не расслышал Тони. Как переспросить?', topic: 'object_questions', opts: [
+        { en: 'Sorry, what was that?', ok: true },
+        { en: 'What?!', why: 'Звучит резко. Вежливо: Sorry? / Sorry, what was that?' },
+        { en: 'Repeat!', why: 'Приказ — грубо. Лучше: Could you say that again?' },
+      ] },
+      { t: 'choice', q: '«Как по-английски „сдача“?»', topic: 'object_questions', opts: [
+        { en: 'How do you say "сдача" in English?', ok: true },
+        { en: 'How to say "сдача" in English?', why: 'В вопросе нужен do you: How do you say…?' },
+        { en: 'How is "сдача" on English?', why: '«По-английски» — in English.' },
+      ] },
+      { t: 'choice', q: 'Уточни у миссис Родригес: «Вы имеете в виду зелёную дверь?»', topic: 'object_questions', opts: [
+        { en: 'Do you mean the green door?', ok: true },
+        { en: 'Do you mean about the green door?', why: 'Mean без about: Do you mean the green door?' },
+        { en: 'You mean green door?', why: 'Нужен артикль the: the green door.' },
+      ] },
+      { t: 'build', q: 'Составь: «Что значит это слово?»', topic: 'object_questions', answer: 'What does this word mean?', extra: ['means', 'is', 'do'], hints: [
+        { extra: 'means', text: 'После does — mean без -s.' },
+        { extra: 'is', text: 'Вопрос через does: What does … mean?' },
+        { extra: 'do', text: 'Word — одно слово: does.' },
+      ] },
+      { t: 'build', q: 'Составь: «Не могли бы вы это записать?»', topic: 'object_questions', answer: 'Could you write it down?', extra: ['to', 'writing', 'up'], hints: [
+        { extra: 'to', text: 'После could — без to.' },
+        { extra: 'writing', text: 'После could — начальная форма: write.' },
+        { extra: 'up', text: 'Записать — write it down.' },
+      ] },
+      { t: 'build', q: 'Составь: «Можете повторить ещё раз?»', topic: 'object_questions', answer: 'Could you say that again?', extra: ['to', 'tell', 'one'], hints: [
+        { extra: 'to', text: 'После could — без to.' },
+        { extra: 'tell', text: 'Повторить — say that again (tell требует «кому»).' },
+        { extra: 'one', text: '«Ещё раз» — again.' },
+      ] },
+      { t: 'choice', q: 'Скажи, что ты ещё учишь английский', topic: 'object_questions', opts: [
+        { en: "I'm still learning English.", ok: true },
+        { en: 'I still learn English.', why: 'Это процесс сейчас — I\'m still learning.' },
+        { en: "I'm still learn English.", why: 'После am — learning.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Простите, можете повторить?»', topic: 'object_questions', example: 'Sorry, could you say that again?', answers: ['sorry could you say that again', 'sorry can you say that again', 'sorry could you repeat that', 'sorry can you repeat that', 'sorry could you say that again please', 'sorry could you repeat that please', 'could you say that again', 'can you say that again', 'could you repeat that', 'can you repeat that', 'could you say that again please', 'could you repeat that please', 'excuse me could you say that again', 'excuse me could you repeat that', 'sorry come again'], hints: [
+        { extra: 'to', text: 'После could — без to.' },
+        { extra: 'tell', text: 'Повторить — say that again или repeat that.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Что значит „hang out“?»', topic: 'object_questions', example: 'What does "hang out" mean?', answers: ['what does hang out mean', "what does 'hang out' mean"], hints: [
+        { missing: 'does', text: 'Нужен does: What does … mean?' },
+        { extra: 'means', text: 'После does — mean без -s.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Как это называется по-английски?»', topic: 'object_questions', example: 'What do you call this in English?', answers: ['what do you call this in English', 'what is this called in English', 'how do you say this in English', 'what is this in English', 'what is it called in English'], hints: [
+        { missing: 'do', text: 'Вопрос через do: What do you call this…?' },
+        { extra: 'on', text: '«По-английски» — in English.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Я правильно сказал?»', topic: 'object_questions', example: 'Did I say it right?', answers: ['did I say it right', 'did I say it correctly', 'did I say that right', 'did I say that correctly', 'is that right', 'was that right', 'is that correct', 'was that correct'], hints: [
+        { missing: 'did', text: 'Вопрос в прошлом — Did I say…?' },
+        { extra: 'said', text: 'После did — начальная форма: say.' },
+      ] },
+    ],
+  },
+
+  // ===================== 21. American English =====================
+  {
+    id: 'american',
+    level: 'A2',
+    title: 'American vs British English',
+    goal: 'Сможешь говорить по-американски: apartment, subway, check, line',
+    rule: 'american',
+    steps: [
+      { t: 'tip', title: 'В Нью-Йорке — по-американски', text: 'В школе часто учат британский. В Нью-Йорке скажут: **apartment** (не flat), **subway** (не underground), **check** (не bill), **line** (не queue), **vacation** (не holiday). Пишут **color, favorite, center**.' },
+      { t: 'choice', q: 'Как попросить счёт в американском ресторане?', topic: 'american', opts: [
+        { en: 'Can we get the check, please?', ok: true },
+        { en: 'Can we get the bill, please?', why: 'Поймут, но в США говорят the check.' },
+        { en: 'Can we get the count, please?', why: 'Count — «считать». Счёт — the check.' },
+      ] },
+      { t: 'choice', q: '«Я живу в квартире в Бруклине»', topic: 'american', opts: [
+        { en: 'I live in an apartment in Brooklyn.', ok: true },
+        { en: 'I live in a flat in Brooklyn.', why: 'Flat — британское. В США — apartment.' },
+        { en: 'I live in apartment in Brooklyn.', why: 'Нужен артикль: an apartment.' },
+      ] },
+      { t: 'choice', q: '«Очередь очень длинная»', topic: 'american', opts: [
+        { en: 'The line is really long.', ok: true },
+        { en: 'The queue is really long.', why: 'Queue — британское. В США — line.' },
+        { en: 'The turn is really long.', why: 'Turn — «чей ход». Очередь людей — line.' },
+      ] },
+      { t: 'choice', q: '«Давай поедем на метро»', topic: 'american', opts: [
+        { en: "Let's take the subway.", ok: true },
+        { en: "Let's take the underground.", why: 'Underground — лондонское. В Нью-Йорке — subway.' },
+        { en: "Let's take the tube.", why: 'Tube — лондонское метро. В Нью-Йорке — subway.' },
+      ] },
+      { t: 'choice', q: 'Как американец назовёт лифт?', topic: 'american', opts: [
+        { en: 'elevator', ok: true },
+        { en: 'lift', why: 'Lift — британское. В США — elevator.' },
+        { en: 'raiser', why: 'Такого слова нет. Лифт — elevator.' },
+      ] },
+      { t: 'build', q: 'Спроси в кафе: «Где здесь туалет?»', topic: 'american', answer: 'Where is the restroom?', extra: ['toilet', 'are', 'WC'], hints: [
+        { extra: 'toilet', text: 'В США в кафе вежливо — restroom (или bathroom). Toilet — это сам унитаз.' },
+        { extra: 'are', text: 'Restroom — один: is.' },
+        { extra: 'wc', text: 'WC в США не говорят. Скажи restroom.' },
+      ] },
+      { t: 'build', q: 'Составь: «Мой любимый цвет — синий»', topic: 'american', answer: 'My favorite color is blue', extra: ['favourite', 'colour', 'the'], hints: [
+        { extra: 'favourite', text: 'Американское написание — favorite.' },
+        { extra: 'colour', text: 'В США пишут color.' },
+        { extra: 'the', text: 'После my артикль не нужен.' },
+      ] },
+      { t: 'build', q: 'Составь: «На следующей неделе я в отпуске»', topic: 'american', answer: "I'm on vacation next week", extra: ['holiday', 'in', 'the'], hints: [
+        { extra: 'holiday', text: 'В США отпуск — vacation.' },
+        { extra: 'in', text: '«В отпуске» — on vacation.' },
+        { extra: 'the', text: 'Next week — без the.' },
+      ] },
+      { t: 'choice', q: 'Как в США называют картошку фри?', topic: 'american', opts: [
+        { en: 'fries', ok: true },
+        { en: 'chips', why: 'В США chips — чипсы из пакета.' },
+        { en: 'crisps', why: 'Crisps — британские «чипсы».' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Мы живём на первом этаже»', topic: 'american', example: 'We live on the first floor.', answers: ['we live on the first floor', 'our apartment is on the first floor'], hints: [
+        { extra: 'ground', text: 'В США первый этаж — first floor.' },
+        { extra: 'in', text: 'На этаже — on.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Я вынесу мусор»', topic: 'american', example: "I'll take out the trash.", answers: ['I will take out the trash', 'I will take the trash out', 'I will throw out the trash', 'I will throw the trash out', 'I will take out the garbage', 'I will take the garbage out'], hints: [
+        { extra: 'rubbish', text: 'В США мусор — trash или garbage.' },
+        { missing: 'out', text: 'Вынести — take out.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Пойдём в кино»', topic: 'american', example: "Let's go to the movies.", answers: ['let us go to the movies', 'let us go see a movie', 'let us see a movie', 'let us watch a movie', 'let us go to the movie theater'], hints: [
+        { extra: 'cinema', text: 'Американцы говорят go to the movies.' },
+        { extra: 'film', text: 'В США чаще movie.' },
+      ] },
+      { t: 'type', q: 'Напиши по-английски: «Где ближайшая станция метро?»', topic: 'american', example: "Where's the nearest subway station?", answers: ['where is the nearest subway station', 'where is the closest subway station', 'where is the nearest subway', 'where is the closest subway', 'where is the subway station'], hints: [
+        { extra: 'underground', text: 'В Нью-Йорке — subway.' },
+        { extra: 'metro', text: 'В Нью-Йорке говорят subway.' },
       ] },
     ],
   },

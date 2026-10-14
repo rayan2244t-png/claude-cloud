@@ -8,6 +8,10 @@ const CONTRACTIONS = [
   [/\bcan't\b/g, 'can not'], [/\bcannot\b/g, 'can not'], [/\bdon't\b/g, 'do not'], [/\bdoesn't\b/g, 'does not'],
   [/\bisn't\b/g, 'is not'], [/\baren't\b/g, 'are not'], [/\bwon't\b/g, 'will not'], [/\blet's\b/g, 'let us'],
   [/\bgonna\b/g, 'going to'], [/\bwanna\b/g, 'want to'],
+  [/\bdidn't\b/g, 'did not'], [/\bwasn't\b/g, 'was not'], [/\bweren't\b/g, 'were not'], [/\bhaven't\b/g, 'have not'],
+  [/\bhasn't\b/g, 'has not'], [/\bhadn't\b/g, 'had not'], [/\bshouldn't\b/g, 'should not'], [/\bwouldn't\b/g, 'would not'],
+  [/\bcouldn't\b/g, 'could not'], [/\bmustn't\b/g, 'must not'], [/\b(it|he|she|we|they|you|that)'ll\b/g, '$1 will'],
+  [/\b(we|you|they)'ve\b/g, '$1 have'], [/\b(he|she|we|they|you)'d\b/g, '$1 would'], [/\bgotta\b/g, 'got to'],
 ];
 
 export function normalize(text) {
